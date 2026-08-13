@@ -30,3 +30,4 @@ shinyapps/
 *.tmp
 *.temp
 *.log
+.positai
