@@ -1,0 +1,50 @@
+name: Shiny smoke test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  shiny-smoke-test:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::shiny
+            any::data.table
+            any::dplyr
+            any::car
+            any::reshape2
+            any::stringr
+            any::shinyjs
+            any::markdown
+            any::crayon
+
+      - name: Launch Shiny app smoke test
+        run: |
+          Rscript -e "
+            options(shiny.autoload.r = FALSE)
+            options(shiny.launch.browser = FALSE)
+            library(shiny)
+            app <- shinyApp(ui = source('ui.R', local = new.env())$value, server = function(input, output, session) source('server.R', local = environment()) )
+            cat('Shiny app object created successfully\n')
+          "

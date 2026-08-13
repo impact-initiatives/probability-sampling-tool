@@ -1,0 +1,51 @@
+name: R check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  r-check:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::shiny
+            any::data.table
+            any::dplyr
+            any::car
+            any::reshape2
+            any::stringr
+            any::shinyjs
+            any::markdown
+            any::crayon
+
+      - name: Check R files parse cleanly
+        run: |
+          Rscript -e "
+            files <- c('global.R', 'ui.R', 'server.R')
+            for (f in files) {
+              source(f, local = new.env())
+            }
+            cat('R files parsed successfully\n')
+          "
