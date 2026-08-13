@@ -31,6 +31,10 @@ Contributions follow a simple issue-driven workflow:
 
 This process is intended to keep changes traceable, reviewable, and aligned with project priorities.
 
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
 ## Maintenance note
 
 This README reflects the project as it exists at the start of official maintenance. More detailed project documentation, standards, and technical guidance will be added as the codebase is reviewed and updated.
