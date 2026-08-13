@@ -18,6 +18,24 @@ The tool supports common sampling approaches used in field data collection, incl
 - cluster sampling,
 - stratified sampling.
 
+## Local development
+
+This project uses `renv` to manage the R package environment and keep local setup reproducible.
+
+1. Open the project in RStudio or your preferred R environment.
+2. Restore the project dependencies:
+
+```r
+renv::restore()
+```
+
+3. Launch the Shiny app locally:
+
+```r
+shiny::runApp()
+```
+
+The project is configured to use the project-local library when opened in the project directory.
 
 ## Contribution workflow
 
