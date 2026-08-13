@@ -1,0 +1,35 @@
+name: Technical task / maintenance
+description: Track a technical task or maintenance activity
+title: "[TASK] Brief description of the task"
+labels: ["task", "maintenance"]
+body:
+  - type: markdown
+    attributes:
+      value: Please complete the fields below.
+
+  - type: textarea
+    id: task
+    attributes:
+      label: Task description
+      description: Describe the task to be done.
+      placeholder: "Example: review and clean the sampling logic for cluster selection."
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What is the objective of this task?
+      placeholder: "Example: improve reliability, simplify maintenance, or fix a recurring issue."
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Add any relevant context, references, or constraints.
+      placeholder: "Optional notes, links, or implementation constraints."
+    validations:
+      required: false

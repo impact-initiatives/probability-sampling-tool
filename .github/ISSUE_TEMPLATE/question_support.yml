@@ -1,0 +1,35 @@
+name: Question / support / usage
+description: Ask a question or request support on using the tool
+title: "[QUESTION] Brief description of the question"
+labels: ["question", "support"]
+body:
+  - type: markdown
+    attributes:
+      value: Please complete the fields below.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What do you need help with?
+      placeholder: "Example: How should I set the sampling parameters for cluster sampling?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Add a short description of the situation or use case.
+      placeholder: "Optional context, file used, sampling mode, or expected outcome."
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Add any relevant details or screenshots.
+      placeholder: "Optional notes or examples."
+    validations:
+      required: false
