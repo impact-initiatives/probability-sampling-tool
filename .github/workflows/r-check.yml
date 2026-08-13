@@ -39,6 +39,7 @@ jobs:
             any::shinyjs
             any::markdown
             any::crayon
+            any::DT
 
       - name: Check R files parse cleanly
         run: |

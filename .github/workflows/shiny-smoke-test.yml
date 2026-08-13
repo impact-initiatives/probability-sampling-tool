@@ -38,6 +38,7 @@ jobs:
             any::shinyjs
             any::markdown
             any::crayon
+            any::DT
 
       - name: Launch Shiny app smoke test
         run: |
