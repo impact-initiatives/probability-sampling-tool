@@ -12,7 +12,7 @@ library(shinyjs)
 library(crayon)
 
 # lift the data size limit
-options(shiny.maxRequestSize=30*1024^2)
+options(shiny.maxRequestSize = 30 * 1024^2)
 
 
 # humanTime function returns the current time in a specific format.
@@ -27,7 +27,10 @@ humanTime <- function() format(Sys.time(), "%Y%m%d-%H%M%OS")
 #   E: The desired margin of error
 # Returns:
 #   The sample size required to achieve the desired level of confidence and margin of error
-Ssize<-function (x,A,p,E) {(qchisq(A,1)*x*p*(1-p)) / (E^2*(x-1)+qchisq(A,df=1)*p*(1-p))}
+Ssize <- function(x, A, p, E) {
+  (qchisq(A, 1) * x * p * (1 - p)) /
+    (E^2 * (x - 1) + qchisq(A, df = 1) * p * (1 - p))
+}
 
 
 # create the sampling frame
@@ -44,37 +47,38 @@ Ssize<-function (x,A,p,E) {(qchisq(A,1)*x*p*(1-p)) / (E^2*(x-1)+qchisq(A,df=1)*p
 # Any rows with missing values in the proba column are removed.
 # If the sampling method is "Cluster sampling", the psu_id column is converted to a factor.
 # The resulting data frame is returned.
-format_sampling_frame<-function(sframe,input){
-  sframe$id_sampl<-paste0("id_",rownames(sframe))
-  if(input$stratified=="Stratified"){
-    sframe$strata_id<-sframe[[as.character(input$strata)]]
+format_sampling_frame <- function(sframe, input) {
+  sframe$id_sampl <- paste0("id_", rownames(sframe))
+  if (input$stratified == "Stratified") {
+    sframe$strata_id <- sframe[[as.character(input$strata)]]
   } else {
-    sframe$strata_id<-rep("all",nrow(sframe))
+    sframe$strata_id <- rep("all", nrow(sframe))
   }
 
-  if(input$samp_type=="Cluster sampling"){
-    sframe$psu_id<-sframe[[as.character(input$col_psu)]]
-    sframe$pop_numbers<-sframe[[as.character(input$colpop)]]
-  }else if(input$samp_type=="Simple random - allocation"){
-    sframe$psu_id<-sframe$id_sampl
-    sframe$pop_numbers<-sframe[[as.character(input$colpop)]]
-  }else{
-    sframe$psu_id<-sframe$id_sampl
-    sframe$pop_numbers<-rep(1,nrow(sframe))
+  if (input$samp_type == "Cluster sampling") {
+    sframe$psu_id <- sframe[[as.character(input$col_psu)]]
+    sframe$pop_numbers <- sframe[[as.character(input$colpop)]]
+  } else if (input$samp_type == "Simple random - allocation") {
+    sframe$psu_id <- sframe$id_sampl
+    sframe$pop_numbers <- sframe[[as.character(input$colpop)]]
+  } else {
+    sframe$psu_id <- sframe$id_sampl
+    sframe$pop_numbers <- rep(1, nrow(sframe))
   }
-  
-  sumdist<-sframe %>% dplyr::group_by(strata_id) %>%  dplyr::summarise(SumDist = sum(pop_numbers,na.rm=T))
-  sframe<-merge(sframe,sumdist,by="strata_id")
-  proba<-as.numeric(sframe$pop_numbers)/as.numeric(sframe$SumDist)
-  sframe<-cbind(sframe,proba)
-  sframe<-sframe[!is.na(sframe$proba),]
-  
-  if(input$samp_type=="Cluster sampling"){
-    sframe$psu_id<-as.factor(sframe$psu_id)
+
+  sumdist <- sframe %>%
+    dplyr::group_by(strata_id) %>%
+    dplyr::summarise(SumDist = sum(pop_numbers, na.rm = T))
+  sframe <- merge(sframe, sumdist, by = "strata_id")
+  proba <- as.numeric(sframe$pop_numbers) / as.numeric(sframe$SumDist)
+  sframe <- cbind(sframe, proba)
+  sframe <- sframe[!is.na(sframe$proba), ]
+
+  if (input$samp_type == "Cluster sampling") {
+    sframe$psu_id <- as.factor(sframe$psu_id)
   }
-  return(sframe) 
+  return(sframe)
 }
-
 
 
 # Calculate the sample size required for a given population proportion
@@ -91,22 +95,23 @@ format_sampling_frame<-function(sframe,input){
 # Returns:
 #   A modified version of the sampling frame dataframe with additional columns 'target' and 'target.with.buffer' representing the calculated sample sizes.
 
-create_targets<-function(sframe,input){
-  sframe |> 
-    dplyr::group_by(strata_id) |> 
+create_targets <- function(sframe, input) {
+  sframe |>
+    dplyr::group_by(strata_id) |>
     dplyr::summarise(
-      Population = sum(pop_numbers,na.rm=T)
-    ) |> 
+      Population = sum(pop_numbers, na.rm = T)
+    ) |>
     dplyr::mutate(
       target = ifelse(
-        input$topup=="Enter sample size",
+        input$topup == "Enter sample size",
         input$target,
-        ceiling(Ssize(Population,input$conf_level,input$pror,input$e_marg))
-      ) |> as.numeric(),
+        ceiling(Ssize(Population, input$conf_level, input$pror, input$e_marg))
+      ) |>
+        as.numeric(),
       target.with.buffer = ifelse(
-        input$topup=="Enter sample size",
+        input$topup == "Enter sample size",
         target,
-        as.numeric(ceiling(target * (1+input$buf)))
+        as.numeric(ceiling(target * (1 + input$buf)))
       )
     )
 }
@@ -122,24 +127,43 @@ create_targets<-function(sframe,input){
 # - sw_rand: The list of strata IDs that have been switched to random sampling.
 # Returns:
 # - A list containing the sampled output and the updated sw_rand list.
-clustersample<-function(sframe,sampling_target,cls,buf,ICC,sw_rand=c()) {
-  target<-as.numeric(as.character(sampling_target[["target"]]))
-  dist<-as.character(sampling_target[["strata_id"]])
-  out<-cluster_sampling(sframe,cls=cls,buf=buf,ICC=ICC,dist=dist,target=target)
-  
-  if(is.null(out)){
-    dbr<-sframe[as.character(sframe$strata_id)==dist,]
-    out<-sample(as.character(dbr$id_sampl),ceiling(as.numeric(sampling_target[["target"]])*(1+buf+0.1)),prob=dbr$proba,replace=TRUE)
-   # showModal(modalDialog(
-   #    title = paste(dist,": All PSUs have been selected"),
-   #    "Set cluster size to 1 to reduce the design  effect and extra buffer to account for analysis DEFF",
-   #    easyClose = TRUE,
-   #    footer = NULL
-   #  ))
-    sw_rand<-c(sw_rand,dist)
+clustersample <- function(
+  sframe,
+  sampling_target,
+  cls,
+  buf,
+  ICC,
+  sw_rand = c()
+) {
+  target <- as.numeric(as.character(sampling_target[["target"]]))
+  dist <- as.character(sampling_target[["strata_id"]])
+  out <- cluster_sampling(
+    sframe,
+    cls = cls,
+    buf = buf,
+    ICC = ICC,
+    dist = dist,
+    target = target
+  )
+
+  if (is.null(out)) {
+    dbr <- sframe[as.character(sframe$strata_id) == dist, ]
+    out <- sample(
+      as.character(dbr$id_sampl),
+      ceiling(as.numeric(sampling_target[["target"]]) * (1 + buf + 0.1)),
+      prob = dbr$proba,
+      replace = TRUE
+    )
+    # showModal(modalDialog(
+    #    title = paste(dist,": All PSUs have been selected"),
+    #    "Set cluster size to 1 to reduce the design  effect and extra buffer to account for analysis DEFF",
+    #    easyClose = TRUE,
+    #    footer = NULL
+    #  ))
+    sw_rand <- c(sw_rand, dist)
   }
   # incProgress(round(1/nrow(sampling_target),2), detail = paste("Sampling", dist))
-  return(list(output=out,sw_rand=sw_rand))
+  return(list(output = out, sw_rand = sw_rand))
 }
 
 #' Randomly samples from a sampling frame
@@ -150,17 +174,17 @@ clustersample<-function(sframe,sampling_target,cls,buf,ICC,sw_rand=c()) {
 #' sampling_target A sampling frame containing the strata ID, target with buffer, and population information
 #' buf The buffer size to for the samples
 #' Returns A vector of randomly selected IDs from the sampling frame dataset
-randomsample<-function(sframe,sampling_target,buf){
-  dist<-as.character(sampling_target[["strata_id"]])
-  dbr<-sframe[as.character(sframe$strata_id)==dist,]
-  tosample<-as.numeric(sampling_target[["target.with.buffer"]])
-  pop<-as.numeric(sampling_target[["Population"]])
-  if(tosample>pop){
-    target<-ceiling(pop)
-  }else{
-    target<-ceiling(tosample)
+randomsample <- function(sframe, sampling_target, buf) {
+  dist <- as.character(sampling_target[["strata_id"]])
+  dbr <- sframe[as.character(sframe$strata_id) == dist, ]
+  tosample <- as.numeric(sampling_target[["target.with.buffer"]])
+  pop <- as.numeric(sampling_target[["Population"]])
+  if (tosample > pop) {
+    target <- ceiling(pop)
+  } else {
+    target <- ceiling(tosample)
   }
-  out<-sample(x=as.character(dbr$id_sampl),size =target,replace=FALSE)
+  out <- sample(x = as.character(dbr$id_sampl), size = target, replace = FALSE)
   # incProgress(round(1/nrow(sampling_target),2), detail = paste("Sampling", dist))
   return(out)
 }
@@ -171,17 +195,22 @@ randomsample<-function(sframe,sampling_target,buf){
 #' sampling_target A data frame containing the sampling data.
 #' buf The buffer size for sampling.
 #' returns A vector of randomly selected IDs from the sampling frame data.
-stage2rdsample<-function(sframe,sampling_target,buf){
-  dist<-as.character(sampling_target[["strata_id"]])
-  dbr<-sframe[as.character(sframe$strata_id)==dist,]  
-  tosample<-as.numeric(sampling_target[["target.with.buffer"]])
-  pop<-as.numeric(sampling_target[["Population"]])
-  if(tosample>pop){
-    target<-ceiling(pop)
-  }else{
-    target<-ceiling(tosample)
+stage2rdsample <- function(sframe, sampling_target, buf) {
+  dist <- as.character(sampling_target[["strata_id"]])
+  dbr <- sframe[as.character(sframe$strata_id) == dist, ]
+  tosample <- as.numeric(sampling_target[["target.with.buffer"]])
+  pop <- as.numeric(sampling_target[["Population"]])
+  if (tosample > pop) {
+    target <- ceiling(pop)
+  } else {
+    target <- ceiling(tosample)
   }
-  out<-sample(x=as.character(dbr$id_sampl),size=target,prob=dbr$proba,replace=TRUE)
+  out <- sample(
+    x = as.character(dbr$id_sampl),
+    size = target,
+    prob = dbr$proba,
+    replace = TRUE
+  )
   # incProgress(round(1/nrow(sampling_target),2), detail = paste("Sampling", dist))
   return(out)
 }
@@ -198,40 +227,54 @@ stage2rdsample<-function(sframe,sampling_target,buf){
 #' target The target sample size.
 #' mode The sampling mode. Default is "notforced".
 #' returns A vector of sampled cluster IDs.
-cluster_sampling<-function(sframe,cls,buf,ICC,dist,target,mode="notforced"){
+cluster_sampling <- function(
+  sframe,
+  cls,
+  buf,
+  ICC,
+  dist,
+  target,
+  mode = "notforced"
+) {
   Sys.sleep(0.25)
-  dbr<-sframe[as.character(sframe$strata_id)==dist,]
-  dbr<-dbr[dbr$pop_numbers>=cls,]
-  out<-sample(as.character(dbr$id_sampl),ceiling(as.numeric(target*(1+buf))/cls),prob=dbr$proba,replace=TRUE)
-  
-  stop<-F
-  
-  while(stop==F){
-    d<-as.data.frame(table(out))[,2]
-    ms<-sum(d)/nrow(as.data.frame(d))
-    DESS<-1+(ms*cls-1)*ICC
-    targ<-DESS*(target*(1+buf))/cls		
-    
-    if(sum(d)>=targ){
+  dbr <- sframe[as.character(sframe$strata_id) == dist, ]
+  dbr <- dbr[dbr$pop_numbers >= cls, ]
+  out <- sample(
+    as.character(dbr$id_sampl),
+    ceiling(as.numeric(target * (1 + buf)) / cls),
+    prob = dbr$proba,
+    replace = TRUE
+  )
+
+  stop <- F
+
+  while (stop == F) {
+    d <- as.data.frame(table(out))[, 2]
+    ms <- sum(d) / nrow(as.data.frame(d))
+    DESS <- 1 + (ms * cls - 1) * ICC
+    targ <- DESS * (target * (1 + buf)) / cls
+
+    if (sum(d) >= targ) {
       # message(green(paste0(dist," : yeah")))
-      stop<-T
+      stop <- T
       return(out)
-      
-    } else if ((mode == "forced" & cls==1 & DESS > 3 )){
-     # message(red(paste0(dist," : exited because of DESS > 3")))
-      stop<-T
+    } else if ((mode == "forced" & cls == 1 & DESS > 3)) {
+      # message(red(paste0(dist," : exited because of DESS > 3")))
+      stop <- T
       return(out)
-      
     } else {
-      out<-c(out,sample(as.character(dbr$id_sampl),1,prob=dbr$proba,replace=TRUE))
-      rd_check<-all(unique(dbr$id_sampl)%in%unique(out))
-      
-      if(rd_check & mode == "notforced" ){
+      out <- c(
+        out,
+        sample(as.character(dbr$id_sampl), 1, prob = dbr$proba, replace = TRUE)
+      )
+      rd_check <- all(unique(dbr$id_sampl) %in% unique(out))
+
+      if (rd_check & mode == "notforced") {
         # message(paste0(dist," : reduced cluster size to 1"))
-        out<-NULL
-        stop<-T
+        out <- NULL
+        stop <- T
         return(out)
-      } 
+      }
     }
   }
 }
@@ -247,57 +290,83 @@ cluster_sampling<-function(sframe,cls,buf,ICC,dist,target,mode="notforced"){
 #' sampling_frame The sampling frame data.
 #' input The input parameters for the sampling method.
 #' return A list containing the sample, summary statistics, and any additional information.
-make_sample<-function(sampling_frame,input){
-
+make_sample <- function(sampling_frame, input) {
   # format the sample frame
-  sampl_f<-format_sampling_frame(sampling_frame,input)
-  
-  # create the target sample. 
-  target<-create_targets(sampl_f,input)
-  
-  sw_rand<-c()
-  output<-c()
-  
-  cls<-input$cls
-  buf<-input$buf
-  ICC<-input$ICC
+  sampl_f <- format_sampling_frame(sampling_frame, input)
 
-  if(input$samp_type=="Cluster sampling"){
-    if(input$topup=="Enter sample size"){
-      clsampling<-apply(target,1,clustersample,sframe=sampl_f,cls=cls,buf=0,ICC=0) # in that case, the buffer is not used, neither is the ICC
-      output<-lapply(clsampling,function(x) x$output) %>% unlist %>% c
-      sw_rand<-lapply(clsampling,function(x) x$sw_rand) %>% unlist %>% c
-    }else {
-      clsampling<-apply(target,1,clustersample,sframe=sampl_f,cls=cls,buf=buf,ICC=ICC) 
-      output<-lapply(clsampling,function(x) x$output) %>% unlist %>% c
-      sw_rand<-lapply(clsampling,function(x) x$sw_rand) %>% unlist %>% c
+  # create the target sample.
+  target <- create_targets(sampl_f, input)
+
+  sw_rand <- c()
+  output <- c()
+
+  cls <- input$cls
+  buf <- input$buf
+  ICC <- input$ICC
+
+  if (input$samp_type == "Cluster sampling") {
+    if (input$topup == "Enter sample size") {
+      clsampling <- apply(
+        target,
+        1,
+        clustersample,
+        sframe = sampl_f,
+        cls = cls,
+        buf = 0,
+        ICC = 0
+      ) # in that case, the buffer is not used, neither is the ICC
+      output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
+      sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
+    } else {
+      clsampling <- apply(
+        target,
+        1,
+        clustersample,
+        sframe = sampl_f,
+        cls = cls,
+        buf = buf,
+        ICC = ICC
+      )
+      output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
+      sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
     }
-  } else if (input$samp_type=="Simple random - allocation"){
-    output<-apply(target,1,stage2rdsample,sframe=sampl_f,buf=buf) %>% unlist 
-    
-  } else if (input$samp_type=="Simple random"){
-    output<-apply(target,1,randomsample,sframe=sampl_f,buf=buf) %>% unlist 
+  } else if (input$samp_type == "Simple random - allocation") {
+    output <- apply(target, 1, stage2rdsample, sframe = sampl_f, buf = buf) %>%
+      unlist
+  } else if (input$samp_type == "Simple random") {
+    output <- apply(target, 1, randomsample, sframe = sampl_f, buf = buf) %>%
+      unlist
   }
-  
-  output<-as.data.frame(table(output))
-  dbout<-merge(output,sampl_f,by.x="output",by.y="id_sampl",all.x=T,all.y=F)
-  
-  if(input$samp_type=="Cluster sampling"){  
-    dbout$Freq<-ifelse(dbout$strata%in%sw_rand,dbout$Freq,dbout$Freq*cls)
+
+  output <- as.data.frame(table(output))
+  dbout <- merge(
+    output,
+    sampl_f,
+    by.x = "output",
+    by.y = "id_sampl",
+    all.x = T,
+    all.y = F
+  )
+
+  if (input$samp_type == "Cluster sampling") {
+    dbout$Freq <- ifelse(
+      dbout$strata %in% sw_rand,
+      dbout$Freq,
+      dbout$Freq * cls
+    )
   }
-  
-  names(dbout)<-recode(names(dbout),"'output'='id_sampl';'Freq'='Survey'")
-  dbout$survey_buffer<-dbout$Survey
-  
-  
+
+  names(dbout) <- recode(names(dbout), "'output'='id_sampl';'Freq'='Survey'")
+  dbout$survey_buffer <- dbout$Survey
+
   # create the summary table
-  summary_sample <- dbout |> 
-    dplyr::group_by(strata_id) |> 
+  summary_sample <- dbout |>
+    dplyr::group_by(strata_id) |>
     dplyr::summarise(
       Surveys = sum(Survey, na.rm = TRUE),
       PSUs = n(),
       NB_Population = max(SumDist, na.rm = TRUE)
-      ) |>
+    ) |>
     dplyr::mutate(
       Cluster_size = round(Surveys / PSUs, 2),
       Cluster_size_init = input$cls,
@@ -309,40 +378,59 @@ make_sample<-function(sampling_frame,input){
       Error_margin = input$e_marg,
       Sampling_type = input$samp_type
     )
-  
-  if(input$samp_type=="Cluster sampling"){
-    for(i in 1:nrow(summary_sample)){
-      if(summary_sample$strata_id[i]%in%sw_rand){
-        summary_sample$Surveys_buffer[i]<-summary_sample$Surveys_buffer[i]+.1
-        summary_sample$Cluster_size[i]<-1
-        summary_sample$DESS[i]<-1
-        summary_sample$Effective_sample[i]<-summary_sample$Surveys[i]
-        summary_sample$Sampling_type[i]<-"Cluster sampling with size 1 = random sampling"
+
+  if (input$samp_type == "Cluster sampling") {
+    for (i in 1:nrow(summary_sample)) {
+      if (summary_sample$strata_id[i] %in% sw_rand) {
+        summary_sample$Surveys_buffer[i] <- summary_sample$Surveys_buffer[i] +
+          .1
+        summary_sample$Cluster_size[i] <- 1
+        summary_sample$DESS[i] <- 1
+        summary_sample$Effective_sample[i] <- summary_sample$Surveys[i]
+        summary_sample$Sampling_type[
+          i
+        ] <- "Cluster sampling with size 1 = random sampling"
       }
     }
   }
-  
-  if(input$samp_type!="Cluster sampling"){
-    le<-nrow(summary_sample)
-    summary_sample$Cluster_size<-rep(NA,le)
-    summary_sample$Cluster_size_init <-rep(NA,le)
-    summary_sample$ICC<-rep(NA,le)
-    summary_sample$DESS<-rep(NA,le)
-    summary_sample$Effective_sample<-rep(NA,le)
-  }
-  
-  if(input$topup=="Enter sample size"){
-    le<-nrow(summary_sample)
-    summary_sample$ICC<-rep(NA,le)
-    summary_sample$DESS<-rep(NA,le)
-    summary_sample$Effective_sample<-rep(NA,le)
-    summary_sample$Error_margin<-rep(NA,le)
-    summary_sample$Confidence_level<-rep(NA,le)
-    summary_sample$Surveys_buffer<-rep(NA,le)
-  }
-  
-  names(summary_sample)<-c("Stratification","# surveys", "# units to assess","Population","Mean Cluster size","Cluster size set","ICC","DESS","Effective sample","% buffer","Confidence level","Error margin","Sampling type")
-  return(list(sample=dbout,summary_sample=summary_sample,sw_rand=sw_rand))
-  
-}
 
+  if (input$samp_type != "Cluster sampling") {
+    le <- nrow(summary_sample)
+    summary_sample$Cluster_size <- rep(NA, le)
+    summary_sample$Cluster_size_init <- rep(NA, le)
+    summary_sample$ICC <- rep(NA, le)
+    summary_sample$DESS <- rep(NA, le)
+    summary_sample$Effective_sample <- rep(NA, le)
+  }
+
+  if (input$topup == "Enter sample size") {
+    le <- nrow(summary_sample)
+    summary_sample$ICC <- rep(NA, le)
+    summary_sample$DESS <- rep(NA, le)
+    summary_sample$Effective_sample <- rep(NA, le)
+    summary_sample$Error_margin <- rep(NA, le)
+    summary_sample$Confidence_level <- rep(NA, le)
+    summary_sample$Surveys_buffer <- rep(NA, le)
+  }
+
+  names(summary_sample) <- c(
+    "Stratification",
+    "# surveys",
+    "# units to assess",
+    "Population",
+    "Mean Cluster size",
+    "Cluster size set",
+    "ICC",
+    "DESS",
+    "Effective sample",
+    "% buffer",
+    "Confidence level",
+    "Error margin",
+    "Sampling type"
+  )
+  return(list(
+    sample = dbout,
+    summary_sample = summary_sample,
+    sw_rand = sw_rand
+  ))
+}
