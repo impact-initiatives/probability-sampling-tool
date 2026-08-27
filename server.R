@@ -49,6 +49,28 @@ function(input, output, session) {
   cible <- eventReactive(input$f_apply, {
     create_targets(frame(), input)
   })
+
+  # enable "Sample!" only once "Apply" has produced a valid sampling frame and target
+  observeEvent(input$f_apply, {
+    frame()
+    cible()
+    shinyjs::enable("desButton")
+  })
+
+  # any change to a frame-defining input invalidates the previous Apply
+  observeEvent(
+    list(
+      input$popdata,
+      input$testdata,
+      input$samp_type,
+      input$stratified,
+      input$col_psu,
+      input$strata,
+      input$colpop
+    ),
+    shinyjs::disable("desButton"),
+    ignoreInit = TRUE
+  )
   # Display the results in the UI
   output$sampling_frame <- DT::renderDataTable(
     frame(),

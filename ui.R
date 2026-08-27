@@ -2,6 +2,7 @@ library(markdown)
 
 navbarPage(
 	"Probability sampling tool",
+	shinyjs::useShinyjs(),
 	tags$head(
 		tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap.css")
 	),
@@ -349,11 +350,13 @@ navbarPage(
 			),
 			mainPanel(
 				fluidRow(
-					actionButton(
-						"desButton",
-						"Sample!",
-						width = "200",
-						style = "color: #fff; background-color: #f15e05; border-color: #2e6da4"
+					shinyjs::disabled(
+						actionButton(
+							"desButton",
+							"Sample!",
+							width = "200",
+							style = "color: #fff; background-color: #f15e05; border-color: #2e6da4"
+						)
 					),
 					align = "center"
 				),
