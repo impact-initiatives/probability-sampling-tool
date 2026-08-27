@@ -90,6 +90,10 @@ function(input, output, session) {
       is.null(validate_strata_selection(input)),
       validate_strata_selection(input)
     ))
+    validate(need(
+      is.null(validate_cluster_size(frame(), input)),
+      validate_cluster_size(frame(), input)
+    ))
     make_sample(db(), input)
   })
 

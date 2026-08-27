@@ -96,6 +96,31 @@ validate_strata_selection <- function(input) {
 }
 
 
+# Check that every stratum has at least one PSU large enough for the requested cluster size.
+# Returns an error message string if the input is invalid, or NULL if valid.
+validate_cluster_size <- function(sampl_f, input) {
+  if (input$samp_type != "Cluster sampling") {
+    return(NULL)
+  }
+  eligible <- tapply(
+    sampl_f$pop_numbers,
+    sampl_f$strata_id,
+    function(x) any(x >= input$cls, na.rm = TRUE)
+  )
+  invalid_strata <- names(eligible)[!eligible]
+  if (length(invalid_strata) > 0) {
+    return(paste0(
+      "Cluster size (",
+      input$cls,
+      ") exceeds the population of every PSU in stratum(s): ",
+      paste(invalid_strata, collapse = ", "),
+      ". Reduce the cluster size or review the population column."
+    ))
+  }
+  return(NULL)
+}
+
+
 # Calculate the sample size required for a given population proportion
 #
 # This function takes in a  dataframe and an input list, and calculates the sample size required for a given population proportion.
