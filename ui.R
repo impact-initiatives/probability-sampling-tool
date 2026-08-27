@@ -70,6 +70,7 @@ navbarPage(
 					strong(
 						"The headers of the dataset must NOT contain special characters."
 					),
+					strong("Uploaded files are limited to 30 MB."),
 					("You can use some example data by ticking 'example data'")
 				),
 				p(
@@ -262,7 +263,8 @@ navbarPage(
 								'text/csv',
 								'text/comma-separated-values,text/plain'
 							)
-						)
+						),
+						helpText("Maximum file size: 30 MB.")
 					),
 					checkboxInput("testdata", "Use test data", FALSE),
 					conditionalPanel(
