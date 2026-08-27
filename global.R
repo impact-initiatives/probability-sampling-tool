@@ -81,6 +81,21 @@ format_sampling_frame <- function(sframe, input) {
 }
 
 
+# Check that a stratification column has been selected when Stratified mode is active.
+# Returns an error message string if the input is invalid, or NULL if valid.
+validate_strata_selection <- function(input) {
+  if (
+    input$stratified == "Stratified" &&
+      (is.null(input$strata) || input$strata == "None")
+  ) {
+    return(
+      "Please select a stratification variable, or set 'Stratified ?' to 'Not stratified'."
+    )
+  }
+  return(NULL)
+}
+
+
 # Calculate the sample size required for a given population proportion
 #
 # This function takes in a  dataframe and an input list, and calculates the sample size required for a given population proportion.
