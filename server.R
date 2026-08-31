@@ -38,6 +38,10 @@ function(input, output, session) {
 
   # create the sampling frame
   frame <- eventReactive(input$f_apply, {
+    validate(need(
+      is.null(validate_population_column(db(), input)),
+      validate_population_column(db(), input)
+    ))
     format_sampling_frame(db(), input)
   })
 
@@ -60,6 +64,10 @@ function(input, output, session) {
 
   # create the sample based on the sampling frame and the input parameters
   out <- eventReactive(input$desButton, {
+    validate(need(
+      is.null(validate_population_column(db(), input)),
+      validate_population_column(db(), input)
+    ))
     make_sample(db(), input)
   })
 

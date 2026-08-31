@@ -81,6 +81,24 @@ format_sampling_frame <- function(sframe, input) {
 }
 
 
+# Check that the selected population column is numeric when required for the sampling type.
+# Returns an error message string if the input is invalid, or NULL if valid.
+validate_population_column <- function(sframe, input) {
+  if (!(input$samp_type %in% c("Cluster sampling", "Simple random - allocation"))) {
+    return(NULL)
+  }
+  if (is.null(input$colpop) || input$colpop == "None") {
+    return("Please select a population column for this sampling type.")
+  }
+  if (!is.numeric(sframe[[as.character(input$colpop)]])) {
+    return(paste0(
+      "'", input$colpop, "' is not a numeric column. Select a numeric population column."
+    ))
+  }
+  return(NULL)
+}
+
+
 # Calculate the sample size required for a given population proportion
 #
 # This function takes in a  dataframe and an input list, and calculates the sample size required for a given population proportion.
