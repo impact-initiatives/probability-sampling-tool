@@ -121,6 +121,17 @@ validate_cluster_size <- function(sampl_f, input) {
 }
 
 
+# Check whether the requested target exceeds the available population in any stratum.
+# Returns a character vector of affected stratum names, or NULL if none.
+check_target_vs_population <- function(cible) {
+  affected <- cible$strata_id[cible$target.with.buffer > cible$Population]
+  if (length(affected) > 0) {
+    return(as.character(affected))
+  }
+  return(NULL)
+}
+
+
 # Calculate the sample size required for a given population proportion
 #
 # This function takes in a  dataframe and an input list, and calculates the sample size required for a given population proportion.
@@ -417,7 +428,12 @@ make_sample <- function(sampling_frame, input) {
       Confidence_level = input$conf_level,
       Error_margin = input$e_marg,
       Sampling_type = input$samp_type
-    )
+    ) |>
+    dplyr::left_join(
+      target[, c("strata_id", "target.with.buffer")],
+      by = "strata_id"
+    ) |>
+    dplyr::relocate(target.with.buffer, .after = NB_Population)
 
   if (input$samp_type == "Cluster sampling") {
     for (i in 1:nrow(summary_sample)) {
@@ -458,6 +474,7 @@ make_sample <- function(sampling_frame, input) {
     "# surveys",
     "# units to assess",
     "Population",
+    "Requested target",
     "Mean Cluster size",
     "Cluster size set",
     "ICC",
