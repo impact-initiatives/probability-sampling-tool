@@ -57,12 +57,18 @@ cat(
 # Each block below is a single statement lifted directly from cluster_sampling()
 # (global.R:230-280). Run them one at a time (e.g. select + Cmd/Ctrl+Enter in
 # RStudio) to inspect every intermediate variable in your environment.
+#
+# `target_stratum` drives the whole STEP 3/3bis/4 section below: set it to
+# "North" or "South" and re-run that section to compare a stratum that
+# exhausts its PSUs (North) against one that doesn't (South), using the
+# exact same code path.
+target_stratum <- "South" # change to "South", then re-run STEP 3/3bis/4
 
 # 3.1 - parameters (mirrors the function's arguments, global.R:230-238)
-north_target <- targets[targets$strata_id == "North", ]
+stratum_target <- targets[targets$strata_id == target_stratum, ]
 # derived the same way clustersample() does it (global.R:139), not hardcoded
-dist <- as.character(north_target[["strata_id"]])
-target <- north_target$target
+dist <- as.character(stratum_target[["strata_id"]])
+target <- stratum_target$target
 cls <- input$cls
 buf <- input$buf
 ICC <- input$ICC
@@ -76,6 +82,14 @@ dbr <- dbr[dbr$pop_numbers >= cls, ]
 print(dbr[, c("id_sampl", "pop_numbers", "proba")])
 
 # 3.3 - initial PPS draw of PSUs, with replacement (global.R:242-247)
+
+sample_n_size <- ceiling(as.numeric(target * (1 + buf)) / cls)
+cat(
+    "N sample size used in sample() :",
+    paste(sample_n_size, collapse = ", "),
+    "\n"
+)
+
 out <- sample(
     as.character(dbr$id_sampl),
     ceiling(as.numeric(target * (1 + buf)) / cls),
@@ -121,6 +135,7 @@ cat("out is now:", paste(out, collapse = ", "), "\n")
 #        clustersample() (STEP 4) would trigger its random-sampling fallback.
 rd_check <- all(unique(dbr$id_sampl) %in% unique(out))
 cat("all PSUs exhausted?", rd_check, "\n")
+
 if (rd_check && mode == "notforced") {
     out <- NULL
     cat("-> exhausted: out set to NULL, stop iterating.\n")
@@ -131,32 +146,33 @@ if (rd_check && mode == "notforced") {
 cat(
     "\n=== STEP 3bis: same call via the real cluster_sampling() function, for comparison ===\n"
 )
-north_out <- cluster_sampling(
+stratum_out <- cluster_sampling(
     sframe,
     cls = input$cls,
     buf = input$buf,
     ICC = input$ICC,
     dist = dist,
-    target = north_target$target
+    target = stratum_target$target
 )
 cat("Result (NULL means all PSUs were exhausted -> fallback would trigger):\n")
-print(north_out)
+print(stratum_out)
 
 cat("\n=== STEP 4: clustersample() breakdown, run sub-step by sub-step ===\n")
 # Picks up where STEP 3 left off: `out` is either a vector (target reached)
 # or NULL (exhausted). Each block mirrors clustersample() (global.R:130-165).
+# Still driven by `target_stratum` set at the top of STEP 3.
 
 # 4.1 - did cluster_sampling() give up? (global.R:149)
-cat("is.null(out)?", is.null(north_out), "\n")
+cat("is.null(out)?", is.null(stratum_out), "\n")
 
 # 4.2 - fallback: draw directly at "cluster size = 1", i.e. one interview
 #       per hit instead of `cls` per hit (global.R:150-156)
 sw_rand <- c()
-if (is.null(north_out)) {
+if (is.null(stratum_out)) {
     dbr_fallback <- sframe[as.character(sframe$strata_id) == dist, ]
-    north_out <- sample(
+    stratum_out <- sample(
         as.character(dbr_fallback$id_sampl),
-        ceiling(as.numeric(north_target[["target"]]) * (1 + buf + 0.1)),
+        ceiling(as.numeric(stratum_target[["target"]]) * (1 + buf + 0.1)),
         prob = dbr_fallback$proba,
         replace = TRUE
     )
@@ -164,23 +180,137 @@ if (is.null(north_out)) {
     sw_rand <- c(sw_rand, dist)
 }
 cat("sw_rand:", sw_rand, "\n")
-print(table(north_out))
+print(table(stratum_out))
 
 cat(
-    "\n=== STEP 5: clustersample() on the South stratum (no fallback expected) ===\n"
+    "\n=== STEP 5: quick North vs South comparison via the real clustersample() ===\n"
 )
-south_target <- targets[targets$strata_id == "South", ]
-south_result <- clustersample(
-    sframe,
-    sampling_target = south_target,
-    cls = input$cls,
-    buf = input$buf,
-    ICC = input$ICC
-)
-cat("sw_rand:", south_result$sw_rand, "\n")
-print(table(south_result$output))
+# Reusable helper so both strata can be compared side by side without
+# retyping the call or manually swapping `target_stratum` above.
+run_clustersample_for <- function(stratum_name) {
+    st <- targets[targets$strata_id == stratum_name, ]
+    res <- clustersample(
+        sframe,
+        sampling_target = st,
+        cls = input$cls,
+        buf = input$buf,
+        ICC = input$ICC
+    )
+    cat(sprintf(
+        "\n[%s] sw_rand: %s\n",
+        stratum_name,
+        paste(res$sw_rand, collapse = ", ")
+    ))
+    print(table(res$output))
+    invisible(res)
+}
+invisible(lapply(c("North", "South"), run_clustersample_for))
 
-cat("\n=== STEP 6: make_sample() end-to-end ===\n")
+cat(
+    "\n=== STEP 6: make_sample() breakdown, run sub-step by sub-step ===\n"
+)
+# Each block below is lifted directly from make_sample() (global.R:293-428).
+# Only the "Cluster sampling" + "Sample size based on population" branch is
+# unrolled here, since that's what `input` above is set to; global.R:307-339
+# holds the other samp_type/topup branches (Simple random, Simple random -
+# allocation, Enter sample size), not reproduced here.
+
+# 6.1 - reuse the sampling frame and targets already built in STEP 1/2
+#       (global.R:295, 298)
+sampl_f <- sframe
+target_tbl <- targets
+
+# 6.2 - initialise accumulators and design parameters (global.R:300-305)
+sw_rand <- c()
+output <- c()
+cls <- input$cls
+buf <- input$buf
+ICC <- input$ICC
+
+# 6.3 - draw the sample for every stratum at once: one clustersample() call
+#       per row of target_tbl (global.R:320-331)
+clsampling <- apply(
+    target_tbl,
+    1,
+    clustersample,
+    sframe = sampl_f,
+    cls = cls,
+    buf = buf,
+    ICC = ICC
+)
+output <- lapply(clsampling, function(x) x$output) %>% unlist() %>% c()
+sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist() %>% c()
+cat("sw_rand (strata that hit the fallback):", sw_rand, "\n")
+
+# 6.4 - collapse the raw draws into one row per selected PSU, with a Freq
+#       count of how many times each PSU was hit (global.R:341-349)
+output <- as.data.frame(table(output))
+dbout <- merge(
+    output,
+    sampl_f,
+    by.x = "output",
+    by.y = "id_sampl",
+    all.x = TRUE,
+    all.y = FALSE
+)
+print(dbout)
+
+# 6.5 - convert "hits" into households: multiply by cls, EXCEPT for strata
+#       that fell back to random sampling (already 1 household per hit)
+#       (global.R:351-357)
+dbout$Freq <- ifelse(dbout$strata %in% sw_rand, dbout$Freq, dbout$Freq * cls)
+
+# 6.6 - rename columns to their final, user-facing names (global.R:359-360)
+names(dbout) <- recode(names(dbout), "'output'='id_sampl';'Freq'='Survey'")
+dbout$survey_buffer <- dbout$Survey
+print(dbout[, c("id_sampl", "strata_id", "Survey")])
+
+# 6.7 - build the per-stratum summary table (global.R:363-380)
+summary_sample <- dbout |>
+    dplyr::group_by(strata_id) |>
+    dplyr::summarise(
+        Surveys = sum(Survey, na.rm = TRUE),
+        PSUs = n(),
+        NB_Population = max(SumDist, na.rm = TRUE)
+    ) |>
+    dplyr::mutate(
+        Cluster_size = round(Surveys / PSUs, 2),
+        Cluster_size_init = input$cls,
+        ICC = input$ICC,
+        DESS = 1 + (Cluster_size - 1) * ICC,
+        Effective_sample = round(Surveys / DESS, 0),
+        Surveys_buffer = input$buf,
+        Confidence_level = input$conf_level,
+        Error_margin = input$e_marg,
+        Sampling_type = input$samp_type
+    )
+print(summary_sample)
+
+# 6.8 - for strata that fell back to random sampling, force Cluster_size=1
+#       and DESS=1 (global.R:382-395). This is the part that overstates
+#       precision when a PSU was actually hit more than once (see #6).
+for (i in 1:nrow(summary_sample)) {
+    if (summary_sample$strata_id[i] %in% sw_rand) {
+        summary_sample$Surveys_buffer[i] <- summary_sample$Surveys_buffer[
+            i
+        ] +
+            0.1
+        summary_sample$Cluster_size[i] <- 1
+        summary_sample$DESS[i] <- 1
+        summary_sample$Effective_sample[i] <- summary_sample$Surveys[i]
+        summary_sample$Sampling_type[
+            i
+        ] <- "Cluster sampling with size 1 = random sampling"
+    }
+}
+print(summary_sample)
+# Note: global.R:397-412 also strips some columns to NA depending on
+# samp_type/topup; not reproduced here since neither condition applies to
+# this mock input (Cluster sampling + Sample size based on population).
+
+cat(
+    "\n=== STEP 7: make_sample() end-to-end via the real function, for comparison ===\n"
+)
 result <- make_sample(df, input)
 cat("\n--- sample (per selected PSU) ---\n")
 print(result$sample)
