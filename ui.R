@@ -77,7 +77,7 @@ navbarPage(
 				),
 				p(
 					strong("Cluster:"),
-					"The variable including the name of each cluster, there should be no duplciates in this column."
+					"The variable including the name of each cluster (PSU). The sampling frame is expected to have one row per cluster, so this column must contain a unique value per row (no duplicates)."
 				),
 				p(
 					strong("Stratification:"),
