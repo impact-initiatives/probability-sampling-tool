@@ -1,0 +1,17 @@
+region,psu_name,population
+North,PSU_A,40
+North,PSU_B,30
+North,PSU_C,20
+North,PSU_D,10
+South,PSU_E,120
+South,PSU_F,95
+South,PSU_G,80
+South,PSU_H,75
+South,PSU_I,60
+South,PSU_J,55
+South,PSU_K,50
+South,PSU_L,45
+South,PSU_M,40
+South,PSU_N,35
+South,PSU_O,30
+South,PSU_P,25
