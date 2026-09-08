@@ -84,7 +84,9 @@ format_sampling_frame <- function(sframe, input) {
 # Check that the selected population column is numeric when required for the sampling type.
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_population_column <- function(sframe, input) {
-  if (!(input$samp_type %in% c("Cluster sampling", "Simple random - allocation"))) {
+  if (
+    !(input$samp_type %in% c("Cluster sampling", "Simple random - allocation"))
+  ) {
     return(NULL)
   }
   if (is.null(input$colpop) || input$colpop == "None") {
@@ -93,12 +95,16 @@ validate_population_column <- function(sframe, input) {
   col <- as.character(input$colpop)
   if (!(col %in% names(sframe))) {
     return(paste0(
-      "Population column '", col, "' was not found in the uploaded dataset."
+      "Population column '",
+      col,
+      "' was not found in the uploaded dataset."
     ))
   }
   if (!is.numeric(sframe[[col]])) {
     return(paste0(
-      "'", col, "' is not a numeric column. Select a numeric population column."
+      "'",
+      col,
+      "' is not a numeric column. Select a numeric population column."
     ))
   }
   return(NULL)
