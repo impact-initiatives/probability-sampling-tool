@@ -38,10 +38,8 @@ function(input, output, session) {
 
   # create the sampling frame
   frame <- eventReactive(input$f_apply, {
-    validate(need(
-      is.null(validate_strata_selection(input)),
-      validate_strata_selection(input)
-    ))
+    strata_msg <- validate_strata_selection(input)
+    validate(need(is.null(strata_msg), strata_msg))
     format_sampling_frame(db(), input)
   })
 
@@ -106,10 +104,8 @@ function(input, output, session) {
 
   # create the sample based on the sampling frame and the input parameters
   out <- eventReactive(input$desButton, {
-    validate(need(
-      is.null(validate_strata_selection(input)),
-      validate_strata_selection(input)
-    ))
+    strata_msg <- validate_strata_selection(input)
+    validate(need(is.null(strata_msg), strata_msg))
     validate(need(
       is.null(validate_cluster_size(frame(), input)),
       validate_cluster_size(frame(), input)
