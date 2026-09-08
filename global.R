@@ -355,11 +355,16 @@ make_sample <- function(sampling_frame, input) {
       NB_Population = max(SumDist, na.rm = TRUE)
     ) |>
     dplyr::mutate(
-      Cluster_size = round(Surveys / PSUs, 2),
-      Cluster_size_init = input$cls,
+      # realized: measured from the actual draw (can differ from the plan,
+      # e.g. a stratum falling back to random sampling with cluster size 1)
+      Cluster_size_realized = round(Surveys / PSUs, 2),
+      # planned: what was set at design stage, used to compute the target
+      # sample size in create_targets()
+      Cluster_size_planned = input$cls,
       ICC = input$ICC,
-      DESS = 1 + (Cluster_size - 1) * ICC,
-      Effective_sample = round(Surveys / DESS, 0),
+      DEFF_planned = 1 + (Cluster_size_planned - 1) * ICC,
+      DEFF_realized = 1 + (Cluster_size_realized - 1) * ICC,
+      Effective_sample = round(Surveys / DEFF_realized, 0),
       Surveys_buffer = input$buf,
       Confidence_level = input$conf_level,
       Error_margin = input$e_marg,
@@ -371,8 +376,8 @@ make_sample <- function(sampling_frame, input) {
       if (summary_sample$strata_id[i] %in% sw_rand) {
         summary_sample$Surveys_buffer[i] <- summary_sample$Surveys_buffer[i] +
           .1
-        summary_sample$Cluster_size[i] <- 1
-        summary_sample$DESS[i] <- 1
+        summary_sample$Cluster_size_realized[i] <- 1
+        summary_sample$DEFF_realized[i] <- 1
         summary_sample$Effective_sample[i] <- summary_sample$Surveys[i]
         summary_sample$Sampling_type[
           i
@@ -383,17 +388,19 @@ make_sample <- function(sampling_frame, input) {
 
   if (input$samp_type != "Cluster sampling") {
     le <- nrow(summary_sample)
-    summary_sample$Cluster_size <- rep(NA, le)
-    summary_sample$Cluster_size_init <- rep(NA, le)
+    summary_sample$Cluster_size_realized <- rep(NA, le)
+    summary_sample$Cluster_size_planned <- rep(NA, le)
     summary_sample$ICC <- rep(NA, le)
-    summary_sample$DESS <- rep(NA, le)
+    summary_sample$DEFF_planned <- rep(NA, le)
+    summary_sample$DEFF_realized <- rep(NA, le)
     summary_sample$Effective_sample <- rep(NA, le)
   }
 
   if (input$topup == "Enter sample size") {
     le <- nrow(summary_sample)
     summary_sample$ICC <- rep(NA, le)
-    summary_sample$DESS <- rep(NA, le)
+    summary_sample$DEFF_planned <- rep(NA, le)
+    summary_sample$DEFF_realized <- rep(NA, le)
     summary_sample$Effective_sample <- rep(NA, le)
     summary_sample$Error_margin <- rep(NA, le)
     summary_sample$Confidence_level <- rep(NA, le)
@@ -405,10 +412,11 @@ make_sample <- function(sampling_frame, input) {
     "# surveys",
     "# units to assess",
     "Population",
-    "Mean Cluster size",
-    "Cluster size set",
+    "Mean Cluster size (realized)",
+    "Cluster size set (planned)",
     "ICC",
-    "DESS",
+    "DEFF (planned)",
+    "DEFF (realized)",
     "Effective sample",
     "% buffer",
     "Confidence level",
