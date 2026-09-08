@@ -38,13 +38,74 @@ function(input, output, session) {
 
   # create the sampling frame
   frame <- eventReactive(input$f_apply, {
-    format_sampling_frame(db(), input)
+    strata_msg <- validate_strata_selection(input)
+    validate(need(is.null(strata_msg), strata_msg))
+    sframe <- db()
+    validate(need(
+      !is.null(sframe),
+      "Please upload a CSV file (or enable 'Use test data') before applying."
+    ))
+    psu_msg <- validate_psu_column(sframe, input)
+    validate(need(is.null(psu_msg), psu_msg))
+    pop_msg <- validate_population_column(sframe, input)
+    validate(need(is.null(pop_msg), pop_msg))
+    format_sampling_frame(sframe, input)
   })
 
   # create the target sampling size by strata
   cible <- eventReactive(input$f_apply, {
     create_targets(frame(), input)
   })
+
+  # enable "Sample!" only once "Apply" has produced a valid sampling frame and target
+  observeEvent(input$f_apply, {
+    frame()
+    cible()
+    shinyjs::enable("desButton")
+
+    affected <- check_target_vs_population(cible())
+    if (!is.null(affected)) {
+      showModal(modalDialog(
+        title = tagList(
+          icon("triangle-exclamation"),
+          "Sample size exceeds population"
+        ),
+        div(
+          class = "alert alert-warning",
+          paste0(
+            "The requested sample size exceeds the available population in stratum(s): ",
+            paste(affected, collapse = ", "),
+            ". The sample will be capped to the available population there."
+          )
+        ),
+        easyClose = TRUE,
+        footer = modalButton("OK")
+      ))
+    }
+  })
+
+  # any change to a frame- or target-defining input invalidates the previous Apply
+  observeEvent(
+    list(
+      input$popdata,
+      input$testdata,
+      input$samp_type,
+      input$stratified,
+      input$col_psu,
+      input$strata,
+      input$colpop,
+      input$topup,
+      input$target,
+      input$conf_level,
+      input$pror,
+      input$e_marg,
+      input$buf,
+      input$cls,
+      input$ICC
+    ),
+    shinyjs::disable("desButton"),
+    ignoreInit = TRUE
+  )
   # Display the results in the UI
   output$sampling_frame <- DT::renderDataTable(
     frame(),
@@ -65,7 +126,20 @@ function(input, output, session) {
 
   # create the sample based on the sampling frame and the input parameters
   out <- eventReactive(input$desButton, {
-    make_sample(db(), input)
+    strata_msg <- validate_strata_selection(input)
+    validate(need(is.null(strata_msg), strata_msg))
+    cluster_size_msg <- validate_cluster_size(frame(), input)
+    validate(need(is.null(cluster_size_msg), cluster_size_msg))
+    sframe <- db()
+    validate(need(
+      !is.null(sframe),
+      "Please upload a CSV file (or enable 'Use test data') before applying."
+    ))
+    psu_msg <- validate_psu_column(sframe, input)
+    validate(need(is.null(psu_msg), psu_msg))
+    pop_msg <- validate_population_column(sframe, input)
+    validate(need(is.null(pop_msg), pop_msg))
+    make_sample(sframe, input)
   })
 
   # display the results

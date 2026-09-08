@@ -18,6 +18,10 @@ The tool supports common sampling approaches used in field data collection, incl
 - cluster sampling,
 - stratified sampling.
 
+## Input data
+
+The sampling frame is uploaded as a CSV file, with one row per sampling unit. Uploaded files are limited to 30 MB (configured via `shiny.maxRequestSize` in [global.R](global.R)).
+
 ## Local development
 
 This project uses `renv` to manage the R package environment and keep local setup reproducible.

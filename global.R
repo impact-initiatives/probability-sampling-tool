@@ -84,6 +84,119 @@ format_sampling_frame <- function(sframe, input) {
 }
 
 
+# Check that a stratification column has been selected when Stratified mode is active.
+# Returns an error message string if the input is invalid, or NULL if valid.
+validate_strata_selection <- function(input) {
+  if (
+    input$stratified == "Stratified" &&
+      (is.null(input$strata) || input$strata == "None")
+  ) {
+    return(
+      "Please select a stratification variable, or set 'Stratified ?' to 'Not stratified'."
+    )
+  }
+  return(NULL)
+}
+
+# Check that the selected population column is numeric when required for the sampling type.
+# Returns an error message string if the input is invalid, or NULL if valid.
+validate_population_column <- function(sframe, input) {
+  if (
+    !(input$samp_type %in% c("Cluster sampling", "Simple random - allocation"))
+  ) {
+    return(NULL)
+  }
+  if (is.null(input$colpop) || input$colpop == "None") {
+    return("Please select a population column for this sampling type.")
+  }
+  col <- as.character(input$colpop)
+  if (!(col %in% names(sframe))) {
+    return(paste0(
+      "Population column '",
+      col,
+      "' was not found in the uploaded dataset."
+    ))
+  }
+  if (!is.numeric(sframe[[col]])) {
+    return(paste0(
+      "'",
+      col,
+      "' is not a numeric column. Select a numeric population column."
+    ))
+  }
+  return(NULL)
+}
+
+
+# Check that every stratum has at least one PSU large enough for the requested cluster size.
+# Returns an error message string if the input is invalid, or NULL if valid.
+validate_cluster_size <- function(sampl_f, input) {
+  if (input$samp_type != "Cluster sampling") {
+    return(NULL)
+  }
+  eligible <- tapply(
+    sampl_f$pop_numbers,
+    sampl_f$strata_id,
+    function(x) any(x >= input$cls, na.rm = TRUE)
+  )
+  invalid_strata <- names(eligible)[!eligible]
+  if (length(invalid_strata) > 0) {
+    return(paste0(
+      "Cluster size (",
+      input$cls,
+      ") exceeds the population of every PSU in stratum(s): ",
+      paste(invalid_strata, collapse = ", "),
+      ". Reduce the cluster size or review the population column."
+    ))
+  }
+  return(NULL)
+}
+
+
+# Check whether the requested target exceeds the available population in any stratum.
+# Returns a character vector of affected stratum names, or NULL if none.
+check_target_vs_population <- function(cible) {
+  affected <- cible$strata_id[cible$target.with.buffer > cible$Population]
+  if (length(affected) > 0) {
+    return(as.character(affected))
+  }
+  return(NULL)
+}
+
+# Check that the PSU (cluster) column is selected, distinct from the
+# stratification column, and contains unique values (no duplicate PSU IDs).
+# Returns an error message string if the input is invalid, or NULL if valid.
+validate_psu_column <- function(sframe, input) {
+  if (input$samp_type != "Cluster sampling") {
+    return(NULL)
+  }
+  if (is.null(input$col_psu) || input$col_psu == "None") {
+    return("Please select a cluster (PSU) column.")
+  }
+  if (input$stratified == "Stratified" && input$col_psu == input$strata) {
+    return(
+      "Cluster and stratification variables must be different columns."
+    )
+  }
+  psu_col <- as.character(input$col_psu)
+  if (is.null(sframe) || !psu_col %in% names(sframe)) {
+    return(paste0(
+      "Input cluster '",
+      psu_col,
+      "' was not found in the uploaded data. Please re-select the column."
+    ))
+  }
+  if (anyDuplicated(sframe[[psu_col]]) > 0) {
+    return(paste0(
+      "Input cluster '",
+      input$col_psu,
+      "' contains duplicate values: the sampling frame must have one row per cluster (PSU), so this column must uniquely identify each cluster."
+    ))
+  }
+  return(NULL)
+}
+
+
 # Calculate the sample size required for a given population proportion
 #
 # This function takes in a  dataframe and an input list, and calculates the sample size required for a given population proportion.
@@ -369,7 +482,12 @@ make_sample <- function(sampling_frame, input) {
       Confidence_level = input$conf_level,
       Error_margin = input$e_marg,
       Sampling_type = input$samp_type
-    )
+    ) |>
+    dplyr::left_join(
+      target[, c("strata_id", "target.with.buffer")],
+      by = "strata_id"
+    ) |>
+    dplyr::relocate(target.with.buffer, .after = NB_Population)
 
   if (input$samp_type == "Cluster sampling") {
     for (i in 1:nrow(summary_sample)) {
