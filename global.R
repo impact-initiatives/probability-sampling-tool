@@ -179,15 +179,8 @@ clustersample <- function(
       prob = dbr$proba,
       replace = TRUE
     )
-    # showModal(modalDialog(
-    #    title = paste(dist,": All PSUs have been selected"),
-    #    "Set cluster size to 1 to reduce the design  effect and extra buffer to account for analysis DEFF",
-    #    easyClose = TRUE,
-    #    footer = NULL
-    #  ))
     sw_rand <- c(sw_rand, dist)
   }
-  # incProgress(round(1/nrow(sampling_target),2), detail = paste("Sampling", dist))
   return(list(output = out, sw_rand = sw_rand))
 }
 
