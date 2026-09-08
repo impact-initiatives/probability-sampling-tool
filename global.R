@@ -111,6 +111,40 @@ validate_population_column <- function(sframe, input) {
 }
 
 
+# Check that the PSU (cluster) column is selected, distinct from the
+# stratification column, and contains unique values (no duplicate PSU IDs).
+# Returns an error message string if the input is invalid, or NULL if valid.
+validate_psu_column <- function(sframe, input) {
+  if (input$samp_type != "Cluster sampling") {
+    return(NULL)
+  }
+  if (is.null(input$col_psu) || input$col_psu == "None") {
+    return("Please select a cluster (PSU) column.")
+  }
+  if (input$stratified == "Stratified" && input$col_psu == input$strata) {
+    return(
+      "Cluster and stratification variables must be different columns."
+    )
+  }
+  psu_col <- as.character(input$col_psu)
+  if (is.null(sframe) || !psu_col %in% names(sframe)) {
+    return(paste0(
+      "Input cluster '",
+      psu_col,
+      "' was not found in the uploaded data. Please re-select the column."
+    ))
+  }
+  if (anyDuplicated(sframe[[psu_col]]) > 0) {
+    return(paste0(
+      "Input cluster '",
+      input$col_psu,
+      "' contains duplicate values: the sampling frame must have one row per cluster (PSU), so this column must uniquely identify each cluster."
+    ))
+  }
+  return(NULL)
+}
+
+
 # Calculate the sample size required for a given population proportion
 #
 # This function takes in a  dataframe and an input list, and calculates the sample size required for a given population proportion.

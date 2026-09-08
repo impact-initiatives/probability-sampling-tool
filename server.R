@@ -43,6 +43,8 @@ function(input, output, session) {
       !is.null(sframe),
       "Please upload a CSV file (or enable 'Use test data') before applying."
     ))
+    psu_validation_msg <- validate_psu_column(sframe, input)
+    validate(need(is.null(psu_validation_msg), psu_validation_msg))
     pop_col_msg <- validate_population_column(sframe, input)
     validate(need(is.null(pop_col_msg), pop_col_msg))
     format_sampling_frame(sframe, input)
@@ -72,6 +74,8 @@ function(input, output, session) {
       !is.null(sframe),
       "Please upload a CSV file (or enable 'Use test data') before applying."
     ))
+    psu_validation_msg <- validate_psu_column(sframe, input)
+    validate(need(is.null(psu_validation_msg), psu_validation_msg))
     pop_col_msg <- validate_population_column(sframe, input)
     validate(need(is.null(pop_col_msg), pop_col_msg))
     make_sample(sframe, input)
