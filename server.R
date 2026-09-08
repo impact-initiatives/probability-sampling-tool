@@ -38,6 +38,8 @@ function(input, output, session) {
 
   # create the sampling frame
   frame <- eventReactive(input$f_apply, {
+    psu_validation_msg <- validate_psu_column(db(), input)
+    validate(need(is.null(psu_validation_msg), psu_validation_msg))
     format_sampling_frame(db(), input)
   })
 
@@ -60,6 +62,8 @@ function(input, output, session) {
 
   # create the sample based on the sampling frame and the input parameters
   out <- eventReactive(input$desButton, {
+    psu_validation_msg <- validate_psu_column(db(), input)
+    validate(need(is.null(psu_validation_msg), psu_validation_msg))
     make_sample(db(), input)
   })
 
