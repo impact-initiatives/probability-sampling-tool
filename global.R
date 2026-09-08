@@ -96,7 +96,15 @@ validate_psu_column <- function(sframe, input) {
       "Cluster and stratification variables must be different columns."
     )
   }
-  if (anyDuplicated(sframe[[as.character(input$col_psu)]]) > 0) {
+  psu_col <- as.character(input$col_psu)
+  if (is.null(sframe) || !psu_col %in% names(sframe)) {
+    return(paste0(
+      "Input cluster '",
+      psu_col,
+      "' was not found in the uploaded data. Please re-select the column."
+    ))
+  }
+  if (anyDuplicated(sframe[[psu_col]]) > 0) {
     return(paste0(
       "Input cluster '",
       input$col_psu,
