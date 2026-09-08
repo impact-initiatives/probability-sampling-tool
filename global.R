@@ -115,6 +115,14 @@ create_targets <- function(sframe, input) {
       Population = sum(pop_numbers, na.rm = T)
     ) |>
     dplyr::mutate(
+      # base SRS-equivalent target, no design effect - used by the
+      # cluster sampling random-sampling fallback (cls=1, DEFF=1)
+      target_srs = ifelse(
+        input$topup == "Enter sample size",
+        input$target,
+        Ssize(Population, input$conf_level, input$pror, input$e_marg)
+      ) |>
+        as.numeric(),
       target = ifelse(
         input$topup == "Enter sample size",
         input$target,
@@ -167,7 +175,7 @@ clustersample <- function(
     dbr <- sframe[as.character(sframe$strata_id) == dist, ]
     out <- sample(
       as.character(dbr$id_sampl),
-      ceiling(as.numeric(sampling_target[["target"]]) * (1 + buf + 0.1)),
+      ceiling(as.numeric(sampling_target[["target_srs"]]) * (1 + buf + 0.1)),
       prob = dbr$proba,
       replace = TRUE
     )
