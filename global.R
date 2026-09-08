@@ -91,6 +91,31 @@ validate_strata_selection <- function(input) {
     return(
       "Please select a stratification variable, or set 'Stratified ?' to 'Not stratified'."
     )
+# Check that the selected population column is numeric when required for the sampling type.
+# Returns an error message string if the input is invalid, or NULL if valid.
+validate_population_column <- function(sframe, input) {
+  if (
+    !(input$samp_type %in% c("Cluster sampling", "Simple random - allocation"))
+  ) {
+    return(NULL)
+  }
+  if (is.null(input$colpop) || input$colpop == "None") {
+    return("Please select a population column for this sampling type.")
+  }
+  col <- as.character(input$colpop)
+  if (!(col %in% names(sframe))) {
+    return(paste0(
+      "Population column '",
+      col,
+      "' was not found in the uploaded dataset."
+    ))
+  }
+  if (!is.numeric(sframe[[col]])) {
+    return(paste0(
+      "'",
+      col,
+      "' is not a numeric column. Select a numeric population column."
+    ))
   }
   return(NULL)
 }
@@ -127,6 +152,35 @@ check_target_vs_population <- function(cible) {
   affected <- cible$strata_id[cible$target.with.buffer > cible$Population]
   if (length(affected) > 0) {
     return(as.character(affected))
+# Check that the PSU (cluster) column is selected, distinct from the
+# stratification column, and contains unique values (no duplicate PSU IDs).
+# Returns an error message string if the input is invalid, or NULL if valid.
+validate_psu_column <- function(sframe, input) {
+  if (input$samp_type != "Cluster sampling") {
+    return(NULL)
+  }
+  if (is.null(input$col_psu) || input$col_psu == "None") {
+    return("Please select a cluster (PSU) column.")
+  }
+  if (input$stratified == "Stratified" && input$col_psu == input$strata) {
+    return(
+      "Cluster and stratification variables must be different columns."
+    )
+  }
+  psu_col <- as.character(input$col_psu)
+  if (is.null(sframe) || !psu_col %in% names(sframe)) {
+    return(paste0(
+      "Input cluster '",
+      psu_col,
+      "' was not found in the uploaded data. Please re-select the column."
+    ))
+  }
+  if (anyDuplicated(sframe[[psu_col]]) > 0) {
+    return(paste0(
+      "Input cluster '",
+      input$col_psu,
+      "' contains duplicate values: the sampling frame must have one row per cluster (PSU), so this column must uniquely identify each cluster."
+    ))
   }
   return(NULL)
 }
