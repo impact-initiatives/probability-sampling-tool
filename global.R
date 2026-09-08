@@ -18,25 +18,6 @@ options(shiny.maxRequestSize = 30 * 1024^2)
 # humanTime function returns the current time in a specific format.
 humanTime <- function() format(Sys.time(), "%Y%m%d-%H%M%OS")
 
-# Runs `expr` under a given RNG seed, restoring the previous RNG state
-# afterwards so the seed doesn't affect any other randomness in the session.
-run_with_seed <- function(seed, expr) {
-  old_seed <- if (exists(".Random.seed", envir = .GlobalEnv)) {
-    get(".Random.seed", envir = .GlobalEnv)
-  } else {
-    NULL
-  }
-  on.exit({
-    if (is.null(old_seed)) {
-      rm(".Random.seed", envir = .GlobalEnv)
-    } else {
-      assign(".Random.seed", old_seed, envir = .GlobalEnv)
-    }
-  })
-  set.seed(seed)
-  expr
-}
-
 # Calculate the sample size required for a given population proportion
 #
 # Parameters:
@@ -508,8 +489,7 @@ make_sample <- function(sampling_frame, input) {
       Surveys_buffer = input$buf,
       Confidence_level = input$conf_level,
       Error_margin = input$e_marg,
-      Sampling_type = input$samp_type,
-      Seed = input$seed_value
+      Sampling_type = input$samp_type
     ) |>
     dplyr::left_join(
       target[, c("strata_id", "target.with.buffer")],
@@ -565,8 +545,7 @@ make_sample <- function(sampling_frame, input) {
     "% buffer",
     "Confidence level",
     "Error margin",
-    "Sampling type",
-    "Seed"
+    "Sampling type"
   )
   return(list(
     sample = dbout,

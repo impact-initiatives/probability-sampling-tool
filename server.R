@@ -2,13 +2,6 @@
 # It defines the reactive behavior and output rendering for the user interface.
 
 function(input, output, session) {
-  # give each session a random default seed, visible and editable by the user
-  updateNumericInput(session, "seed_value", value = sample.int(1e6, 1))
-
-  observeEvent(input$new_seed, {
-    updateNumericInput(session, "seed_value", value = sample.int(1e6, 1))
-  })
-
   # get the data
   db <- reactive({
     inFile <- input$popdata
@@ -141,7 +134,7 @@ function(input, output, session) {
     validate(need(is.null(psu_msg), psu_msg))
     pop_msg <- validate_population_column(sframe, input)
     validate(need(is.null(pop_msg), pop_msg))
-    run_with_seed(input$seed_value, make_sample(sframe, input))
+    make_sample(sframe, input)
   })
 
   # display the results
