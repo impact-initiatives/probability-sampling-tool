@@ -417,7 +417,7 @@ make_sample <- function(sampling_frame, input) {
     "ICC",
     "DEFF (planned)",
     "DEFF (realized)",
-    "Effective sample",
+    "Effective sample size",
     "% buffer",
     "Confidence level",
     "Error margin",
