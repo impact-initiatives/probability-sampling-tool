@@ -38,11 +38,14 @@ function(input, output, session) {
 
   # create the sampling frame
   frame <- eventReactive(input$f_apply, {
+    sframe <- db()
     validate(need(
-      is.null(validate_population_column(db(), input)),
-      validate_population_column(db(), input)
+      !is.null(sframe),
+      "Please upload a CSV file (or enable 'Use test data') before applying."
     ))
-    format_sampling_frame(db(), input)
+    pop_col_msg <- validate_population_column(sframe, input)
+    validate(need(is.null(pop_col_msg), pop_col_msg))
+    format_sampling_frame(sframe, input)
   })
 
   # create the target sampling size by strata
@@ -64,11 +67,14 @@ function(input, output, session) {
 
   # create the sample based on the sampling frame and the input parameters
   out <- eventReactive(input$desButton, {
+    sframe <- db()
     validate(need(
-      is.null(validate_population_column(db(), input)),
-      validate_population_column(db(), input)
+      !is.null(sframe),
+      "Please upload a CSV file (or enable 'Use test data') before applying."
     ))
-    make_sample(db(), input)
+    pop_col_msg <- validate_population_column(sframe, input)
+    validate(need(is.null(pop_col_msg), pop_col_msg))
+    make_sample(sframe, input)
   })
 
   # display the results
