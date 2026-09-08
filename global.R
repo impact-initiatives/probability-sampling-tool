@@ -91,6 +91,10 @@ validate_strata_selection <- function(input) {
     return(
       "Please select a stratification variable, or set 'Stratified ?' to 'Not stratified'."
     )
+  }
+  return(NULL)
+}
+
 # Check that the selected population column is numeric when required for the sampling type.
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_population_column <- function(sframe, input) {
@@ -152,6 +156,10 @@ check_target_vs_population <- function(cible) {
   affected <- cible$strata_id[cible$target.with.buffer > cible$Population]
   if (length(affected) > 0) {
     return(as.character(affected))
+  }
+  return(NULL)
+}
+
 # Check that the PSU (cluster) column is selected, distinct from the
 # stratification column, and contains unique values (no duplicate PSU IDs).
 # Returns an error message string if the input is invalid, or NULL if valid.
