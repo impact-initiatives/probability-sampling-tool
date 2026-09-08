@@ -326,9 +326,10 @@ make_sample <- function(sampling_frame, input) {
       unlist
   }
 
-  output <- as.data.frame(table(output))
+  # one row per PSU draw, so repeated draws stay separate visits instead of
+  # being collapsed into a single row with a multiplied count
   dbout <- merge(
-    output,
+    data.frame(output = output),
     sampl_f,
     by.x = "output",
     by.y = "id_sampl",
@@ -337,14 +338,12 @@ make_sample <- function(sampling_frame, input) {
   )
 
   if (input$samp_type == "Cluster sampling") {
-    dbout$Freq <- ifelse(
-      dbout$strata %in% sw_rand,
-      dbout$Freq,
-      dbout$Freq * cls
-    )
+    dbout$Survey <- ifelse(dbout$strata %in% sw_rand, 1, cls)
+  } else {
+    dbout$Survey <- 1
   }
 
-  names(dbout) <- recode(names(dbout), "'output'='id_sampl';'Freq'='Survey'")
+  names(dbout)[names(dbout) == "output"] <- "id_sampl"
   dbout$survey_buffer <- dbout$Survey
 
   # create the summary table
