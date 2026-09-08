@@ -141,8 +141,8 @@ create_targets <- function(sframe, input) {
 # - sframe: The sampling frame.
 # - sampling_target: a dataframe with the sampling targets by strata.
 # - cls: The cluster size.
-# - buf: The buffer size.
-# - ICC: The intra-cluster correlation coefficient.
+# - buf: The buffer size, used for the random-sampling fallback only (the
+#   main draw uses target.with.buffer, already buffer-adjusted).
 # - sw_rand: The list of strata IDs that have been switched to random sampling.
 # Returns:
 # - A list containing the sampled output and the updated sw_rand list.
@@ -151,18 +151,16 @@ clustersample <- function(
   sampling_target,
   cls,
   buf,
-  ICC,
   sw_rand = c()
 ) {
-  target <- as.numeric(as.character(sampling_target[["target"]]))
   dist <- as.character(sampling_target[["strata_id"]])
   out <- cluster_sampling(
     sframe,
     cls = cls,
-    buf = buf,
-    ICC = ICC,
     dist = dist,
-    target = target
+    target_with_buffer = as.numeric(as.character(
+      sampling_target[["target.with.buffer"]]
+    ))
   )
 
   if (is.null(out)) {
@@ -239,63 +237,29 @@ stage2rdsample <- function(sframe, sampling_target, buf) {
 #'
 #' This function performs cluster sampling based on specified parameters.
 #' sframe A data frame containing the sampling frame data.
-#' cls The minimum cluster size.
-#' buf The buffer size.
-#' ICC The intra-cluster correlation coefficient.
+#' cls The (planned) cluster size.
 #' dist The stratum ID.
-#' target The target sample size.
-#' mode The sampling mode. Default is "notforced".
-#' returns A vector of sampled cluster IDs.
+#' target_with_buffer The target sample size, buffer included. Already
+#'   DEFF-adjusted by create_targets() for Cluster sampling, so no design
+#'   effect is applied here.
+#' returns A vector of sampled PSU IDs (one entry per draw), or NULL if no
+#'   PSU in the stratum is large enough to support the requested cluster size.
 cluster_sampling <- function(
   sframe,
   cls,
-  buf,
-  ICC,
   dist,
-  target,
-  mode = "notforced"
+  target_with_buffer
 ) {
-  Sys.sleep(0.25)
   dbr <- sframe[as.character(sframe$strata_id) == dist, ]
   dbr <- dbr[dbr$pop_numbers >= cls, ]
-  out <- sample(
-    as.character(dbr$id_sampl),
-    ceiling(as.numeric(target * (1 + buf)) / cls),
-    prob = dbr$proba,
-    replace = TRUE
-  )
 
-  stop <- F
-
-  while (stop == F) {
-    d <- as.data.frame(table(out))[, 2]
-    ms <- sum(d) / nrow(as.data.frame(d))
-    DESS <- 1 + (ms * cls - 1) * ICC
-    targ <- DESS * (target * (1 + buf)) / cls
-
-    if (sum(d) >= targ) {
-      # message(green(paste0(dist," : yeah")))
-      stop <- T
-      return(out)
-    } else if ((mode == "forced" & cls == 1 & DESS > 3)) {
-      # message(red(paste0(dist," : exited because of DESS > 3")))
-      stop <- T
-      return(out)
-    } else {
-      out <- c(
-        out,
-        sample(as.character(dbr$id_sampl), 1, prob = dbr$proba, replace = TRUE)
-      )
-      rd_check <- all(unique(dbr$id_sampl) %in% unique(out))
-
-      if (rd_check & mode == "notforced") {
-        # message(paste0(dist," : reduced cluster size to 1"))
-        out <- NULL
-        stop <- T
-        return(out)
-      }
-    }
+  if (nrow(dbr) == 0) {
+    return(NULL)
   }
+
+  m <- ceiling(as.numeric(target_with_buffer) / cls)
+
+  sample(as.character(dbr$id_sampl), size = m, prob = dbr$proba, replace = TRUE)
 }
 
 
@@ -331,9 +295,8 @@ make_sample <- function(sampling_frame, input) {
         clustersample,
         sframe = sampl_f,
         cls = cls,
-        buf = 0,
-        ICC = 0
-      ) # in that case, the buffer is not used, neither is the ICC
+        buf = 0
+      ) # in that case, the buffer is not used
       output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
       sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
     } else {
@@ -343,8 +306,7 @@ make_sample <- function(sampling_frame, input) {
         clustersample,
         sframe = sampl_f,
         cls = cls,
-        buf = buf,
-        ICC = ICC
+        buf = buf
       )
       output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
       sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
