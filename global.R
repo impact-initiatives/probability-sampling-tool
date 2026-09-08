@@ -99,6 +99,16 @@ format_sampling_frame <- function(sframe, input) {
 #   A modified version of the sampling frame dataframe with additional columns 'target' and 'target.with.buffer' representing the calculated sample sizes.
 
 create_targets <- function(sframe, input) {
+  # DEFF is fixed by the planned cluster size and ICC, computed once here so
+  # that the target sample size (and the "Target sampling" tab shown to the
+  # user) already reflects the design-effect-adjusted number for Cluster
+  # sampling. DEFF=1 (no adjustment) for the other sampling methods.
+  DEFF <- if (input$samp_type == "Cluster sampling") {
+    1 + (input$cls - 1) * input$ICC
+  } else {
+    1
+  }
+
   sframe |>
     dplyr::group_by(strata_id) |>
     dplyr::summarise(
@@ -108,7 +118,13 @@ create_targets <- function(sframe, input) {
       target = ifelse(
         input$topup == "Enter sample size",
         input$target,
-        ceiling(Ssize(Population, input$conf_level, input$pror, input$e_marg))
+        Ssize(
+          Population,
+          input$conf_level,
+          input$pror,
+          input$e_marg,
+          DEFF = DEFF
+        )
       ) |>
         as.numeric(),
       target.with.buffer = ifelse(
