@@ -2,6 +2,7 @@ library(markdown)
 
 navbarPage(
 	"Probability sampling tool",
+	shinyjs::useShinyjs(),
 	tags$head(
 		tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap.css")
 	),
@@ -70,6 +71,7 @@ navbarPage(
 					strong(
 						"The headers of the dataset must NOT contain special characters."
 					),
+					strong("Uploaded files are limited to 30 MB."),
 					("You can use some example data by ticking 'example data'")
 				),
 				p(
@@ -262,7 +264,8 @@ navbarPage(
 								'text/csv',
 								'text/comma-separated-values,text/plain'
 							)
-						)
+						),
+						helpText("Maximum file size: 30 MB.")
 					),
 					checkboxInput("testdata", "Use test data", FALSE),
 					conditionalPanel(
@@ -347,11 +350,13 @@ navbarPage(
 			),
 			mainPanel(
 				fluidRow(
-					actionButton(
-						"desButton",
-						"Sample!",
-						width = "200",
-						style = "color: #fff; background-color: #f15e05; border-color: #2e6da4"
+					shinyjs::disabled(
+						actionButton(
+							"desButton",
+							"Sample!",
+							width = "200",
+							style = "color: #fff; background-color: #f15e05; border-color: #2e6da4"
+						)
 					),
 					align = "center"
 				),
