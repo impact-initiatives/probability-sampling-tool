@@ -75,7 +75,7 @@ function(input, output, session) {
     }
   })
 
-  # any change to a frame-defining input invalidates the previous Apply
+  # any change to a frame- or target-defining input invalidates the previous Apply
   observeEvent(
     list(
       input$popdata,
@@ -84,7 +84,15 @@ function(input, output, session) {
       input$stratified,
       input$col_psu,
       input$strata,
-      input$colpop
+      input$colpop,
+      input$topup,
+      input$target,
+      input$conf_level,
+      input$pror,
+      input$e_marg,
+      input$buf,
+      input$cls,
+      input$ICC
     ),
     shinyjs::disable("desButton"),
     ignoreInit = TRUE
