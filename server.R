@@ -40,16 +40,15 @@ function(input, output, session) {
   frame <- eventReactive(input$f_apply, {
     strata_msg <- validate_strata_selection(input)
     validate(need(is.null(strata_msg), strata_msg))
-    format_sampling_frame(db(), input)
     sframe <- db()
     validate(need(
       !is.null(sframe),
       "Please upload a CSV file (or enable 'Use test data') before applying."
     ))
-    psu_validation_msg <- validate_psu_column(sframe, input)
-    validate(need(is.null(psu_validation_msg), psu_validation_msg))
-    pop_col_msg <- validate_population_column(sframe, input)
-    validate(need(is.null(pop_col_msg), pop_col_msg))
+    psu_msg <- validate_psu_column(sframe, input)
+    validate(need(is.null(psu_msg), psu_msg))
+    pop_msg <- validate_population_column(sframe, input)
+    validate(need(is.null(pop_msg), pop_msg))
     format_sampling_frame(sframe, input)
   })
 
@@ -124,20 +123,17 @@ function(input, output, session) {
   out <- eventReactive(input$desButton, {
     strata_msg <- validate_strata_selection(input)
     validate(need(is.null(strata_msg), strata_msg))
-    validate(need(
-      is.null(validate_cluster_size(frame(), input)),
-      validate_cluster_size(frame(), input)
-    ))
-    make_sample(db(), input)
+    cluster_size_msg <- validate_cluster_size(frame(), input)
+    validate(need(is.null(cluster_size_msg), cluster_size_msg))
     sframe <- db()
     validate(need(
       !is.null(sframe),
       "Please upload a CSV file (or enable 'Use test data') before applying."
     ))
-    psu_validation_msg <- validate_psu_column(sframe, input)
-    validate(need(is.null(psu_validation_msg), psu_validation_msg))
-    pop_col_msg <- validate_population_column(sframe, input)
-    validate(need(is.null(pop_col_msg), pop_col_msg))
+    psu_msg <- validate_psu_column(sframe, input)
+    validate(need(is.null(psu_msg), psu_msg))
+    pop_msg <- validate_population_column(sframe, input)
+    validate(need(is.null(pop_msg), pop_msg))
     make_sample(sframe, input)
   })
 
