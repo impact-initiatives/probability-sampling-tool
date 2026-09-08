@@ -117,9 +117,9 @@ create_targets <- function(sframe, input) {
     dplyr::mutate(
       # base SRS-equivalent target, no design effect - used by the
       # cluster sampling random-sampling fallback (cls=1, DEFF=1)
-      target_srs = ifelse(
-        input$topup == "Enter sample size",
-        input$target,
+      target_srs = (if (input$topup == "Enter sample size") {
+        input$target
+      } else {
         Ssize(
           population_size = Population,
           conf_level = input$conf_level,
@@ -127,11 +127,11 @@ create_targets <- function(sframe, input) {
           margin_error = input$e_marg,
           DEFF = 1
         )
-      ) |>
+      }) |>
         as.numeric(),
-      target = ifelse(
-        input$topup == "Enter sample size",
-        input$target,
+      target = (if (input$topup == "Enter sample size") {
+        input$target
+      } else {
         Ssize(
           population_size = Population,
           conf_level = input$conf_level,
@@ -139,13 +139,13 @@ create_targets <- function(sframe, input) {
           margin_error = input$e_marg,
           DEFF = DEFF
         )
-      ) |>
+      }) |>
         as.numeric(),
-      target.with.buffer = ifelse(
-        input$topup == "Enter sample size",
-        target,
+      target.with.buffer = if (input$topup == "Enter sample size") {
+        target
+      } else {
         as.numeric(ceiling(target * (1 + input$buf)))
-      )
+      }
     )
 }
 
