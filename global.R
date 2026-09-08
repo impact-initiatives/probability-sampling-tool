@@ -90,9 +90,15 @@ validate_population_column <- function(sframe, input) {
   if (is.null(input$colpop) || input$colpop == "None") {
     return("Please select a population column for this sampling type.")
   }
-  if (!is.numeric(sframe[[as.character(input$colpop)]])) {
+  col <- as.character(input$colpop)
+  if (!(col %in% names(sframe))) {
     return(paste0(
-      "'", input$colpop, "' is not a numeric column. Select a numeric population column."
+      "Population column '", col, "' was not found in the uploaded dataset."
+    ))
+  }
+  if (!is.numeric(sframe[[col]])) {
+    return(paste0(
+      "'", col, "' is not a numeric column. Select a numeric population column."
     ))
   }
   return(NULL)
