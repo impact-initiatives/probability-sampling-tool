@@ -216,6 +216,20 @@ navbarPage(
 					max = 0.50,
 					step = 0.01
 				)
+			),
+			column(
+				2,
+				numericInput(
+					'seed_value',
+					'Seed',
+					value = 1,
+					step = 1
+				),
+				actionButton(
+					'new_seed',
+					'New seed',
+					style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"
+				)
 			)
 		),
 		fluidRow(
