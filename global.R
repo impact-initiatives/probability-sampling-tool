@@ -21,17 +21,17 @@ humanTime <- function() format(Sys.time(), "%Y%m%d-%H%M%OS")
 # Calculate the sample size required for a given population proportion
 #
 # Parameters:
-#   x: The population size
-#   A: The desired level of confidence (between 0 and 1)
-#   p: The estimated population proportion (between 0 and 1)
-#   E: The desired margin of error
+#   population_size: The population size
+#   conf_level: The desired level of confidence (between 0 and 1)
+#   prop: The estimated population proportion (between 0 and 1)
+#   margin_error: The desired margin of error
 #   DEFF: Design effect to inflate the sample size for (default 1, i.e. no inflation)
 # Returns:
 #   The sample size required to achieve the desired level of confidence and margin of error
-Ssize <- function(x, A, p, E, DEFF = 1) {
-  z <- qnorm(1 - (1 - A) / 2) # two-sided z-score for confidence level A
-  n0 <- (z^2 * p * (1 - p)) / E^2 # infinite population approximation
-  n <- n0 / (1 + (n0 - 1) / x) # finite population correction
+Ssize <- function(population_size, conf_level, prop, margin_error, DEFF = 1) {
+  z <- qnorm(1 - (1 - conf_level) / 2) # two-sided z-score for confidence level
+  n0 <- (z^2 * prop * (1 - prop)) / margin_error^2 # infinite population approximation
+  n <- n0 / (1 + (n0 - 1) / population_size) # finite population correction
   ceiling(n * DEFF)
 }
 
@@ -120,17 +120,23 @@ create_targets <- function(sframe, input) {
       target_srs = ifelse(
         input$topup == "Enter sample size",
         input$target,
-        Ssize(Population, input$conf_level, input$pror, input$e_marg)
+        Ssize(
+          population_size = Population,
+          conf_level = input$conf_level,
+          prop = input$pror,
+          margin_error = input$e_marg,
+          DEFF = 1
+        )
       ) |>
         as.numeric(),
       target = ifelse(
         input$topup == "Enter sample size",
         input$target,
         Ssize(
-          Population,
-          input$conf_level,
-          input$pror,
-          input$e_marg,
+          population_size = Population,
+          conf_level = input$conf_level,
+          prop = input$pror,
+          margin_error = input$e_marg,
           DEFF = DEFF
         )
       ) |>
