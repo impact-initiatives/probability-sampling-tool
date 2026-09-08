@@ -33,8 +33,8 @@ navbarPage(
 					"Simple Random sampling, a random sample directly from the sampling frame which consists of every unit in the population of interest, thus ensuring equal probability of each unit to be selected."
 				),
 				p(
-					strong("Simple random - allocation:"),
-					"Allocates surveys based on the size of the unit provided (e.g. cities), to use if the information about each unit of analysis is missing."
+					strong("Random sampling with PPS allocation:"),
+					"Use when you don't have a full sampling frame at the unit of analysis level, only aggregated units (e.g. cities) with their population size. Surveys are allocated across these units with probability proportional to size, and the same unit can be allocated more than one survey."
 				),
 				p(
 					strong("Cluster sampling:"),
@@ -131,7 +131,7 @@ navbarPage(
 					"Type of sampling",
 					c(
 						"Simple random",
-						"Simple random - allocation",
+						"Random sampling with PPS allocation",
 						"Cluster sampling"
 					)
 				)
@@ -285,7 +285,7 @@ navbarPage(
 						)
 					),
 					conditionalPanel(
-						condition = "input.samp_type == 'Cluster sampling'|input.samp_type =='Simple random - allocation'",
+						condition = "input.samp_type == 'Cluster sampling'|input.samp_type =='Random sampling with PPS allocation'",
 						selectInput(
 							'colpop',
 							'Input population',

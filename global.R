@@ -40,7 +40,7 @@ Ssize <- function(x, A, p, E) {
 # If the sampling method is "Stratified", the strata_id column is created by extracting the values from the specified strata column in the input data frame.
 # If the sampling method is "Cluster sampling", the psu_id column is created by extracting the values from the specified col_psu column in the input data frame,
 # and the pop_numbers column is created by extracting the values from the specified colpop column in the input data frame.
-# If the sampling method is "Simple random - allocation" or any other method, the psu_id column is created using the id_sampl column,
+# If the sampling method is "Random sampling with PPS allocation" or any other method, the psu_id column is created using the id_sampl column,
 # and the pop_numbers column is created with a value of 1 for each row.
 # The SumDist column is calculated by summing the pop_numbers column within each strata_id group.
 # The proba column is calculated by dividing the pop_numbers column by the SumDist column.
@@ -58,7 +58,7 @@ format_sampling_frame <- function(sframe, input) {
   if (input$samp_type == "Cluster sampling") {
     sframe$psu_id <- sframe[[as.character(input$col_psu)]]
     sframe$pop_numbers <- sframe[[as.character(input$colpop)]]
-  } else if (input$samp_type == "Simple random - allocation") {
+  } else if (input$samp_type == "Random sampling with PPS allocation") {
     sframe$psu_id <- sframe$id_sampl
     sframe$pop_numbers <- sframe[[as.character(input$colpop)]]
   } else {
@@ -99,7 +99,8 @@ validate_strata_selection <- function(input) {
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_population_column <- function(sframe, input) {
   if (
-    !(input$samp_type %in% c("Cluster sampling", "Simple random - allocation"))
+    !(input$samp_type %in%
+      c("Cluster sampling", "Random sampling with PPS allocation"))
   ) {
     return(NULL)
   }
@@ -302,13 +303,14 @@ randomsample <- function(sframe, sampling_target, buf) {
   return(out)
 }
 
-#' stage2rdsample Function
-#' This function performs stage 2 random sampling based on given parameters.
+#' random_pps_allocation Function
+#' Allocates surveys across units with probability proportional to size (PPS),
+#' sampling with replacement so the same unit can receive multiple surveys.
 #' sframe A data frame containing the sampling frame data.
 #' sampling_target A data frame containing the sampling data.
 #' buf The buffer size for sampling.
-#' returns A vector of randomly selected IDs from the sampling frame data.
-stage2rdsample <- function(sframe, sampling_target, buf) {
+#' returns A vector of sampled IDs (with repeats) from the sampling frame data.
+random_pps_allocation <- function(sframe, sampling_target, buf) {
   dist <- as.character(sampling_target[["strata_id"]])
   dbr <- sframe[as.character(sframe$strata_id) == dist, ]
   tosample <- as.numeric(sampling_target[["target.with.buffer"]])
@@ -396,7 +398,7 @@ cluster_sampling <- function(
 #' Function to create a sample based on different sampling methods
 #'
 #' This function takes a sampling frame and input parameters as input and creates a sample based on the specified sampling method.
-#' The sampling methods supported are Cluster sampling, Simple random - allocation, and Simple random sampling.
+#' The sampling methods supported are Cluster sampling, Random sampling with PPS allocation, and Simple random sampling.
 #' The function formats the sampling frame, creates the target sample, and applies the specified sampling method to generate the output.
 #' It also calculates various summary statistics related to the sample.
 #'
@@ -443,8 +445,14 @@ make_sample <- function(sampling_frame, input) {
       output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
       sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
     }
-  } else if (input$samp_type == "Simple random - allocation") {
-    output <- apply(target, 1, stage2rdsample, sframe = sampl_f, buf = buf) %>%
+  } else if (input$samp_type == "Random sampling with PPS allocation") {
+    output <- apply(
+      target,
+      1,
+      random_pps_allocation,
+      sframe = sampl_f,
+      buf = buf
+    ) %>%
       unlist
   } else if (input$samp_type == "Simple random") {
     output <- apply(target, 1, randomsample, sframe = sampl_f, buf = buf) %>%
