@@ -223,6 +223,8 @@ navbarPage(
 					'seed_value',
 					'Seed',
 					value = 1,
+					min = 1,
+					max = 1e6,
 					step = 1
 				),
 				actionButton(

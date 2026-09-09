@@ -141,7 +141,9 @@ function(input, output, session) {
     validate(need(is.null(psu_msg), psu_msg))
     pop_msg <- validate_population_column(sframe, input)
     validate(need(is.null(pop_msg), pop_msg))
-    run_with_seed(input$seed_value, make_sample(sframe, input))
+    seed_msg <- validate_seed(input$seed_value)
+    validate(need(is.null(seed_msg), seed_msg))
+    run_with_seed(as.integer(input$seed_value), make_sample(sframe, input))
   })
 
   # display the results

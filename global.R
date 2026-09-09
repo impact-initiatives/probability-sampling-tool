@@ -144,6 +144,26 @@ validate_population_column <- function(sframe, input) {
 }
 
 
+# Check that the seed is a single finite whole number within set.seed()'s range.
+# Guards against a cleared field (NA) or a decimal/out-of-range value that would
+# make set.seed() throw and break the sampling reactive.
+# Returns an error message string if the input is invalid, or NULL if valid.
+validate_seed <- function(seed) {
+  if (
+    length(seed) != 1 ||
+      is.na(seed) ||
+      !is.finite(seed) ||
+      seed != floor(seed) ||
+      abs(seed) > .Machine$integer.max
+  ) {
+    return(
+      "Seed must be a whole number between -2147483647 and 2147483647."
+    )
+  }
+  return(NULL)
+}
+
+
 # Check that every stratum has at least one PSU large enough for the requested cluster size.
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_cluster_size <- function(sampl_f, input) {
@@ -509,7 +529,7 @@ make_sample <- function(sampling_frame, input) {
       Confidence_level = input$conf_level,
       Error_margin = input$e_marg,
       Sampling_type = input$samp_type,
-      Seed = input$seed_value
+      Seed = as.integer(input$seed_value)
     ) |>
     dplyr::left_join(
       target[, c("strata_id", "target.with.buffer")],
