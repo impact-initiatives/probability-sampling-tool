@@ -21,15 +21,18 @@ humanTime <- function() format(Sys.time(), "%Y%m%d-%H%M%OS")
 # Calculate the sample size required for a given population proportion
 #
 # Parameters:
-#   x: The population size
-#   A: The desired level of confidence (between 0 and 1)
-#   p: The estimated population proportion (between 0 and 1)
-#   E: The desired margin of error
+#   population_size: The population size
+#   conf_level: The desired level of confidence (between 0 and 1)
+#   prop: The estimated population proportion (between 0 and 1)
+#   margin_error: The desired margin of error
+#   DEFF: Design effect to inflate the sample size for (default 1, i.e. no inflation)
 # Returns:
 #   The sample size required to achieve the desired level of confidence and margin of error
-Ssize <- function(x, A, p, E) {
-  (qchisq(A, 1) * x * p * (1 - p)) /
-    (E^2 * (x - 1) + qchisq(A, df = 1) * p * (1 - p))
+Ssize <- function(population_size, conf_level, prop, margin_error, DEFF = 1) {
+  z <- qnorm(1 - (1 - conf_level) / 2) # two-sided z-score for confidence level
+  n0 <- (z^2 * prop * (1 - prop)) / margin_error^2 # infinite population approximation
+  n <- n0 / (1 + (n0 - 1) / population_size) # finite population correction
+  ceiling(n * DEFF)
 }
 
 
@@ -209,23 +212,53 @@ validate_psu_column <- function(sframe, input) {
 #   A modified version of the sampling frame dataframe with additional columns 'target' and 'target.with.buffer' representing the calculated sample sizes.
 
 create_targets <- function(sframe, input) {
+  # DEFF is fixed by the planned cluster size and ICC, computed once here so
+  # that the target sample size (and the "Target sampling" tab shown to the
+  # user) already reflects the design-effect-adjusted number for Cluster
+  # sampling. DEFF=1 (no adjustment) for the other sampling methods.
+  DEFF <- if (input$samp_type == "Cluster sampling") {
+    1 + (input$cls - 1) * input$ICC
+  } else {
+    1
+  }
+
   sframe |>
     dplyr::group_by(strata_id) |>
     dplyr::summarise(
       Population = sum(pop_numbers, na.rm = T)
     ) |>
     dplyr::mutate(
-      target = ifelse(
-        input$topup == "Enter sample size",
-        input$target,
-        ceiling(Ssize(Population, input$conf_level, input$pror, input$e_marg))
-      ) |>
+      # base SRS-equivalent target, no design effect - used by the
+      # cluster sampling random-sampling fallback (cls=1, DEFF=1)
+      target_srs = (if (input$topup == "Enter sample size") {
+        input$target
+      } else {
+        Ssize(
+          population_size = Population,
+          conf_level = input$conf_level,
+          prop = input$pror,
+          margin_error = input$e_marg,
+          DEFF = 1
+        )
+      }) |>
         as.numeric(),
-      target.with.buffer = ifelse(
-        input$topup == "Enter sample size",
-        target,
+      target = (if (input$topup == "Enter sample size") {
+        input$target
+      } else {
+        Ssize(
+          population_size = Population,
+          conf_level = input$conf_level,
+          prop = input$pror,
+          margin_error = input$e_marg,
+          DEFF = DEFF
+        )
+      }) |>
+        as.numeric(),
+      target.with.buffer = if (input$topup == "Enter sample size") {
+        target
+      } else {
         as.numeric(ceiling(target * (1 + input$buf)))
-      )
+      }
     )
 }
 
@@ -235,8 +268,8 @@ create_targets <- function(sframe, input) {
 # - sframe: The sampling frame.
 # - sampling_target: a dataframe with the sampling targets by strata.
 # - cls: The cluster size.
-# - buf: The buffer size.
-# - ICC: The intra-cluster correlation coefficient.
+# - buf: The buffer size, used for the random-sampling fallback only (the
+#   main draw uses target.with.buffer, already buffer-adjusted).
 # - sw_rand: The list of strata IDs that have been switched to random sampling.
 # Returns:
 # - A list containing the sampled output and the updated sw_rand list.
@@ -245,37 +278,28 @@ clustersample <- function(
   sampling_target,
   cls,
   buf,
-  ICC,
   sw_rand = c()
 ) {
-  target <- as.numeric(as.character(sampling_target[["target"]]))
   dist <- as.character(sampling_target[["strata_id"]])
   out <- cluster_sampling(
     sframe,
     cls = cls,
-    buf = buf,
-    ICC = ICC,
     dist = dist,
-    target = target
+    target_with_buffer = as.numeric(as.character(
+      sampling_target[["target.with.buffer"]]
+    ))
   )
 
   if (is.null(out)) {
     dbr <- sframe[as.character(sframe$strata_id) == dist, ]
     out <- sample(
       as.character(dbr$id_sampl),
-      ceiling(as.numeric(sampling_target[["target"]]) * (1 + buf + 0.1)),
+      ceiling(as.numeric(sampling_target[["target_srs"]]) * (1 + buf + 0.1)),
       prob = dbr$proba,
       replace = TRUE
     )
-    # showModal(modalDialog(
-    #    title = paste(dist,": All PSUs have been selected"),
-    #    "Set cluster size to 1 to reduce the design  effect and extra buffer to account for analysis DEFF",
-    #    easyClose = TRUE,
-    #    footer = NULL
-    #  ))
     sw_rand <- c(sw_rand, dist)
   }
-  # incProgress(round(1/nrow(sampling_target),2), detail = paste("Sampling", dist))
   return(list(output = out, sw_rand = sw_rand))
 }
 
@@ -333,63 +357,29 @@ stage2rdsample <- function(sframe, sampling_target, buf) {
 #'
 #' This function performs cluster sampling based on specified parameters.
 #' sframe A data frame containing the sampling frame data.
-#' cls The minimum cluster size.
-#' buf The buffer size.
-#' ICC The intra-cluster correlation coefficient.
+#' cls The (planned) cluster size.
 #' dist The stratum ID.
-#' target The target sample size.
-#' mode The sampling mode. Default is "notforced".
-#' returns A vector of sampled cluster IDs.
+#' target_with_buffer The target sample size, buffer included. Already
+#'   DEFF-adjusted by create_targets() for Cluster sampling, so no design
+#'   effect is applied here.
+#' returns A vector of sampled PSU IDs (one entry per draw), or NULL if no
+#'   PSU in the stratum is large enough to support the requested cluster size.
 cluster_sampling <- function(
   sframe,
   cls,
-  buf,
-  ICC,
   dist,
-  target,
-  mode = "notforced"
+  target_with_buffer
 ) {
-  Sys.sleep(0.25)
   dbr <- sframe[as.character(sframe$strata_id) == dist, ]
   dbr <- dbr[dbr$pop_numbers >= cls, ]
-  out <- sample(
-    as.character(dbr$id_sampl),
-    ceiling(as.numeric(target * (1 + buf)) / cls),
-    prob = dbr$proba,
-    replace = TRUE
-  )
 
-  stop <- F
-
-  while (stop == F) {
-    d <- as.data.frame(table(out))[, 2]
-    ms <- sum(d) / nrow(as.data.frame(d))
-    DESS <- 1 + (ms * cls - 1) * ICC
-    targ <- DESS * (target * (1 + buf)) / cls
-
-    if (sum(d) >= targ) {
-      # message(green(paste0(dist," : yeah")))
-      stop <- T
-      return(out)
-    } else if ((mode == "forced" & cls == 1 & DESS > 3)) {
-      # message(red(paste0(dist," : exited because of DESS > 3")))
-      stop <- T
-      return(out)
-    } else {
-      out <- c(
-        out,
-        sample(as.character(dbr$id_sampl), 1, prob = dbr$proba, replace = TRUE)
-      )
-      rd_check <- all(unique(dbr$id_sampl) %in% unique(out))
-
-      if (rd_check & mode == "notforced") {
-        # message(paste0(dist," : reduced cluster size to 1"))
-        out <- NULL
-        stop <- T
-        return(out)
-      }
-    }
+  if (nrow(dbr) == 0) {
+    return(NULL)
   }
+
+  m <- ceiling(as.numeric(target_with_buffer) / cls)
+
+  sample(as.character(dbr$id_sampl), size = m, prob = dbr$proba, replace = TRUE)
 }
 
 
@@ -425,9 +415,8 @@ make_sample <- function(sampling_frame, input) {
         clustersample,
         sframe = sampl_f,
         cls = cls,
-        buf = 0,
-        ICC = 0
-      ) # in that case, the buffer is not used, neither is the ICC
+        buf = 0
+      ) # in that case, the buffer is not used
       output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
       sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
     } else {
@@ -437,8 +426,7 @@ make_sample <- function(sampling_frame, input) {
         clustersample,
         sframe = sampl_f,
         cls = cls,
-        buf = buf,
-        ICC = ICC
+        buf = buf
       )
       output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
       sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
@@ -451,9 +439,10 @@ make_sample <- function(sampling_frame, input) {
       unlist
   }
 
-  output <- as.data.frame(table(output))
+  # one row per PSU draw, so repeated draws stay separate visits instead of
+  # being collapsed into a single row with a multiplied count
   dbout <- merge(
-    output,
+    data.frame(output = output),
     sampl_f,
     by.x = "output",
     by.y = "id_sampl",
@@ -462,14 +451,12 @@ make_sample <- function(sampling_frame, input) {
   )
 
   if (input$samp_type == "Cluster sampling") {
-    dbout$Freq <- ifelse(
-      dbout$strata %in% sw_rand,
-      dbout$Freq,
-      dbout$Freq * cls
-    )
+    dbout$Survey <- ifelse(dbout$strata %in% sw_rand, 1, cls)
+  } else {
+    dbout$Survey <- 1
   }
 
-  names(dbout) <- recode(names(dbout), "'output'='id_sampl';'Freq'='Survey'")
+  names(dbout)[names(dbout) == "output"] <- "id_sampl"
   dbout$survey_buffer <- dbout$Survey
 
   # create the summary table
@@ -481,11 +468,16 @@ make_sample <- function(sampling_frame, input) {
       NB_Population = max(SumDist, na.rm = TRUE)
     ) |>
     dplyr::mutate(
-      Cluster_size = round(Surveys / PSUs, 2),
-      Cluster_size_init = input$cls,
+      # realized: measured from the actual draw (can differ from the plan,
+      # e.g. a stratum falling back to random sampling with cluster size 1)
+      Cluster_size_realized = round(Surveys / PSUs, 2),
+      # planned: what was set at design stage, used to compute the target
+      # sample size in create_targets()
+      Cluster_size_planned = input$cls,
       ICC = input$ICC,
-      DESS = 1 + (Cluster_size - 1) * ICC,
-      Effective_sample = round(Surveys / DESS, 0),
+      DEFF_planned = 1 + (Cluster_size_planned - 1) * ICC,
+      DEFF_realized = 1 + (Cluster_size_realized - 1) * ICC,
+      Effective_sample = round(Surveys / DEFF_realized, 0),
       Surveys_buffer = input$buf,
       Confidence_level = input$conf_level,
       Error_margin = input$e_marg,
@@ -502,8 +494,8 @@ make_sample <- function(sampling_frame, input) {
       if (summary_sample$strata_id[i] %in% sw_rand) {
         summary_sample$Surveys_buffer[i] <- summary_sample$Surveys_buffer[i] +
           .1
-        summary_sample$Cluster_size[i] <- 1
-        summary_sample$DESS[i] <- 1
+        summary_sample$Cluster_size_realized[i] <- 1
+        summary_sample$DEFF_realized[i] <- 1
         summary_sample$Effective_sample[i] <- summary_sample$Surveys[i]
         summary_sample$Sampling_type[
           i
@@ -514,17 +506,19 @@ make_sample <- function(sampling_frame, input) {
 
   if (input$samp_type != "Cluster sampling") {
     le <- nrow(summary_sample)
-    summary_sample$Cluster_size <- rep(NA, le)
-    summary_sample$Cluster_size_init <- rep(NA, le)
+    summary_sample$Cluster_size_realized <- rep(NA, le)
+    summary_sample$Cluster_size_planned <- rep(NA, le)
     summary_sample$ICC <- rep(NA, le)
-    summary_sample$DESS <- rep(NA, le)
+    summary_sample$DEFF_planned <- rep(NA, le)
+    summary_sample$DEFF_realized <- rep(NA, le)
     summary_sample$Effective_sample <- rep(NA, le)
   }
 
   if (input$topup == "Enter sample size") {
     le <- nrow(summary_sample)
     summary_sample$ICC <- rep(NA, le)
-    summary_sample$DESS <- rep(NA, le)
+    summary_sample$DEFF_planned <- rep(NA, le)
+    summary_sample$DEFF_realized <- rep(NA, le)
     summary_sample$Effective_sample <- rep(NA, le)
     summary_sample$Error_margin <- rep(NA, le)
     summary_sample$Confidence_level <- rep(NA, le)
@@ -537,11 +531,12 @@ make_sample <- function(sampling_frame, input) {
     "# units to assess",
     "Population",
     "Requested target",
-    "Mean Cluster size",
-    "Cluster size set",
+    "Mean Cluster size (realized)",
+    "Cluster size set (planned)",
     "ICC",
-    "DESS",
-    "Effective sample",
+    "DEFF (planned)",
+    "DEFF (realized)",
+    "Effective sample size (SRS-equivalent)",
     "% buffer",
     "Confidence level",
     "Error margin",

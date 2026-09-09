@@ -114,7 +114,12 @@ function(input, output, session) {
   )
 
   output$target_frame <- DT::renderDataTable(
-    cible(),
+    {
+      req(cible())
+      # target_srs is an internal SRS-equivalent used by the cluster
+      # sampling fallback, not meant for display
+      cible()[, setdiff(names(cible()), "target_srs")]
+    },
     rownames = FALSE,
     options = list(searching = FALSE, lengthChange = F)
   )
