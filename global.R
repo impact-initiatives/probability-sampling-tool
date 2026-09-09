@@ -18,6 +18,25 @@ options(shiny.maxRequestSize = 30 * 1024^2)
 # humanTime function returns the current time in a specific format.
 humanTime <- function() format(Sys.time(), "%Y%m%d-%H%M%OS")
 
+# Runs `expr` under a given RNG seed, restoring the previous RNG state
+# afterwards so the seed doesn't affect any other randomness in the session.
+run_with_seed <- function(seed, expr) {
+  old_seed <- if (exists(".Random.seed", envir = .GlobalEnv)) {
+    get(".Random.seed", envir = .GlobalEnv)
+  } else {
+    NULL
+  }
+  on.exit({
+    if (is.null(old_seed)) {
+      rm(".Random.seed", envir = .GlobalEnv)
+    } else {
+      assign(".Random.seed", old_seed, envir = .GlobalEnv)
+    }
+  })
+  set.seed(seed)
+  expr
+}
+
 # Calculate the sample size required for a given population proportion
 #
 # Parameters:
@@ -123,6 +142,26 @@ validate_population_column <- function(sframe, input) {
       col,
       "' is not a numeric column. Select a numeric population column."
     ))
+  }
+  return(NULL)
+}
+
+
+# Check that the seed is a single finite whole number within set.seed()'s range.
+# Guards against a cleared field (NA) or a decimal/out-of-range value that would
+# make set.seed() throw and break the sampling reactive.
+# Returns an error message string if the input is invalid, or NULL if valid.
+validate_seed <- function(seed) {
+  if (
+    length(seed) != 1 ||
+      is.na(seed) ||
+      !is.finite(seed) ||
+      seed != floor(seed) ||
+      abs(seed) > .Machine$integer.max
+  ) {
+    return(
+      "Seed must be a whole number between -2147483647 and 2147483647."
+    )
   }
   return(NULL)
 }
@@ -481,7 +520,8 @@ make_sample <- function(sampling_frame, input) {
       Surveys_buffer = input$buf,
       Confidence_level = input$conf_level,
       Error_margin = input$e_marg,
-      Sampling_type = input$samp_type
+      Sampling_type = input$samp_type,
+      Seed = as.integer(input$seed_value)
     ) |>
     dplyr::left_join(
       target[, c("strata_id", "target.with.buffer")],
@@ -540,7 +580,8 @@ make_sample <- function(sampling_frame, input) {
     "% buffer",
     "Confidence level",
     "Error margin",
-    "Sampling type"
+    "Sampling type",
+    "Seed"
   )
   return(list(
     sample = dbout,
