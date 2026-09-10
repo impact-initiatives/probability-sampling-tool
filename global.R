@@ -471,10 +471,18 @@ make_sample <- function(sampling_frame, input) {
       sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
     }
   } else if (input$samp_type == "Simple random - allocation") {
-    output <- apply(target, 1, stage2rdsample, sframe = sampl_f, buf = buf) %>%
+    # simplify = FALSE: when every stratum draws the same number of units
+    # (e.g. "Enter sample size" + stratified), apply() would otherwise return
+    # a matrix instead of a list, which unlist() keeps 2-D and breaks the
+    # merge() below.
+    output <- apply(
+      target, 1, stage2rdsample, sframe = sampl_f, buf = buf, simplify = FALSE
+    ) %>%
       unlist
   } else if (input$samp_type == "Simple random") {
-    output <- apply(target, 1, randomsample, sframe = sampl_f, buf = buf) %>%
+    output <- apply(
+      target, 1, randomsample, sframe = sampl_f, buf = buf, simplify = FALSE
+    ) %>%
       unlist
   }
 
