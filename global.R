@@ -504,7 +504,6 @@ make_sample <- function(sampling_frame, input) {
   }
 
   names(dbout)[names(dbout) == "output"] <- "id_sampl"
-  dbout$survey_buffer <- dbout$Survey
 
   # create the summary table
   summary_sample <- dbout |>
