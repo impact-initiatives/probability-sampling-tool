@@ -498,7 +498,7 @@ make_sample <- function(sampling_frame, input) {
   )
 
   if (input$samp_type == "Cluster sampling") {
-    dbout$Survey <- ifelse(dbout$strata %in% sw_rand, 1, cls)
+    dbout$Survey <- ifelse(dbout$strata_id %in% sw_rand, 1, cls)
   } else {
     dbout$Survey <- 1
   }
