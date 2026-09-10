@@ -568,6 +568,14 @@ make_sample <- function(sampling_frame, input) {
 
   if (input$samp_type != "Cluster sampling") {
     le <- nrow(summary_sample)
+    # "# PSUs to assess" is the draw count; it only differs from "# surveys"
+    # when a draw yields more than one survey, i.e. cluster sampling.
+    summary_sample$PSUs <- rep(NA, le)
+    if (input$samp_type == "Simple random") {
+      # plain SRS: no replacement and no PSU concept, so the distinct count
+      # is just "# surveys" again.
+      summary_sample$Unique_PSUs <- rep(NA, le)
+    }
     summary_sample$Cluster_size_realized <- rep(NA, le)
     summary_sample$Cluster_size_planned <- rep(NA, le)
     summary_sample$ICC <- rep(NA, le)
@@ -587,25 +595,30 @@ make_sample <- function(sampling_frame, input) {
     summary_sample$Surveys_buffer <- rep(NA, le)
   }
 
-  names(summary_sample) <- c(
-    "Stratification",
-    "# surveys",
-    "# units to assess",
-    "# Unique PSUs",
-    "Population",
-    "Requested target",
-    "Cluster size set (planned)",
-    "Mean Cluster size (realized)",
-    "ICC",
-    "DEFF (planned)",
-    "DEFF (realized)",
-    "Effective sample size (SRS-equivalent)",
-    "% buffer",
-    "Confidence level",
-    "Error margin",
-    "Sampling type",
-    "Seed"
-  )
+  # rename by name (not position) then drop the columns that are structurally
+  # not applicable to this run, so the table only shows relevant statistics.
+  summary_sample <- summary_sample |>
+    dplyr::rename(
+      "Stratification" = "strata_id",
+      "# surveys" = "Surveys",
+      "# PSUs to assess" = "PSUs",
+      "# Unique PSUs" = "Unique_PSUs",
+      "Population" = "NB_Population",
+      "Requested target" = "target.with.buffer",
+      "Cluster size set (planned)" = "Cluster_size_planned",
+      "Mean Cluster size (realized)" = "Cluster_size_realized",
+      "ICC" = "ICC",
+      "DEFF (planned)" = "DEFF_planned",
+      "DEFF (realized)" = "DEFF_realized",
+      "Effective sample size (SRS-equivalent)" = "Effective_sample",
+      "% buffer" = "Surveys_buffer",
+      "Confidence level" = "Confidence_level",
+      "Error margin" = "Error_margin",
+      "Sampling type" = "Sampling_type",
+      "Seed" = "Seed"
+    ) |>
+    dplyr::select(dplyr::where(~ !all(is.na(.x))))
+
   return(list(
     sample = dbout_sample,
     summary_sample = summary_sample,
