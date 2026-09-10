@@ -34,7 +34,7 @@ navbarPage(
 				),
 				p(
 					strong("Simple random - allocation:"),
-					"Allocates surveys based on the size of the unit provided (e.g. cities), to use if the information about each unit of analysis is missing."
+					"Use when the sampling frame lists geographic units (e.g. cities, wards) with their population sizes but no household-level frame is available. Surveys are allocated across units with probability proportional to population size, so larger units receive more surveys and a unit can be selected several times. The output gives the number of surveys to collect in each selected unit."
 				),
 				p(
 					strong("Cluster sampling:"),
