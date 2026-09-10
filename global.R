@@ -522,16 +522,19 @@ make_sample <- function(sampling_frame, input) {
     dplyr::group_by(strata_id) |>
     dplyr::summarise(
       Surveys = sum(Survey, na.rm = TRUE),
+      # PSUs counts draws (PSU selections, with replacement); Unique_PSUs is
+      # the number of distinct PSUs a team actually has to visit.
       PSUs = n(),
+      Unique_PSUs = dplyr::n_distinct(id_sampl),
       NB_Population = max(SumDist, na.rm = TRUE)
     ) |>
     dplyr::mutate(
-      # realized: measured from the actual draw (can differ from the plan,
-      # e.g. a stratum falling back to random sampling with cluster size 1)
-      Cluster_size_realized = round(Surveys / PSUs, 2),
       # planned: what was set at design stage, used to compute the target
       # sample size in create_targets()
       Cluster_size_planned = input$cls,
+      # realized: measured from the actual draw (can differ from the plan,
+      # e.g. a stratum falling back to random sampling with cluster size 1)
+      Cluster_size_realized = round(Surveys / PSUs, 2),
       ICC = input$ICC,
       DEFF_planned = 1 + (Cluster_size_planned - 1) * ICC,
       DEFF_realized = 1 + (Cluster_size_realized - 1) * ICC,
@@ -588,10 +591,11 @@ make_sample <- function(sampling_frame, input) {
     "Stratification",
     "# surveys",
     "# units to assess",
+    "# Unique PSUs",
     "Population",
     "Requested target",
-    "Mean Cluster size (realized)",
     "Cluster size set (planned)",
+    "Mean Cluster size (realized)",
     "ICC",
     "DEFF (planned)",
     "DEFF (realized)",
