@@ -554,32 +554,22 @@ make_sample <- function(sampling_frame, input) {
   }
 
   if (input$samp_type != "Cluster sampling") {
-    le <- nrow(summary_sample)
     # "# PSUs to assess" is the draw count; it only differs from "# surveys"
     # when a draw yields more than one survey, i.e. cluster sampling.
-    summary_sample$PSUs <- rep(NA, le)
-    if (input$samp_type == "Simple random") {
-      # plain SRS: no replacement and no PSU concept, so the distinct count
-      # is just "# surveys" again.
-      summary_sample$Unique_PSUs <- rep(NA, le)
-    }
-    summary_sample$Cluster_size_realized <- rep(NA, le)
-    summary_sample$Cluster_size_planned <- rep(NA, le)
-    summary_sample$ICC <- rep(NA, le)
-    summary_sample$DEFF_planned <- rep(NA, le)
-    summary_sample$DEFF_realized <- rep(NA, le)
-    summary_sample$Effective_sample <- rep(NA, le)
+    summary_sample[c(
+      "PSUs", "Cluster_size_realized", "Cluster_size_planned",
+      "ICC", "DEFF_planned", "DEFF_realized", "Effective_sample"
+    )] <- NA
+    # plain SRS: no replacement and no PSU concept, so the distinct count
+    # is just "# surveys" again.
+    if (input$samp_type == "Simple random") summary_sample["Unique_PSUs"] <- NA
   }
 
   if (input$topup == "Enter sample size") {
-    le <- nrow(summary_sample)
-    summary_sample$ICC <- rep(NA, le)
-    summary_sample$DEFF_planned <- rep(NA, le)
-    summary_sample$DEFF_realized <- rep(NA, le)
-    summary_sample$Effective_sample <- rep(NA, le)
-    summary_sample$Error_margin <- rep(NA, le)
-    summary_sample$Confidence_level <- rep(NA, le)
-    summary_sample$Surveys_buffer <- rep(NA, le)
+    summary_sample[c(
+      "ICC", "DEFF_planned", "DEFF_realized", "Effective_sample",
+      "Error_margin", "Confidence_level", "Surveys_buffer"
+    )] <- NA
   }
 
   # rename by name (not position) then drop the columns that are structurally
