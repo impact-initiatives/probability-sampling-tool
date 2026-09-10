@@ -604,7 +604,7 @@ make_sample <- function(sampling_frame, input) {
       "# PSUs to assess" = "PSUs",
       "# Unique PSUs" = "Unique_PSUs",
       "Population" = "NB_Population",
-      "Requested target" = "target.with.buffer",
+      "Target (with buffer)" = "target.with.buffer",
       "Cluster size set (planned)" = "Cluster_size_planned",
       "Mean Cluster size (realized)" = "Cluster_size_realized",
       "ICC" = "ICC",
