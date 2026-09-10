@@ -329,6 +329,7 @@ clustersample <- function(
     ))
   )
 
+  # no PSU big enough for the cluster size: fall back to SRS. Only use of `buf`.
   if (is.null(out)) {
     dbr <- sframe[as.character(sframe$strata_id) == dist, ]
     out <- sample(
@@ -447,29 +448,17 @@ make_sample <- function(sampling_frame, input) {
   ICC <- input$ICC
 
   if (input$samp_type == "Cluster sampling") {
-    if (input$topup == "Enter sample size") {
-      clsampling <- apply(
-        target,
-        1,
-        clustersample,
-        sframe = sampl_f,
-        cls = cls,
-        buf = 0
-      ) # in that case, the buffer is not used
-      output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
-      sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
-    } else {
-      clsampling <- apply(
-        target,
-        1,
-        clustersample,
-        sframe = sampl_f,
-        cls = cls,
-        buf = buf
-      )
-      output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
-      sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
-    }
+    clsampling <- apply(
+      target,
+      1,
+      clustersample,
+      sframe = sampl_f,
+      cls = cls,
+      # no buffer when the user entered an explicit sample size
+      buf = if (input$topup == "Enter sample size") 0 else buf
+    )
+    output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
+    sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
   } else if (input$samp_type == "Simple random - allocation") {
     # simplify = FALSE: when every stratum draws the same number of units
     # (e.g. "Enter sample size" + stratified), apply() would otherwise return
