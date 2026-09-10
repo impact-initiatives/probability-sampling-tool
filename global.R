@@ -333,7 +333,7 @@ clustersample <- function(
     dbr <- sframe[as.character(sframe$strata_id) == dist, ]
     out <- sample(
       as.character(dbr$id_sampl),
-      ceiling(as.numeric(sampling_target[["target_srs"]]) * (1 + buf + 0.1)),
+      ceiling(as.numeric(sampling_target[["target_srs"]]) * (1 + buf)),
       prob = dbr$proba,
       replace = TRUE
     )
@@ -554,8 +554,6 @@ make_sample <- function(sampling_frame, input) {
   if (input$samp_type == "Cluster sampling") {
     for (i in 1:nrow(summary_sample)) {
       if (summary_sample$strata_id[i] %in% sw_rand) {
-        summary_sample$Surveys_buffer[i] <- summary_sample$Surveys_buffer[i] +
-          .1
         summary_sample$Cluster_size_realized[i] <- 1
         summary_sample$DEFF_realized[i] <- 1
         summary_sample$Effective_sample[i] <- summary_sample$Surveys[i]
