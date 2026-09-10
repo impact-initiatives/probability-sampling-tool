@@ -505,6 +505,18 @@ make_sample <- function(sampling_frame, input) {
 
   names(dbout)[names(dbout) == "output"] <- "id_sampl"
 
+  # user-facing sample: one row per selected PSU, with the total number of
+  # surveys to run there. Cluster and PPS-allocation draw PSUs with
+  # replacement, so dbout can hold the same PSU on several rows; the summary
+  # statistics below still use the per-draw dbout.
+  dbout_sample <- dbout |>
+    dplyr::group_by(id_sampl) |>
+    dplyr::summarise(
+      Survey = sum(Survey, na.rm = TRUE),
+      dplyr::across(-Survey, dplyr::first),
+      .groups = "drop"
+    )
+
   # create the summary table
   summary_sample <- dbout |>
     dplyr::group_by(strata_id) |>
@@ -591,7 +603,7 @@ make_sample <- function(sampling_frame, input) {
     "Seed"
   )
   return(list(
-    sample = dbout,
+    sample = dbout_sample,
     summary_sample = summary_sample,
     sw_rand = sw_rand
   ))
