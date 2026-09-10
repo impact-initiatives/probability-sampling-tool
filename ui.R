@@ -67,6 +67,9 @@ navbarPage(
 				4,
 				h2("Loading files"),
 				p(
+					"The CSV is your sampling frame: one row per sampling unit, covering the entire population of interest (not a pre-drawn subset). For Simple random, each row is a unit and the frame size is the population. For Cluster sampling and Simple random - allocation, each row is a cluster or area, and the Population column gives the number of sub-units (e.g. households) it contains."
+				),
+				p(
 					"The app takes only files .csv; each row of the csv need to be the primary sampling unit.",
 					strong(
 						"The headers of the dataset must NOT contain special characters."
