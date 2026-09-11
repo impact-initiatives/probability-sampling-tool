@@ -329,11 +329,12 @@ clustersample <- function(
     ))
   )
 
+  # no PSU big enough for the cluster size: fall back to SRS. Only use of `buf`.
   if (is.null(out)) {
     dbr <- sframe[as.character(sframe$strata_id) == dist, ]
     out <- sample(
       as.character(dbr$id_sampl),
-      ceiling(as.numeric(sampling_target[["target_srs"]]) * (1 + buf + 0.1)),
+      ceiling(as.numeric(sampling_target[["target_srs"]]) * (1 + buf)),
       prob = dbr$proba,
       replace = TRUE
     )
@@ -447,34 +448,30 @@ make_sample <- function(sampling_frame, input) {
   ICC <- input$ICC
 
   if (input$samp_type == "Cluster sampling") {
-    if (input$topup == "Enter sample size") {
-      clsampling <- apply(
-        target,
-        1,
-        clustersample,
-        sframe = sampl_f,
-        cls = cls,
-        buf = 0
-      ) # in that case, the buffer is not used
-      output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
-      sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
-    } else {
-      clsampling <- apply(
-        target,
-        1,
-        clustersample,
-        sframe = sampl_f,
-        cls = cls,
-        buf = buf
-      )
-      output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
-      sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
-    }
+    clsampling <- apply(
+      target,
+      1,
+      clustersample,
+      sframe = sampl_f,
+      cls = cls,
+      # no buffer when the user entered an explicit sample size
+      buf = if (input$topup == "Enter sample size") 0 else buf
+    )
+    output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
+    sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
   } else if (input$samp_type == "Simple random - allocation") {
-    output <- apply(target, 1, stage2rdsample, sframe = sampl_f, buf = buf) %>%
+    # simplify = FALSE: when every stratum draws the same number of units
+    # (e.g. "Enter sample size" + stratified), apply() would otherwise return
+    # a matrix instead of a list, which unlist() keeps 2-D and breaks the
+    # merge() below.
+    output <- apply(
+      target, 1, stage2rdsample, sframe = sampl_f, buf = buf, simplify = FALSE
+    ) %>%
       unlist
   } else if (input$samp_type == "Simple random") {
-    output <- apply(target, 1, randomsample, sframe = sampl_f, buf = buf) %>%
+    output <- apply(
+      target, 1, randomsample, sframe = sampl_f, buf = buf, simplify = FALSE
+    ) %>%
       unlist
   }
 
@@ -490,29 +487,43 @@ make_sample <- function(sampling_frame, input) {
   )
 
   if (input$samp_type == "Cluster sampling") {
-    dbout$Survey <- ifelse(dbout$strata %in% sw_rand, 1, cls)
+    dbout$Survey <- ifelse(dbout$strata_id %in% sw_rand, 1, cls)
   } else {
     dbout$Survey <- 1
   }
 
   names(dbout)[names(dbout) == "output"] <- "id_sampl"
-  dbout$survey_buffer <- dbout$Survey
+
+  # user-facing sample: one row per selected PSU, with the total number of
+  # surveys to run there. Cluster and PPS-allocation draw PSUs with
+  # replacement, so dbout can hold the same PSU on several rows; the summary
+  # statistics below still use the per-draw dbout.
+  dbout_sample <- dbout |>
+    dplyr::group_by(id_sampl) |>
+    dplyr::summarise(
+      Survey = sum(Survey, na.rm = TRUE),
+      dplyr::across(-Survey, dplyr::first),
+      .groups = "drop"
+    )
 
   # create the summary table
   summary_sample <- dbout |>
     dplyr::group_by(strata_id) |>
     dplyr::summarise(
       Surveys = sum(Survey, na.rm = TRUE),
+      # PSUs counts draws (PSU selections, with replacement); Unique_PSUs is
+      # the number of distinct PSUs a team actually has to visit.
       PSUs = n(),
+      Unique_PSUs = dplyr::n_distinct(id_sampl),
       NB_Population = max(SumDist, na.rm = TRUE)
     ) |>
     dplyr::mutate(
-      # realized: measured from the actual draw (can differ from the plan,
-      # e.g. a stratum falling back to random sampling with cluster size 1)
-      Cluster_size_realized = round(Surveys / PSUs, 2),
       # planned: what was set at design stage, used to compute the target
       # sample size in create_targets()
       Cluster_size_planned = input$cls,
+      # realized: measured from the actual draw (can differ from the plan,
+      # e.g. a stratum falling back to random sampling with cluster size 1)
+      Cluster_size_realized = round(Surveys / PSUs, 2),
       ICC = input$ICC,
       DEFF_planned = 1 + (Cluster_size_planned - 1) * ICC,
       DEFF_realized = 1 + (Cluster_size_realized - 1) * ICC,
@@ -532,8 +543,6 @@ make_sample <- function(sampling_frame, input) {
   if (input$samp_type == "Cluster sampling") {
     for (i in 1:nrow(summary_sample)) {
       if (summary_sample$strata_id[i] %in% sw_rand) {
-        summary_sample$Surveys_buffer[i] <- summary_sample$Surveys_buffer[i] +
-          .1
         summary_sample$Cluster_size_realized[i] <- 1
         summary_sample$DEFF_realized[i] <- 1
         summary_sample$Effective_sample[i] <- summary_sample$Surveys[i]
@@ -545,46 +554,50 @@ make_sample <- function(sampling_frame, input) {
   }
 
   if (input$samp_type != "Cluster sampling") {
-    le <- nrow(summary_sample)
-    summary_sample$Cluster_size_realized <- rep(NA, le)
-    summary_sample$Cluster_size_planned <- rep(NA, le)
-    summary_sample$ICC <- rep(NA, le)
-    summary_sample$DEFF_planned <- rep(NA, le)
-    summary_sample$DEFF_realized <- rep(NA, le)
-    summary_sample$Effective_sample <- rep(NA, le)
+    # "# PSUs to assess" is the draw count; it only differs from "# surveys"
+    # when a draw yields more than one survey, i.e. cluster sampling.
+    summary_sample[c(
+      "PSUs", "Cluster_size_realized", "Cluster_size_planned",
+      "ICC", "DEFF_planned", "DEFF_realized", "Effective_sample"
+    )] <- NA
+    # plain SRS: no replacement and no PSU concept, so the distinct count
+    # is just "# surveys" again.
+    if (input$samp_type == "Simple random") summary_sample["Unique_PSUs"] <- NA
   }
 
   if (input$topup == "Enter sample size") {
-    le <- nrow(summary_sample)
-    summary_sample$ICC <- rep(NA, le)
-    summary_sample$DEFF_planned <- rep(NA, le)
-    summary_sample$DEFF_realized <- rep(NA, le)
-    summary_sample$Effective_sample <- rep(NA, le)
-    summary_sample$Error_margin <- rep(NA, le)
-    summary_sample$Confidence_level <- rep(NA, le)
-    summary_sample$Surveys_buffer <- rep(NA, le)
+    summary_sample[c(
+      "ICC", "DEFF_planned", "DEFF_realized", "Effective_sample",
+      "Error_margin", "Confidence_level", "Surveys_buffer"
+    )] <- NA
   }
 
-  names(summary_sample) <- c(
-    "Stratification",
-    "# surveys",
-    "# units to assess",
-    "Population",
-    "Requested target",
-    "Mean Cluster size (realized)",
-    "Cluster size set (planned)",
-    "ICC",
-    "DEFF (planned)",
-    "DEFF (realized)",
-    "Effective sample size (SRS-equivalent)",
-    "% buffer",
-    "Confidence level",
-    "Error margin",
-    "Sampling type",
-    "Seed"
-  )
+  # rename by name (not position) then drop the columns that are structurally
+  # not applicable to this run, so the table only shows relevant statistics.
+  summary_sample <- summary_sample |>
+    dplyr::rename(
+      "Stratification" = "strata_id",
+      "# surveys" = "Surveys",
+      "# PSUs to assess" = "PSUs",
+      "# Unique PSUs" = "Unique_PSUs",
+      "Population" = "NB_Population",
+      "Target (with buffer)" = "target.with.buffer",
+      "Cluster size set (planned)" = "Cluster_size_planned",
+      "Mean Cluster size (realized)" = "Cluster_size_realized",
+      "ICC" = "ICC",
+      "DEFF (planned)" = "DEFF_planned",
+      "DEFF (realized)" = "DEFF_realized",
+      "Effective sample size (SRS-equivalent)" = "Effective_sample",
+      "% buffer" = "Surveys_buffer",
+      "Confidence level" = "Confidence_level",
+      "Error margin" = "Error_margin",
+      "Sampling type" = "Sampling_type",
+      "Seed" = "Seed"
+    ) |>
+    dplyr::select(dplyr::where(~ !all(is.na(.x))))
+
   return(list(
-    sample = dbout,
+    sample = dbout_sample,
     summary_sample = summary_sample,
     sw_rand = sw_rand
   ))
