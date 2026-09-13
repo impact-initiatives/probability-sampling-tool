@@ -1,10 +1,25 @@
 library(markdown)
 
+# Section header used across the app, styled once via www/app.css instead of
+# a repeated inline style on every h4().
+section_title <- function(text) h4(text, class = "section-title")
+
 navbarPage(
 	"Probability sampling tool",
 	shinyjs::useShinyjs(),
 	tags$head(
-		tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap.css")
+		tags$link(
+			rel = "stylesheet",
+			type = "text/css",
+			href = "bootstrap.css"
+		),
+		# Cache-bust: without a version query string, browsers keep serving a
+		# previously-cached app.css after it changes on disk.
+		tags$link(
+			rel = "stylesheet",
+			type = "text/css",
+			href = paste0("app.css?v=", as.integer(file.mtime("www/app.css")))
+		)
 	),
 	tabPanel(
 		"Introduction",
@@ -113,280 +128,266 @@ navbarPage(
 	tabPanel(
 		"Sampling frame",
 		fluidRow(
-			h4(
-				"Sampling type",
-				style = "color:#707070;background-color:#f8f8f8"
-			),
-
-			column(
-				2,
-				selectInput(
-					"topup",
-					"Mode of sampling",
-					c("Enter sample size", "Sample size based on population"),
-					"Sample size based on population"
-				)
-			),
-			column(
-				2,
-				selectInput(
-					"samp_type",
-					"Type of sampling",
-					c(
-						"Simple random",
-						"Simple random - allocation",
-						"Cluster sampling"
-					)
-				)
-			),
-			column(
-				2,
-				selectInput(
-					"stratified",
-					"Stratified ?",
-					c("Not stratified", "Stratified")
-				)
-			)
-		),
-		fluidRow(
-			h4(
-				"Sampling parameters",
-				style = "color:#707070;background-color:#f8f8f8"
-			),
-			conditionalPanel(
-				condition = "input.topup != 'Enter sample size'",
-				column(
-					2,
-					numericInput(
-						'conf_level',
-						'Confidence level',
-						0.95,
-						min = 0.70,
-						max = 0.99,
-						step = 0.005
-					)
-				)
-			),
-			conditionalPanel(
-				condition = "input.topup != 'Enter sample size'",
-				column(
-					2,
-					numericInput(
-						'e_marg',
-						'Error Margin',
-						0.05,
-						min = 0.01,
-						max = 0.25,
-						step = 0.005
-					)
-				)
-			),
-			conditionalPanel(
-				condition = "input.topup != 'Enter sample size'",
-				column(
-					2,
-					numericInput(
-						'pror',
-						'Proportion',
-						0.5,
-						min = 0.01,
-						max = 1,
-						step = 0.05
-					)
-				)
-			),
-			conditionalPanel(
-				condition = "input.topup == 'Enter sample size'",
-				column(
-					2,
-					numericInput(
-						'target',
-						'Enter target sample size',
-						0,
-						min = 0,
-						max = 10000,
-						step = 1
-					)
-				)
-			),
-			column(
-				2,
-				numericInput(
-					'buf',
-					'Buffer',
-					0.05,
-					min = 0.00,
-					max = 0.50,
-					step = 0.01
-				)
-			),
-			column(
-				2,
-				numericInput(
-					'seed_value',
-					'Seed',
-					value = 1,
-					min = 1,
-					max = 1e6,
-					step = 1
-				),
-				actionButton(
-					'new_seed',
-					'New seed',
-					style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"
-				)
-			)
-		),
-		fluidRow(
-			column(
-				6,
-				conditionalPanel(
-					condition = "input.samp_type == 'Cluster sampling'",
-					h4(
-						"Cluster Sampling",
-						style = "color:#707070;background-color:#f8f8f8"
-					),
+			div(
+				class = "col-sm-5 frame-card",
+				section_title("Sampling setup"),
+				fluidRow(
 					column(
-						6,
-						numericInput(
-							'cls',
-							'Cluster size',
-							5,
-							min = 2,
-							step = 1
+						4,
+						selectInput(
+							"topup",
+							"Mode of sampling",
+							c(
+								"Enter sample size",
+								"Sample size based on population"
+							),
+							"Sample size based on population"
 						)
 					),
 					column(
+						4,
+						selectInput(
+							"samp_type",
+							"Type of sampling",
+							c(
+								"Simple random",
+								"Simple random - allocation",
+								"Cluster sampling"
+							)
+						)
+					),
+					column(
+						4,
+						selectInput(
+							"stratified",
+							"Stratified ?",
+							c("Not stratified", "Stratified")
+						)
+					)
+				),
+				fluidRow(
+					conditionalPanel(
+						condition = "input.topup != 'Enter sample size'",
+						column(
+							4,
+							numericInput(
+								'conf_level',
+								'Confidence level',
+								0.95,
+								min = 0.70,
+								max = 0.99,
+								step = 0.005
+							)
+						)
+					),
+					conditionalPanel(
+						condition = "input.topup != 'Enter sample size'",
+						column(
+							4,
+							numericInput(
+								'e_marg',
+								'Error Margin',
+								0.05,
+								min = 0.01,
+								max = 0.25,
+								step = 0.005
+							)
+						)
+					),
+					conditionalPanel(
+						condition = "input.topup != 'Enter sample size'",
+						column(
+							4,
+							numericInput(
+								'pror',
+								'Proportion',
+								0.5,
+								min = 0.01,
+								max = 1,
+								step = 0.05
+							)
+						)
+					),
+					conditionalPanel(
+						condition = "input.topup == 'Enter sample size'",
+						column(
+							4,
+							numericInput(
+								'target',
+								'Enter target sample size',
+								0,
+								min = 0,
+								max = 10000,
+								step = 1
+							)
+						)
+					)
+				),
+				fluidRow(
+					column(
 						6,
 						numericInput(
-							'ICC',
-							'ICC',
-							0.06,
-							min = 0.01,
-							max = 0.5,
+							'buf',
+							'Buffer',
+							0.05,
+							min = 0.00,
+							max = 0.50,
 							step = 0.01
 						)
+					),
+					column(
+						6,
+						numericInput(
+							'seed_value',
+							'Seed',
+							value = 1,
+							min = 1,
+							max = 1e6,
+							step = 1
+						)
 					)
 				),
-				h4(
-					"Set up sampling frame",
-					style = "color:#707070;background-color:#f8f8f8"
-				),
-				column(
-					6,
-					conditionalPanel(
-						condition = "!input.testdata",
-						fileInput(
-							'popdata',
-							'Choose CSV file',
-							accept = c(
-								'text/csv',
-								'text/comma-separated-values,text/plain'
+				conditionalPanel(
+					condition = "input.samp_type == 'Cluster sampling'",
+					div(class = "param-subhead", "Cluster design"),
+					fluidRow(
+						column(
+							6,
+							numericInput(
+								'cls',
+								'Cluster size',
+								5,
+								min = 2,
+								step = 1
 							)
 						),
-						helpText("Maximum file size: 30 MB.")
-					),
-					checkboxInput("testdata", "Use test data", FALSE),
-					conditionalPanel(
-						condition = "input.samp_type == 'Cluster sampling'",
-						selectInput('col_psu', 'Input cluster', choices = NULL)
+						column(
+							6,
+							numericInput(
+								'ICC',
+								'ICC',
+								0.06,
+								min = 0.01,
+								max = 0.5,
+								step = 0.01
+							)
+						)
 					)
 				),
-				column(
-					6,
+				div(class = "param-subhead", "Data source"),
+				checkboxInput("testdata", "Use test data", FALSE),
+				conditionalPanel(
+					condition = "!input.testdata",
+					fileInput(
+						'popdata',
+						'Choose CSV file',
+						accept = c(
+							'text/csv',
+							'text/comma-separated-values,text/plain'
+						)
+					),
+					helpText("Maximum file size: 30 MB.")
+				),
+				div(class = "param-subhead", "Column mapping"),
+				fluidRow(
 					conditionalPanel(
-						condition = "input.stratified=='Stratified'",
-						selectInput(
-							'strata',
-							'Input strata',
-							choices = NULL,
-							multiple = F
+						condition = "input.samp_type == 'Cluster sampling'",
+						column(
+							4,
+							selectInput(
+								'col_psu',
+								'Input cluster',
+								choices = NULL
+							)
+						)
+					),
+					conditionalPanel(
+						condition = "input.stratified == 'Stratified'",
+						column(
+							4,
+							selectInput(
+								'strata',
+								'Input strata',
+								choices = NULL,
+								multiple = F
+							)
 						)
 					),
 					conditionalPanel(
 						condition = "input.samp_type == 'Cluster sampling'|input.samp_type =='Simple random - allocation'",
-						selectInput(
-							'colpop',
-							'Input population',
-							choices = NULL
+						column(
+							4,
+							selectInput(
+								'colpop',
+								'Input population',
+								choices = NULL
+							)
 						)
 					)
+				),
+				hr(style = "margin: 24px 0 16px;"),
+				fluidRow(
+					actionButton(
+						"f_apply",
+						"Apply",
+						width = "200px",
+						style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"
+					),
+					align = "center"
 				)
 			),
-			column(
-				6,
-				h4(
-					"TARGET sampling",
-					style = "color:#707070;background-color:#f8f8f8"
+			div(
+				class = "col-sm-7",
+				div(
+					class = "frame-card",
+					section_title("Target sampling"),
+					DT::dataTableOutput("target_frame")
 				),
-				DT::dataTableOutput("target_frame")
+				div(
+					class = "frame-card",
+					section_title("Sampling frame"),
+					DT::dataTableOutput("sampling_frame")
+				)
 			)
-		),
-		fluidRow(
-			#column(6,
-			actionButton(
-				"f_apply",
-				"Apply",
-				width = "300",
-				style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"
-			),
-			align = "center"
-			#),
-			#column(6,
-			#	actionButton("t_apply", "Apply",width ="300",style="color: #fff; background-color: #337ab7; border-color: #2e6da4"),
-			#align = "center"
-			#)
-		),
-		fluidRow(
-			br(),
-			br()
-		),
-		br(),
-		br(),
-		fluidRow(
-			h3("Sampling frame"),
-			DT::dataTableOutput("sampling_frame"),
-			width = 6
 		)
 	),
 	tabPanel(
 		"Sampling",
-		sidebarLayout(
-			sidebarPanel(
-				fluidRow(
+		fluidRow(
+			div(
+				class = "col-sm-3 frame-card",
+				section_title("Actions"),
+				shinyjs::disabled(
 					actionButton(
-						"refresh",
-						"Refresh",
-						style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"
-					),
-					br(),
-					downloadButton("downloadBtn2", "Download Summary"),
-					br(),
-					downloadButton("downloadBtn", "Download SAMPLE"),
-					h3(textOutput("caption"))
+						"desButton",
+						"Sample",
+						style = "width: 100%; margin-bottom: 20px; color: #fff; background-color: #337ab7; border-color: #2e6da4"
+					)
 				),
-				width = 2
+				section_title("Export"),
+				downloadButton(
+					"downloadBtn2",
+					"Download Summary",
+					style = "width: 100%; margin-bottom: 10px;"
+				),
+				downloadButton(
+					"downloadBtn",
+					"Download Sample",
+					style = "width: 100%;"
+				)
 			),
-			mainPanel(
-				fluidRow(
-					shinyjs::disabled(
-						actionButton(
-							"desButton",
-							"Sample!",
-							width = "200",
-							style = "color: #fff; background-color: #f15e05; border-color: #2e6da4"
-						)
-					),
-					align = "center"
+			div(
+				class = "col-sm-9",
+				div(
+					class = "frame-card",
+					section_title("Sample summary"),
+					DT::dataTableOutput("test_1")
 				),
-				h3("Sample summary"),
-				DT::dataTableOutput("test_1"),
-				br(),
-				br(),
-				br(),
-				br(),
-				h3("Sample"),
-				DT::dataTableOutput("sampling_output")
+				div(
+					class = "frame-card",
+					section_title("Sample"),
+					DT::dataTableOutput("sampling_output")
+				)
 			)
 		)
 	)

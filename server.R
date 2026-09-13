@@ -5,10 +5,6 @@ function(input, output, session) {
   # give each session a random default seed, visible and editable by the user
   updateNumericInput(session, "seed_value", value = sample.int(1e6, 1))
 
-  observeEvent(input$new_seed, {
-    updateNumericInput(session, "seed_value", value = sample.int(1e6, 1))
-  })
-
   # get the data
   db <- reactive({
     inFile <- input$popdata
@@ -117,7 +113,18 @@ function(input, output, session) {
   output$sampling_frame <- DT::renderDataTable(
     frame(),
     rownames = FALSE,
-    options = list(searching = FALSE, lengthChange = FALSE)
+    class = "display compact stripe hover",
+    # scrollY: fixed-height grid with its own scrollbar, so a long/wide
+    # uploaded frame doesn't push the whole page down; scrollX for frames
+    # with many columns.
+    options = list(
+      searching = FALSE,
+      lengthChange = FALSE,
+      paging = FALSE,
+      scrollY = "360px",
+      scrollCollapse = TRUE,
+      scrollX = TRUE
+    )
   )
 
   output$target_frame <- DT::renderDataTable(
@@ -128,7 +135,9 @@ function(input, output, session) {
       cible()[, setdiff(names(cible()), "target_srs")]
     },
     rownames = FALSE,
-    options = list(searching = FALSE, lengthChange = F)
+    class = "display compact stripe hover",
+    # a handful of strata rows at most: no pagination controls needed
+    options = list(searching = FALSE, lengthChange = F, paging = FALSE)
   )
 
   # create the sample based on the sampling frame and the input parameters
@@ -153,33 +162,36 @@ function(input, output, session) {
 
   # display the results
 
-  output$sampling_output <- DT::renderDataTable(
-    out()[[1]],
-    rownames = FALSE,
-    options = list(searching = FALSE)
-  )
-
-  output$test_1 <- DT::renderDataTable(
-    out()[[2]],
-    rownames = FALSE,
-    options = list(searching = FALSE, lengthChange = FALSE)
-  )
-
-  observeEvent(input$refresh, {
-    output$test_1 <- DT::renderDataTable(
-      out()[[2]],
-      rownames = FALSE,
-      options = list(searching = FALSE, lengthChange = FALSE)
-    )
-  })
-
-  observeEvent(input$refresh, {
-    output$sampling_output <- DT::renderDataTable(
+  # scrollY: the drawn sample can run to hundreds of rows and carries every
+  # column from the uploaded frame, so it gets its own scrollbar (like the
+  # "Sampling frame" tab) instead of growing the page.
+  render_sample <- function() {
+    DT::renderDataTable(
       out()[[1]],
       rownames = FALSE,
-      options = list(searching = FALSE, lengthChange = FALSE)
+      class = "display compact stripe hover",
+      options = list(
+        searching = FALSE,
+        lengthChange = FALSE,
+        paging = FALSE,
+        scrollY = "400px",
+        scrollCollapse = TRUE,
+        scrollX = TRUE
+      )
     )
-  })
+  }
+
+  render_summary <- function() {
+    DT::renderDataTable(
+      out()[[2]],
+      rownames = FALSE,
+      class = "display compact stripe hover",
+      options = list(searching = FALSE, lengthChange = FALSE, paging = FALSE)
+    )
+  }
+
+  output$sampling_output <- render_sample()
+  output$test_1 <- render_summary()
 
   output$downloadBtn <- downloadHandler(
     filename = function() {
