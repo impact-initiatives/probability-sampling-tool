@@ -1,10 +1,6 @@
 library(markdown)
 library(bslib)
 
-# Section header used across the app, styled once via www/app.css instead of
-# a repeated inline style on every h4().
-section_title <- function(text) h4(text, class = "section-title")
-
 page_navbar(
 	title = "Probability sampling tool",
 	theme = bs_theme(
@@ -130,297 +126,318 @@ page_navbar(
 	),
 	nav_panel(
 		"Sampling frame",
-		fluidRow(
-			div(
-				class = "col-sm-5 frame-card",
-				section_title("Sampling setup"),
-				fluidRow(
-					column(
-						6,
-						selectInput(
-							"topup",
-							"Mode of sampling",
-							c(
-								"Enter sample size",
+		layout_columns(
+			col_widths = c(5, 7),
+			card(
+				card_header("Sampling setup"),
+				card_body(				fillable = FALSE,					fluidRow(
+						column(
+							6,
+							selectInput(
+								"topup",
+								"Mode of sampling",
+								c(
+									"Enter sample size",
+									"Sample size based on population"
+								),
 								"Sample size based on population"
-							),
-							"Sample size based on population"
-						)
-					),
-					column(
-						6,
-						selectInput(
-							"samp_type",
-							"Type of sampling",
-							c(
-								"Simple random",
-								"Simple random - allocation",
-								"Cluster sampling"
 							)
-						)
-					)
-				),
-				fluidRow(
-					column(
-						4,
-						selectInput(
-							"stratified",
-							"Stratified ?",
-							c("Not stratified", "Stratified")
-						)
-					),
-					conditionalPanel(
-						# the buffer only applies to a sample size computed from the population
-						condition = "input.topup != 'Enter sample size'",
+						),
 						column(
-							4,
-							numericInput(
-								'buf',
-								'Buffer',
-								0.05,
-								min = 0,
-								step = 0.01
+							6,
+							selectInput(
+								"samp_type",
+								"Type of sampling",
+								c(
+									"Simple random",
+									"Simple random - allocation",
+									"Cluster sampling"
+								)
 							)
 						)
 					),
-					column(
-						4,
-						numericInput(
-							'seed_value',
-							'Seed',
-							value = 1,
-							min = -2147483647,
-							max = 2147483647,
-							step = 1
-						)
-					)
-				),
-				# min/max mirror validate_parameters(); HTML cannot express a strict bound,
-				# so the closest value on the step grid is used.
-				fluidRow(
-					conditionalPanel(
-						condition = "input.topup != 'Enter sample size'",
+					fluidRow(
 						column(
 							4,
-							numericInput(
-								'conf_level',
-								'Confidence level',
-								0.95,
-								min = 0.005,
-								max = 0.995,
-								step = 0.005
+							selectInput(
+								"stratified",
+								"Stratified ?",
+								c("Not stratified", "Stratified")
 							)
-						)
-					),
-					conditionalPanel(
-						condition = "input.topup != 'Enter sample size'",
-						column(
-							4,
-							numericInput(
-								'e_marg',
-								'Error Margin',
-								0.05,
-								min = 0.005,
-								max = 0.995,
-								step = 0.005
+						),
+						conditionalPanel(
+							# the buffer only applies to a sample size computed from the population
+							condition = "input.topup != 'Enter sample size'",
+							column(
+								4,
+								numericInput(
+									'buf',
+									'Buffer',
+									0.05,
+									min = 0,
+									step = 0.01
+								)
 							)
-						)
-					),
-					conditionalPanel(
-						condition = "input.topup != 'Enter sample size'",
+						),
 						column(
 							4,
 							numericInput(
-								'pror',
-								'Proportion',
-								0.5,
-								min = 0.05,
-								max = 0.95,
-								step = 0.05
-							)
-						)
-					),
-					conditionalPanel(
-						condition = "input.topup == 'Enter sample size'",
-						column(
-							4,
-							numericInput(
-								'target',
-								'Enter target sample size',
-								NULL,
-								min = 1,
+								'seed_value',
+								'Seed',
+								value = 1,
+								min = -2147483647,
+								max = 2147483647,
 								step = 1
 							)
 						)
-					)
-				),
-				radioButtons(
-					"data_source",
-					tags$span(class = "param-subhead", "Data source"),
-					choices = c(
-						"Upload CSV" = "upload",
-						"Use test data" = "test"
 					),
-					inline = TRUE
-				),
-				fluidRow(
-					column(
-						7,
+					# min/max mirror validate_parameters(); HTML cannot express a strict bound,
+					# so the closest value on the step grid is used.
+					fluidRow(
 						conditionalPanel(
-							condition = "input.data_source == 'upload'",
-							# aria-label on the inputs: a hidden label would still take up space
-							htmltools::tagQuery(
-								fileInput(
-									'popdata',
-									NULL,
-									accept = c(
-										'text/csv',
-										'text/comma-separated-values,text/plain'
-									),
-									placeholder = "CSV, max 30 MB"
+							condition = "input.topup != 'Enter sample size'",
+							column(
+								4,
+								numericInput(
+									'conf_level',
+									'Confidence level',
+									0.95,
+									min = 0.005,
+									max = 0.995,
+									step = 0.005
 								)
-							)$find("input")$addAttrs(
-								"aria-label" = "CSV file"
-							)$allTags()
+							)
 						),
 						conditionalPanel(
-							condition = "input.data_source == 'test'",
-							div(
-								class = "example-link",
-								downloadLink(
-									"download_example",
-									tagList(
-										icon("download"),
-										"Download example CSV"
+							condition = "input.topup != 'Enter sample size'",
+							column(
+								4,
+								numericInput(
+									'e_marg',
+									'Error Margin',
+									0.05,
+									min = 0.005,
+									max = 0.995,
+									step = 0.005
+								)
+							)
+						),
+						conditionalPanel(
+							condition = "input.topup != 'Enter sample size'",
+							column(
+								4,
+								numericInput(
+									'pror',
+									'Proportion',
+									0.5,
+									min = 0.05,
+									max = 0.95,
+									step = 0.05
+								)
+							)
+						),
+						conditionalPanel(
+							condition = "input.topup == 'Enter sample size'",
+							column(
+								4,
+								numericInput(
+									'target',
+									'Enter target sample size',
+									NULL,
+									min = 1,
+									step = 1
+								)
+							)
+						)
+					),
+					radioButtons(
+						"data_source",
+						tags$span(class = "param-subhead", "Data source"),
+						choices = c(
+							"Upload CSV" = "upload",
+							"Use test data" = "test"
+						),
+						inline = TRUE
+					),
+					fluidRow(
+						column(
+							7,
+							conditionalPanel(
+								condition = "input.data_source == 'upload'",
+								# aria-label on the inputs: a hidden label would still take up space
+								htmltools::tagQuery(
+									fileInput(
+										'popdata',
+										NULL,
+										accept = c(
+											'text/csv',
+											'text/comma-separated-values,text/plain'
+										),
+										placeholder = "CSV, max 30 MB"
+									)
+								)$find("input")$addAttrs(
+									"aria-label" = "CSV file"
+								)$allTags()
+							),
+							conditionalPanel(
+								condition = "input.data_source == 'test'",
+								div(
+									class = "example-link",
+									downloadLink(
+										"download_example",
+										tagList(
+											icon("download"),
+											"Download example CSV"
+										)
+									)
+								)
+							)
+						),
+						column(5, uiOutput("data_status"))
+					),
+					# Simple random without stratification needs no column from the data
+					conditionalPanel(
+						condition = "input.samp_type != 'Simple random' || input.stratified == 'Stratified'",
+						div(class = "param-subhead", "Column mapping"),
+						fluidRow(
+							conditionalPanel(
+								condition = "input.samp_type == 'Cluster sampling'",
+								column(
+									4,
+									selectInput(
+										'col_psu',
+										'Input cluster',
+										choices = NULL
+									)
+								)
+							),
+							conditionalPanel(
+								condition = "input.stratified == 'Stratified'",
+								column(
+									4,
+									selectInput(
+										'strata',
+										'Input strata',
+										choices = NULL,
+										multiple = F
+									)
+								)
+							),
+							conditionalPanel(
+								condition = "input.samp_type == 'Cluster sampling'|input.samp_type =='Simple random - allocation'",
+								column(
+									4,
+									selectInput(
+										'colpop',
+										'Input population',
+										choices = NULL
 									)
 								)
 							)
 						)
 					),
-					column(5, uiOutput("data_status"))
-				),
-				# Simple random without stratification needs no column from the data
-				conditionalPanel(
-					condition = "input.samp_type != 'Simple random' || input.stratified == 'Stratified'",
-					div(class = "param-subhead", "Column mapping"),
-					fluidRow(
-						conditionalPanel(
-							condition = "input.samp_type == 'Cluster sampling'",
+					conditionalPanel(
+						condition = "input.samp_type == 'Cluster sampling'",
+						div(class = "param-subhead", "Cluster design"),
+						fluidRow(
 							column(
-								4,
-								selectInput(
-									'col_psu',
-									'Input cluster',
-									choices = NULL
+								6,
+								numericInput(
+									'cls',
+									'Cluster size',
+									5,
+									min = 2,
+									step = 1
 								)
-							)
-						),
-						conditionalPanel(
-							condition = "input.stratified == 'Stratified'",
+							),
 							column(
-								4,
-								selectInput(
-									'strata',
-									'Input strata',
-									choices = NULL,
-									multiple = F
-								)
-							)
-						),
-						conditionalPanel(
-							condition = "input.samp_type == 'Cluster sampling'|input.samp_type =='Simple random - allocation'",
-							column(
-								4,
-								selectInput(
-									'colpop',
-									'Input population',
-									choices = NULL
+								6,
+								numericInput(
+									'ICC',
+									'ICC',
+									0.06,
+									min = 0,
+									max = 1,
+									step = 0.01
 								)
 							)
 						)
-					)
-				),
-				conditionalPanel(
-					condition = "input.samp_type == 'Cluster sampling'",
-					div(class = "param-subhead", "Cluster design"),
-					fluidRow(
-						column(
-							6,
-							numericInput(
-								'cls',
-								'Cluster size',
-								5,
-								min = 2,
-								step = 1
-							)
-						),
-						column(
-							6,
-							numericInput(
-								'ICC',
-								'ICC',
-								0.06,
-								min = 0,
-								max = 1,
-								step = 0.01
-							)
-						)
-					)
-				),
-				fluidRow(
-					actionButton(
-						"f_apply",
-						"Apply",
-						width = "200px",
-						style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"
 					),
-					class = "text-center"
+					div(
+						class = "text-center",
+						actionButton(
+							"f_apply",
+							"Apply",
+							class = "btn-primary",
+							width = "200px"
+						)
+					)
 				)
 			),
-			div(
-				class = "col-sm-7",
-				div(
-					class = "frame-card",
-					section_title("Target sampling"),
-					uiOutput("apply_error"),
-					DT::dataTableOutput("target_frame")
+			layout_column_wrap(
+				width = 1,
+				heights_equal = "row",
+				fill = FALSE,
+				card(
+					card_header("Target sampling"),
+					card_body(
+						fillable = FALSE,
+						uiOutput("apply_error"),
+						DT::dataTableOutput("target_frame")
+					)
 				),
-				div(
-					class = "frame-card",
-					section_title("Sampling frame"),
-					DT::dataTableOutput("sampling_frame")
+				card(
+					card_header("Sampling frame"),
+					card_body(
+						fillable = FALSE,
+						DT::dataTableOutput("sampling_frame")
+					)
 				)
 			)
 		)
 	),
 	nav_panel(
 		"Sampling",
-		fluidRow(
-			div(
-				class = "col-sm-2 frame-card",
-				section_title("Actions"),
-				shinyjs::disabled(
-					actionButton(
-						"desButton",
-						"Sample",
-						style = "width: 100%; margin-bottom: 20px; color: #fff; background-color: #337ab7; border-color: #2e6da4"
+		layout_columns(
+			col_widths = c(2, 10),
+			layout_column_wrap(
+				width = 1,
+				heights_equal = "row",
+				fill = FALSE,
+				card(
+					card_header("Actions"),
+					shinyjs::disabled(
+						actionButton(
+							"desButton",
+							"Sample",
+							class = "btn-primary",
+							width = "100%"
+						)
 					)
 				),
-				section_title("Export"),
-				uiOutput("export_buttons")
+				card(
+					card_header("Export"),
+					uiOutput("export_buttons")
+				)
 			),
-			div(
-				class = "col-sm-10",
-				div(
-					class = "frame-card",
-					section_title("Sample summary"),
-					uiOutput("sample_error"),
-					DT::dataTableOutput("test_1")
+			layout_column_wrap(
+				width = 1,
+				heights_equal = "row",
+				fill = FALSE,
+				card(
+					card_header("Sample summary"),
+					card_body(
+						fillable = FALSE,
+						uiOutput("sample_error"),
+						DT::dataTableOutput("test_1")
+					)
 				),
-				div(
-					class = "frame-card",
-					section_title("Sample"),
-					DT::dataTableOutput("sampling_output")
+				card(
+					card_header("Sample"),
+					card_body(
+						fillable = FALSE,
+						DT::dataTableOutput("sampling_output")
+					)
 				)
 			)
 		)
