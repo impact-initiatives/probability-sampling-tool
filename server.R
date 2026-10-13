@@ -187,9 +187,10 @@ function(input, output, session) {
   # Display the results in the UI
 
   # Body height of the large tables: what is left under the small table above.
-  big_table_height <- "max(120px, 100vh - 560px)"
-  sample_table_height <- "max(110px, 100vh - 680px)"
-  small_table_height <- "18vh"
+  big_table_height <- "max(120px, 100vh - 605px)"
+  # 584px = the rest of the Sampling tab, so the page fits whatever the height
+  sample_table_height <- "max(80px, 100vh - 14vh - 584px)"
+  small_table_height <- "14vh"
 
   # Bootstrap 5 table look; the wide tables also keep their cells on one line.
   dt_style <- "bootstrap5"

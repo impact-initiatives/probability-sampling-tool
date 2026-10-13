@@ -69,3 +69,13 @@
 	font-size: 0.85em;
 	opacity: 0.8;
 }
+
+/* Centre the sidebar collapse arrow on the 40px section header */
+.bslib-sidebar-layout > .collapse-toggle {
+	margin-top: -4px;
+}
+
+/* Leave room for the collapse arrow once the sidebar is closed */
+.bslib-sidebar-layout.sidebar-collapsed > .main {
+	padding-left: 3rem !important;
+}

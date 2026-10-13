@@ -6,6 +6,14 @@ kish_1965 <- tagList("Kish, ", tags$em("Survey Sampling"), " (1965)")
 # Cochran, W. G. (1977). Sampling Techniques, 3rd ed. New York: Wiley.
 cochran_1977 <- tagList("Cochran, ", tags$em("Sampling Techniques"), " (1977)")
 
+# Header of a sidebar section, identical to the card headers of the main area
+sidebar_header <- function(text) {
+	div(
+		class = "card bslib-card border-0 rounded-0 bg-transparent",
+		card_header(h2(text, class = "h6 mb-0"))
+	)
+}
+
 # numericInput() whose label carries a help icon with a tooltip. The input is
 # named by the label text only, not by the icon.
 numeric_input_with_tip <- function(inputId, label, tip, source = NULL, ...) {
@@ -182,15 +190,24 @@ page_navbar(
 	),
 	nav_panel(
 		"Sampling frame",
-		layout_columns(
-			col_widths = c(6, 6),
-			card(
-				card_header(h2("Sampling setup", class = "h6 mb-0")),
-				card_body(
-					fillable = FALSE,
+		layout_sidebar(
+			fill = FALSE,
+			fillable = FALSE,
+			padding = "1rem",
+			sidebar = sidebar(
+				id = "setup_sidebar",
+				width = 600,
+				open = "desktop",
+				resizable = TRUE,
+				fillable = FALSE,
+				gap = 0,
+				padding = 0,
+				sidebar_header("Sampling setup"),
+				div(
+					class = "p-3",
 					fluidRow(
 						column(
-							6,
+							7,
 							selectInput(
 								"topup",
 								"Mode of sampling",
@@ -202,7 +219,7 @@ page_navbar(
 							)
 						),
 						column(
-							6,
+							5,
 							selectInput(
 								"samp_type",
 								"Type of sampling",
@@ -326,6 +343,7 @@ page_navbar(
 						inline = TRUE
 					),
 					fluidRow(
+						class = "mt-2",
 						column(
 							7,
 							conditionalPanel(
@@ -468,14 +486,21 @@ page_navbar(
 	),
 	nav_panel(
 		"Sampling",
-		layout_columns(
-			col_widths = c(3, 9),
-			layout_column_wrap(
-				width = 1,
-				heights_equal = "row",
-				fill = FALSE,
-				card(
-					card_header(h2("Actions", class = "h6 mb-0")),
+		layout_sidebar(
+			fill = FALSE,
+			fillable = FALSE,
+			padding = "1rem",
+			sidebar = sidebar(
+				id = "sampling_sidebar",
+				width = 300,
+				open = "desktop",
+				resizable = TRUE,
+				fillable = FALSE,
+				gap = 0,
+				padding = 0,
+				sidebar_header("Actions"),
+				div(
+					class = "p-3",
 					shinyjs::disabled(
 						actionButton(
 							"desButton",
@@ -485,10 +510,8 @@ page_navbar(
 						)
 					)
 				),
-				card(
-					card_header(h2("Export", class = "h6 mb-0")),
-					uiOutput("export_buttons")
-				)
+				sidebar_header("Export"),
+				div(class = "p-3", uiOutput("export_buttons"))
 			),
 			layout_column_wrap(
 				width = 1,
