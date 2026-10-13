@@ -130,7 +130,9 @@ page_navbar(
 			col_widths = c(5, 7),
 			card(
 				card_header("Sampling setup"),
-				card_body(				fillable = FALSE,					fluidRow(
+				card_body(
+					fillable = FALSE,
+					fluidRow(
 						column(
 							6,
 							selectInput(

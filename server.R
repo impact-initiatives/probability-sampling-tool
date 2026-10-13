@@ -188,7 +188,13 @@ function(input, output, session) {
 
   # Body height of the large tables: what is left under the small table above.
   big_table_height <- "max(120px, 100vh - 560px)"
+  sample_table_height <- "max(120px, 100vh - 630px)"
   small_table_height <- "18vh"
+
+  # Bootstrap 5 table look; the wide tables also keep their cells on one line.
+  dt_style <- "bootstrap5"
+  dt_class <- "table table-sm table-striped table-hover"
+  dt_class_wide <- paste(dt_class, "nowrap")
 
   # A failed validation is shown once, as an alert, instead of inside each table.
   validation_alert <- function(expr) {
@@ -207,7 +213,8 @@ function(input, output, session) {
   output$sampling_frame <- DT::renderDataTable(
     quiet(frame()),
     rownames = FALSE,
-    class = "display nowrap compact stripe hover",
+    style = dt_style,
+    class = dt_class_wide,
     options = list(
       searching = FALSE,
       lengthChange = FALSE,
@@ -226,7 +233,8 @@ function(input, output, session) {
       target[, setdiff(names(target), "target_srs")]
     },
     rownames = FALSE,
-    class = "display compact stripe hover",
+    style = dt_style,
+    class = dt_class,
     options = list(
       searching = FALSE,
       lengthChange = F,
@@ -254,12 +262,13 @@ function(input, output, session) {
     DT::renderDataTable(
       quiet(out())[[1]],
       rownames = FALSE,
-      class = "display nowrap compact stripe hover",
+      style = dt_style,
+      class = dt_class_wide,
       options = list(
         searching = FALSE,
         lengthChange = FALSE,
         pageLength = 100,
-        scrollY = big_table_height,
+        scrollY = sample_table_height,
         scrollCollapse = TRUE,
         scrollX = TRUE
       )
@@ -270,7 +279,8 @@ function(input, output, session) {
     DT::renderDataTable(
       quiet(out())[[2]],
       rownames = FALSE,
-      class = "display compact stripe hover",
+      style = dt_style,
+      class = dt_class,
       options = list(
         searching = FALSE,
         lengthChange = FALSE,
