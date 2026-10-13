@@ -14,6 +14,8 @@ page_navbar(
 	fillable = FALSE,
 	header = tagList(
 		shinyjs::useShinyjs(),
+		# Spinner on the outputs being recalculated and a pulse while the app is busy
+		useBusyIndicators(),
 		# Cache-bust: without a version query string, browsers keep serving a
 		# previously-cached app.css after it changes on disk.
 		tags$link(
@@ -368,11 +370,11 @@ page_navbar(
 					),
 					div(
 						class = "text-center mt-2",
-						actionButton(
+						input_task_button(
 							"f_apply",
 							"Apply",
-							class = "btn-primary",
-							width = "200px"
+							label_busy = "Applying...",
+							style = "width: 200px;"
 						)
 					)
 				)
