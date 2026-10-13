@@ -1,18 +1,21 @@
 library(markdown)
+library(bslib)
 
 # Section header used across the app, styled once via www/app.css instead of
 # a repeated inline style on every h4().
 section_title <- function(text) h4(text, class = "section-title")
 
-navbarPage(
-	"Probability sampling tool",
-	shinyjs::useShinyjs(),
-	tags$head(
-		tags$link(
-			rel = "stylesheet",
-			type = "text/css",
-			href = "bootstrap.css"
-		),
+page_navbar(
+	title = "Probability sampling tool",
+	theme = bs_theme(
+		version = 5,
+		bootswatch = "united",
+		# the Bootstrap 3 base size, to keep the setup card on one screen
+		"font-size-base" = "0.875rem"
+	),
+	fillable = FALSE,
+	header = tagList(
+		shinyjs::useShinyjs(),
 		# Cache-bust: without a version query string, browsers keep serving a
 		# previously-cached app.css after it changes on disk.
 		tags$link(
@@ -21,11 +24,11 @@ navbarPage(
 			href = paste0("app.css?v=", as.integer(file.mtime("www/app.css")))
 		)
 	),
-	tabPanel(
+	nav_panel(
 		"Introduction",
 		fluidRow(
 			h1("Brief overview of the tool"),
-			align = "center"
+			class = "text-center"
 		),
 		fluidRow(
 			column(1, br()),
@@ -125,7 +128,7 @@ navbarPage(
 			)
 		)
 	),
-	tabPanel(
+	nav_panel(
 		"Sampling frame",
 		fluidRow(
 			div(
@@ -371,7 +374,7 @@ navbarPage(
 						width = "200px",
 						style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"
 					),
-					align = "center"
+					class = "text-center"
 				)
 			),
 			div(
@@ -390,7 +393,7 @@ navbarPage(
 			)
 		)
 	),
-	tabPanel(
+	nav_panel(
 		"Sampling",
 		fluidRow(
 			div(

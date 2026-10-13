@@ -1,5 +1,16 @@
-/* App-specific styles layered on top of the bootswatch theme (bootstrap.css).
-   Kept in a separate file so the vendored theme stays untouched. */
+/* App-specific styles layered on top of the bslib theme (see ui.R). */
+
+/* A conditionalPanel() wrapping columns inside a row: Bootstrap 5 rows are
+   flex containers, so the panel must not become the flex item itself. */
+.row > .shiny-panel-conditional.shiny-conditional--shown {
+	display: contents;
+}
+
+/* ...so the gutter that Bootstrap 5 gives to the row's direct children goes to the columns */
+.row > .shiny-panel-conditional > [class*="col-"] {
+	padding-right: calc(var(--bs-gutter-x) * 0.5);
+	padding-left: calc(var(--bs-gutter-x) * 0.5);
+}
 
 /* Section headers: one shared look instead of a repeated inline style */
 .section-title {
