@@ -45,3 +45,27 @@
 	font-size: 13px;
 	padding-top: 6px;
 }
+
+/* Help icon next to a field label, opening a tooltip (see info_tip() in ui.R) */
+.info-tip {
+	margin-left: 0.25rem;
+	font-size: 0.85em;
+	color: var(--bs-secondary);
+	cursor: help;
+}
+
+.info-tip:hover,
+.info-tip:focus-visible {
+	color: var(--bs-primary);
+}
+
+.tooltip-inner {
+	max-width: 18rem;
+	text-align: left;
+}
+
+.info-tip-source {
+	margin-top: 0.35rem;
+	font-size: 0.85em;
+	opacity: 0.8;
+}

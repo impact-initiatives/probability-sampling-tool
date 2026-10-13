@@ -1,6 +1,37 @@
 library(markdown)
 library(bslib)
 
+# Kish, L. (1965). Survey Sampling. New York: Wiley.
+kish_1965 <- tagList("Kish, ", tags$em("Survey Sampling"), " (1965)")
+# Cochran, W. G. (1977). Sampling Techniques, 3rd ed. New York: Wiley.
+cochran_1977 <- tagList("Cochran, ", tags$em("Sampling Techniques"), " (1977)")
+
+# numericInput() whose label carries a help icon with a tooltip. The input is
+# named by the label text only, not by the icon.
+numeric_input_with_tip <- function(inputId, label, tip, source = NULL, ...) {
+	name_id <- paste0(inputId, "-name")
+	htmltools::tagQuery(
+		numericInput(
+			inputId,
+			tagList(
+				tags$span(id = name_id, label),
+				tooltip(
+					tags$span(
+						class = "info-tip",
+						tabindex = "0",
+						role = "img",
+						`aria-label` = paste("About", label),
+						icon("circle-info", `aria-hidden` = "true")
+					),
+					tip,
+					if (!is.null(source)) div(class = "info-tip-source", source)
+				)
+			),
+			...
+		)
+	)$find("input")$addAttrs("aria-labelledby" = name_id)$allTags()
+}
+
 page_navbar(
 	title = "Probability sampling tool",
 	lang = "en",
@@ -197,10 +228,11 @@ page_navbar(
 							condition = "input.topup != 'Enter sample size'",
 							column(
 								4,
-								numericInput(
+								numeric_input_with_tip(
 									'buf',
-									'Buffer',
-									0.05,
+									"Buffer",
+									tip = "Extra share added to the target to cover non-response or unusable interviews: target \u00d7 (1 + buffer). Base it on the non-response rate you expect.",
+									value = 0.05,
 									min = 0,
 									step = 0.01
 								)
@@ -208,9 +240,10 @@ page_navbar(
 						),
 						column(
 							4,
-							numericInput(
+							numeric_input_with_tip(
 								'seed_value',
-								'Seed',
+								"Seed",
+								tip = "Starting point of the random draw. The same seed with the same settings gives the same sample, so a draw can be reproduced. Change it to get a different sample.",
 								value = 1,
 								min = -2147483647,
 								max = 2147483647,
@@ -225,10 +258,12 @@ page_navbar(
 							condition = "input.topup != 'Enter sample size'",
 							column(
 								4,
-								numericInput(
+								numeric_input_with_tip(
 									'conf_level',
-									'Confidence level',
-									0.95,
+									"Confidence level",
+									tip = "How often the interval around your estimate would contain the true value if the survey were repeated (0.95 = 95% of the time). Higher confidence needs a larger sample.",
+									source = cochran_1977,
+									value = 0.95,
 									min = 0.005,
 									max = 0.995,
 									step = 0.005
@@ -239,10 +274,12 @@ page_navbar(
 							condition = "input.topup != 'Enter sample size'",
 							column(
 								4,
-								numericInput(
+								numeric_input_with_tip(
 									'e_marg',
-									'Error Margin',
-									0.05,
+									"Error Margin",
+									tip = "Largest gap you accept between the estimate and the true value, at the chosen confidence level (0.05 = \u00b15 percentage points). A smaller margin needs a larger sample.",
+									source = cochran_1977,
+									value = 0.05,
 									min = 0.005,
 									max = 0.995,
 									step = 0.005
@@ -253,10 +290,12 @@ page_navbar(
 							condition = "input.topup != 'Enter sample size'",
 							column(
 								4,
-								numericInput(
+								numeric_input_with_tip(
 									'pror',
-									'Proportion',
-									0.5,
+									"Proportion",
+									tip = "Share of the population expected to have the characteristic you measure. With no estimate, keep 0.5: it gives the largest, most cautious sample size.",
+									source = cochran_1977,
+									value = 0.5,
 									min = 0.05,
 									max = 0.95,
 									step = 0.05
@@ -369,20 +408,24 @@ page_navbar(
 						fluidRow(
 							column(
 								6,
-								numericInput(
+								numeric_input_with_tip(
 									'cls',
-									'Cluster size',
-									5,
+									"Cluster size",
+									tip = "Number of interviews planned in each selected cluster (at least 2). Larger clusters lower the fieldwork cost but raise the design effect.",
+									source = kish_1965,
+									value = 5,
 									min = 2,
 									step = 1
 								)
 							),
 							column(
 								6,
-								numericInput(
+								numeric_input_with_tip(
 									'ICC',
-									'ICC',
-									0.06,
+									"ICC",
+									tip = "Intracluster correlation: how alike the units of a cluster are (0 = not at all, 1 = identical). It inflates the sample through the design effect, 1 + (cluster size \u2212 1) \u00d7 ICC. Use a value from a similar past survey.",
+									source = kish_1965,
+									value = 0.06,
 									min = 0,
 									max = 1,
 									step = 0.01
