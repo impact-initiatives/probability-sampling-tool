@@ -188,7 +188,7 @@ function(input, output, session) {
 
   # Body height of the large tables: what is left under the small table above.
   big_table_height <- "max(120px, 100vh - 560px)"
-  sample_table_height <- "max(120px, 100vh - 630px)"
+  sample_table_height <- "max(110px, 100vh - 680px)"
   small_table_height <- "18vh"
 
   # Bootstrap 5 table look; the wide tables also keep their cells on one line.
@@ -301,11 +301,16 @@ function(input, output, session) {
     ready <- succeeds(out())
     export_button <- function(id, label, style) {
       if (ready) {
-        downloadButton(id, label, class = "btn-success", style = style)
+        downloadButton(
+          id,
+          label,
+          class = "btn-outline-primary text-nowrap",
+          style = style
+        )
       } else {
         tags$button(
           type = "button",
-          class = "btn btn-success",
+          class = "btn btn-outline-primary text-nowrap",
           style = style,
           disabled = NA,
           icon("download"),

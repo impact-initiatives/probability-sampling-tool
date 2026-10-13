@@ -17,6 +17,11 @@
 	margin-right: 1.5rem;
 }
 
+/* bslib does not pick up the card-cap-bg theme variable */
+.card-header {
+	background-color: #eef3fa;
+}
+
 /* Sub-heading between groups of fields inside a form (e.g. "Cluster
    design", "Data source", "Column mapping") - lighter than a card header
    so it doesn't add much height. */

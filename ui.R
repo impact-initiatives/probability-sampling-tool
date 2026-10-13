@@ -6,12 +6,33 @@ page_navbar(
 	lang = "en",
 	theme = bs_theme(
 		version = 5,
-		bootswatch = "united",
+		# WCAG AA: white text on primary/danger/success is above 4.5:1
+		primary = "#1A56A0",
+		secondary = "#5C6670",
+		success = "#146C43",
+		danger = "#B42318",
+		"body-bg" = "#F5F7FA",
+		# form control borders need 3:1 against the background (WCAG 1.4.11)
+		"input-border-color" = "#8A939C",
+		"card-cap-bg" = "#EEF3FA",
+		"card-cap-color" = "#12355B",
+		base_font = font_collection(
+			"system-ui",
+			"-apple-system",
+			"Segoe UI",
+			"Roboto",
+			"Helvetica Neue",
+			"Arial",
+			"sans-serif"
+		),
 		# the Bootstrap 3 base size, to keep the setup card on one screen
 		"font-size-base" = "0.875rem",
 		# the Bootstrap 3 paragraph spacing, which keeps the Introduction compact
-		"paragraph-margin-bottom" = "0.7rem"
+		"paragraph-margin-bottom" = "0.7rem",
+		"h1-font-size" = "2rem",
+		"h2-font-size" = "1.4rem"
 	),
+	navbar_options = navbar_options(bg = "#12355B", theme = "dark"),
 	fillable = FALSE,
 	header = tagList(
 		shinyjs::useShinyjs(),
@@ -131,7 +152,7 @@ page_navbar(
 	nav_panel(
 		"Sampling frame",
 		layout_columns(
-			col_widths = c(5, 7),
+			col_widths = c(6, 6),
 			card(
 				card_header(h2("Sampling setup", class = "h6 mb-0")),
 				card_body(
@@ -405,7 +426,7 @@ page_navbar(
 	nav_panel(
 		"Sampling",
 		layout_columns(
-			col_widths = c(2, 10),
+			col_widths = c(3, 9),
 			layout_column_wrap(
 				width = 1,
 				heights_equal = "row",
