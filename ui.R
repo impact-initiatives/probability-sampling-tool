@@ -355,7 +355,7 @@ navbarPage(
 		"Sampling",
 		fluidRow(
 			div(
-				class = "col-sm-3 frame-card",
+				class = "col-sm-2 frame-card",
 				section_title("Actions"),
 				shinyjs::disabled(
 					actionButton(
@@ -365,19 +365,24 @@ navbarPage(
 					)
 				),
 				section_title("Export"),
-				downloadButton(
-					"downloadBtn2",
-					"Download Summary",
-					style = "width: 100%; margin-bottom: 10px;"
+				shinyjs::disabled(
+					downloadButton(
+						"downloadBtn2",
+						"Sample summary (CSV)",
+						class = "btn-export",
+						style = "margin-bottom: 10px;"
+					)
 				),
-				downloadButton(
-					"downloadBtn",
-					"Download Sample",
-					style = "width: 100%;"
+				shinyjs::disabled(
+					downloadButton(
+						"downloadBtn",
+						"Sample (CSV)",
+						class = "btn-export"
+					)
 				)
 			),
 			div(
-				class = "col-sm-9",
+				class = "col-sm-10",
 				div(
 					class = "frame-card",
 					section_title("Sample summary"),

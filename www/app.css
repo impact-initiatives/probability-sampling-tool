@@ -36,3 +36,21 @@
 	color: #333333;
 	margin: 18px 0 8px;
 }
+
+/* Export buttons: full width, green */
+.btn.btn-export {
+	width: 100%;
+	padding-left: 6px;
+	padding-right: 6px;
+	white-space: normal;
+	color: #ffffff;
+	background-color: #2e9e5b;
+	border-color: #278a4e;
+}
+
+.btn.btn-export:hover,
+.btn.btn-export:focus {
+	color: #ffffff;
+	background-color: #258a4d;
+	border-color: #1f7442;
+}

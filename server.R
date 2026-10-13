@@ -192,6 +192,12 @@ function(input, output, session) {
   output$sampling_output <- render_sample()
   output$test_1 <- render_summary()
 
+  # downloads stay disabled until a sample has actually been drawn
+  observeEvent(out(), {
+    shinyjs::enable("downloadBtn")
+    shinyjs::enable("downloadBtn2")
+  })
+
   output$downloadBtn <- downloadHandler(
     filename = function() {
       paste("sample_", humanTime(), '.csv', sep = '')
