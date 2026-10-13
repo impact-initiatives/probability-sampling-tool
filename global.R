@@ -513,12 +513,22 @@ make_sample <- function(sampling_frame, input) {
     # a matrix instead of a list, which unlist() keeps 2-D and breaks the
     # merge() below.
     output <- apply(
-      target, 1, stage2rdsample, sframe = sampl_f, buf = buf, simplify = FALSE
+      target,
+      1,
+      stage2rdsample,
+      sframe = sampl_f,
+      buf = buf,
+      simplify = FALSE
     ) %>%
       unlist
   } else if (input$samp_type == "Simple random") {
     output <- apply(
-      target, 1, randomsample, sframe = sampl_f, buf = buf, simplify = FALSE
+      target,
+      1,
+      randomsample,
+      sframe = sampl_f,
+      buf = buf,
+      simplify = FALSE
     ) %>%
       unlist
   }
@@ -605,8 +615,13 @@ make_sample <- function(sampling_frame, input) {
     # "# PSUs to assess" is the draw count; it only differs from "# surveys"
     # when a draw yields more than one survey, i.e. cluster sampling.
     summary_sample[c(
-      "PSUs", "Cluster_size_realized", "Cluster_size_planned",
-      "ICC", "DEFF_planned", "DEFF_realized", "Effective_sample"
+      "PSUs",
+      "Cluster_size_realized",
+      "Cluster_size_planned",
+      "ICC",
+      "DEFF_planned",
+      "DEFF_realized",
+      "Effective_sample"
     )] <- NA
     # plain SRS: no replacement and no PSU concept, so the distinct count
     # is just "# surveys" again.
@@ -615,8 +630,13 @@ make_sample <- function(sampling_frame, input) {
 
   if (input$topup == "Enter sample size") {
     summary_sample[c(
-      "ICC", "DEFF_planned", "DEFF_realized", "Effective_sample",
-      "Error_margin", "Confidence_level", "Surveys_buffer"
+      "ICC",
+      "DEFF_planned",
+      "DEFF_realized",
+      "Effective_sample",
+      "Error_margin",
+      "Confidence_level",
+      "Surveys_buffer"
     )] <- NA
   }
 
