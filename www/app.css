@@ -12,6 +12,11 @@
 	padding-left: calc(var(--bs-gutter-x) * 0.5);
 }
 
+/* Shiny still emits Bootstrap 3 markup for inline radios: give them a gap */
+.shiny-options-group .radio-inline {
+	margin-right: 1.5rem;
+}
+
 /* Sub-heading between groups of fields inside a form (e.g. "Cluster
    design", "Data source", "Column mapping") - lighter than a card header
    so it doesn't add much height. */

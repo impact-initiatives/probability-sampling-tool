@@ -7,7 +7,9 @@ page_navbar(
 		version = 5,
 		bootswatch = "united",
 		# the Bootstrap 3 base size, to keep the setup card on one screen
-		"font-size-base" = "0.875rem"
+		"font-size-base" = "0.875rem",
+		# the Bootstrap 3 paragraph spacing, which keeps the Introduction compact
+		"paragraph-margin-bottom" = "0.7rem"
 	),
 	fillable = FALSE,
 	header = tagList(
@@ -27,9 +29,9 @@ page_navbar(
 			class = "text-center"
 		),
 		fluidRow(
-			column(1, br()),
 			column(
-				4,
+				5,
+				offset = 1,
 				h2("Mode of sampling"),
 				p(
 					strong("Enter sample size:"),
@@ -76,9 +78,8 @@ page_navbar(
 					"Intracluster  correlation : average value estimated in previous assessments = 0.06."
 				)
 			),
-			column(1, br()),
 			column(
-				4,
+				5,
 				h2("Loading files"),
 				p(
 					"The CSV is your sampling frame: one row per sampling unit, covering the entire population of interest (not a pre-drawn subset). For Simple random, each row is a unit and the frame size is the population. For Cluster sampling and Simple random - allocation, each row is a cluster or area, and the Population column gives the number of sub-units (e.g. households) it contains."
@@ -366,7 +367,7 @@ page_navbar(
 						)
 					),
 					div(
-						class = "text-center",
+						class = "text-center mt-2",
 						actionButton(
 							"f_apply",
 							"Apply",
