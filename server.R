@@ -18,24 +18,25 @@ function(input, output, session) {
   })
 
   # one-line feedback under the data source selector
-  output$data_status <- renderText({
+  output$data_status <- renderUI({
     d <- db()
-    if (is.null(d)) {
-      return("No data loaded yet")
-    }
+    req(d)
     src <- if (input$data_source == "test") {
       "data_example.csv"
     } else {
       input$popdata$name
     }
-    paste0(
-      "\u2714 ",
-      src,
-      " - ",
-      format(nrow(d), big.mark = ","),
-      " rows x ",
-      ncol(d),
-      " columns"
+    div(
+      class = "data-status",
+      paste0(
+        "\u2714 ",
+        src,
+        " - ",
+        format(nrow(d), big.mark = ","),
+        " rows x ",
+        ncol(d),
+        " columns"
+      )
     )
   })
 

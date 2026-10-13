@@ -7,7 +7,7 @@
 	background-color: #f8f8f8;
 	border-left: 4px solid #F15B55;
 	padding: 8px 12px;
-	margin: 0 0 15px 0;
+	margin: 0 0 10px 0;
 	font-size: 16px;
 }
 
@@ -17,24 +17,46 @@
 	border: 1px solid #e6e6e6;
 	border-radius: 6px;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-	padding: 20px;
+	padding: 16px 20px;
 	margin-bottom: 20px;
 }
 
 /* Slightly tighter vertical rhythm inside a card, so a form with many
    fields (e.g. cluster sampling) has a better chance of fitting on screen */
 .frame-card .form-group {
-	margin-bottom: 10px;
+	margin-bottom: 6px;
 }
 
 /* Sub-heading between groups of fields inside a form (e.g. "Cluster
    design", "Data source", "Column mapping") - visible but lighter than a
    full section-title so it doesn't add much height. */
 .param-subhead {
-	font-size: 17px;
+	font-size: 15px;
 	font-weight: 700;
 	color: #333333;
-	margin: 18px 0 8px;
+	margin: 10px 0 4px;
+}
+
+/* Keep long select values on one line instead of growing the field */
+.frame-card .selectize-input {
+	white-space: nowrap;
+}
+
+.frame-card .selectize-input .item {
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Thin upload progress bar */
+.frame-card .progress {
+	height: 14px;
+	margin: 2px 0 0;
+}
+
+.frame-card .progress-bar {
+	font-size: 10px;
+	line-height: 14px;
 }
 
 /* Export buttons: full width, green */
@@ -55,15 +77,16 @@
 	border-color: #1f7442;
 }
 
-/* One-line feedback under the data source selector */
+/* Loaded-data summary, shown to the right of the file box */
 .data-status {
 	font-size: 12px;
+	line-height: 1.35;
 	color: #707070;
-	margin: -4px 0 8px;
+	padding-top: 4px;
 }
 
-/* Link to the bundled example CSV, shown under the data status */
+/* Link to the bundled example CSV, shown where the file box would be */
 .example-link {
 	font-size: 13px;
-	margin: 4px 0 8px;
+	padding-top: 6px;
 }

@@ -133,7 +133,7 @@ navbarPage(
 				section_title("Sampling setup"),
 				fluidRow(
 					column(
-						4,
+						5,
 						selectInput(
 							"topup",
 							"Mode of sampling",
@@ -157,7 +157,7 @@ navbarPage(
 						)
 					),
 					column(
-						4,
+						3,
 						selectInput(
 							"stratified",
 							"Stratified ?",
@@ -247,33 +247,6 @@ navbarPage(
 						)
 					)
 				),
-				conditionalPanel(
-					condition = "input.samp_type == 'Cluster sampling'",
-					div(class = "param-subhead", "Cluster design"),
-					fluidRow(
-						column(
-							6,
-							numericInput(
-								'cls',
-								'Cluster size',
-								5,
-								min = 2,
-								step = 1
-							)
-						),
-						column(
-							6,
-							numericInput(
-								'ICC',
-								'ICC',
-								0.06,
-								min = 0.01,
-								max = 0.5,
-								step = 0.01
-							)
-						)
-					)
-				),
 				div(class = "param-subhead", "Data source"),
 				radioButtons(
 					"data_source",
@@ -284,31 +257,33 @@ navbarPage(
 					),
 					inline = TRUE
 				),
-				conditionalPanel(
-					condition = "input.data_source == 'upload'",
-					fileInput(
-						'popdata',
-						NULL,
-						accept = c(
-							'text/csv',
-							'text/comma-separated-values,text/plain'
+				fluidRow(
+					column(
+						7,
+						conditionalPanel(
+							condition = "input.data_source == 'upload'",
+							fileInput(
+								'popdata',
+								NULL,
+								accept = c(
+									'text/csv',
+									'text/comma-separated-values,text/plain'
+								),
+								placeholder = "CSV, max 30 MB"
+							)
 						),
-						placeholder = "CSV, max 30 MB"
-					)
-				),
-				div(
-					class = "data-status",
-					textOutput("data_status", inline = TRUE)
-				),
-				conditionalPanel(
-					condition = "input.data_source == 'test'",
-					div(
-						class = "example-link",
-						downloadLink(
-							"download_example",
-							tagList(icon("download"), "Download example CSV")
+						conditionalPanel(
+							condition = "input.data_source == 'test'",
+							div(
+								class = "example-link",
+								downloadLink(
+									"download_example",
+									tagList(icon("download"), "Download example CSV")
+								)
+							)
 						)
-					)
+					),
+					column(5, uiOutput("data_status"))
 				),
 				div(class = "param-subhead", "Column mapping"),
 				fluidRow(
@@ -347,7 +322,34 @@ navbarPage(
 						)
 					)
 				),
-				hr(style = "margin: 24px 0 16px;"),
+				conditionalPanel(
+					condition = "input.samp_type == 'Cluster sampling'",
+					div(class = "param-subhead", "Cluster design"),
+					fluidRow(
+						column(
+							6,
+							numericInput(
+								'cls',
+								'Cluster size',
+								5,
+								min = 2,
+								step = 1
+							)
+						),
+						column(
+							6,
+							numericInput(
+								'ICC',
+								'ICC',
+								0.06,
+								min = 0.01,
+								max = 0.5,
+								step = 0.01
+							)
+						)
+					)
+				),
+				hr(style = "margin: 8px 0 10px;"),
 				fluidRow(
 					actionButton(
 						"f_apply",
