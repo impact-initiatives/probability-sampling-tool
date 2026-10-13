@@ -122,8 +122,10 @@ function(input, output, session) {
   observeEvent(input$f_apply, {
     applied(FALSE)
     draw_failed(FALSE)
-    frame()
-    cible()
+    # the errors are shown by the outputs; here they must not end the session
+    if (!succeeds(frame()) || !succeeds(cible())) {
+      return()
+    }
     applied(TRUE)
 
     affected <- check_target_vs_population(cible())
@@ -199,7 +201,8 @@ function(input, output, session) {
   }
 
   output$apply_error <- renderUI(validation_alert(cible()))
-  output$sample_error <- renderUI(validation_alert(out()))
+  # out() keeps its error until the next draw, so gate it on draw_failed()
+  output$sample_error <- renderUI(if (draw_failed()) validation_alert(out()))
 
   output$sampling_frame <- DT::renderDataTable(
     quiet(frame()),
