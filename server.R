@@ -120,7 +120,7 @@ function(input, output, session) {
     options = list(
       searching = FALSE,
       lengthChange = FALSE,
-      paging = FALSE,
+      pageLength = 100,
       scrollY = "360px",
       scrollCollapse = TRUE,
       scrollX = TRUE
@@ -136,8 +136,7 @@ function(input, output, session) {
     },
     rownames = FALSE,
     class = "display compact stripe hover",
-    # a handful of strata rows at most: no pagination controls needed
-    options = list(searching = FALSE, lengthChange = F, paging = FALSE)
+    options = list(searching = FALSE, lengthChange = F)
   )
 
   # create the sample based on the sampling frame and the input parameters
@@ -173,7 +172,7 @@ function(input, output, session) {
       options = list(
         searching = FALSE,
         lengthChange = FALSE,
-        paging = FALSE,
+        pageLength = 100,
         scrollY = "400px",
         scrollCollapse = TRUE,
         scrollX = TRUE
@@ -186,7 +185,7 @@ function(input, output, session) {
       out()[[2]],
       rownames = FALSE,
       class = "display compact stripe hover",
-      options = list(searching = FALSE, lengthChange = FALSE, paging = FALSE)
+      options = list(searching = FALSE, lengthChange = FALSE, scrollX = TRUE)
     )
   }
 
