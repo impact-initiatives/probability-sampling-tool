@@ -278,7 +278,10 @@ navbarPage(
 								class = "example-link",
 								downloadLink(
 									"download_example",
-									tagList(icon("download"), "Download example CSV")
+									tagList(
+										icon("download"),
+										"Download example CSV"
+									)
 								)
 							)
 						)
