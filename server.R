@@ -67,19 +67,45 @@ function(input, output, session) {
     )
   })
 
+  # Stops with the message when a validate_*() check returned one
+  require_valid <- function(msg) validate(need(is.null(msg), msg))
+
+  # NULL when `expr` succeeds, otherwise its validation message ("" if silent).
+  validation_message <- function(expr) {
+    tryCatch(
+      {
+        expr
+        NULL
+      },
+      shiny.silent.error = function(e) conditionMessage(e)
+    )
+  }
+
+  # Observers must not evaluate an `expr` that can fail without catching it:
+  # an unexpected error there would end the session.
+  succeeds <- function(expr) {
+    tryCatch(
+      {
+        expr
+        TRUE
+      },
+      error = function(e) FALSE
+    )
+  }
+
   # create the sampling frame
   frame <- eventReactive(input$f_apply, {
-    strata_msg <- validate_strata_selection(input)
-    validate(need(is.null(strata_msg), strata_msg))
+    require_valid(validate_strata_selection(input))
     sframe <- db()
     validate(need(
       !is.null(sframe),
       "Please upload a CSV file (or enable 'Use test data') before applying."
     ))
-    psu_msg <- validate_psu_column(sframe, input)
-    validate(need(is.null(psu_msg), psu_msg))
-    pop_msg <- validate_population_column(sframe, input)
-    validate(need(is.null(pop_msg), pop_msg))
+    require_valid(validate_psu_column(sframe, input))
+    require_valid(validate_population_column(sframe, input))
+    require_valid(validate_parameters(input))
+    # not needed for the frame, but reported here rather than at the draw
+    require_valid(validate_seed(input$seed_value))
     format_sampling_frame(sframe, input)
   })
 
@@ -88,11 +114,17 @@ function(input, output, session) {
     create_targets(frame(), input)
   })
 
-  # enable "Sample!" only once "Apply" has produced a valid sampling frame and target
+  # "Sample" is usable after a successful Apply, until a parameter changes or a
+  # draw fails; an impossible seed blocks it too.
+  applied <- reactiveVal(FALSE)
+  draw_failed <- reactiveVal(FALSE)
+
   observeEvent(input$f_apply, {
+    applied(FALSE)
+    draw_failed(FALSE)
     frame()
     cible()
-    shinyjs::enable("desButton")
+    applied(TRUE)
 
     affected <- check_target_vs_population(cible())
     if (!is.null(affected)) {
@@ -134,9 +166,22 @@ function(input, output, session) {
       input$cls,
       input$ICC
     ),
-    shinyjs::disable("desButton"),
+    applied(FALSE),
     ignoreInit = TRUE
   )
+
+  observeEvent(input$desButton, {
+    if (!succeeds(out())) draw_failed(TRUE)
+  })
+  observeEvent(input$seed_value, draw_failed(FALSE), ignoreInit = TRUE)
+
+  observe({
+    shinyjs::toggleState(
+      "desButton",
+      applied() && !draw_failed() && is.null(validate_seed(input$seed_value))
+    )
+  })
+
   # Display the results in the UI
 
   # Body height of the large tables: what is left under the small table above.
@@ -144,20 +189,17 @@ function(input, output, session) {
   small_table_height <- "18vh"
 
   # A failed validation is shown once, as an alert, instead of inside each table.
+  validation_alert <- function(expr) {
+    msg <- validation_message(expr)
+    if (length(msg) && nzchar(msg)) div(class = "alert alert-danger", msg)
+  }
+
   quiet <- function(expr) {
     tryCatch(expr, shiny.silent.error = function(e) req(FALSE))
   }
 
-  output$apply_error <- renderUI({
-    msg <- tryCatch(
-      {
-        cible()
-        NULL
-      },
-      shiny.silent.error = function(e) conditionMessage(e)
-    )
-    if (length(msg) && nzchar(msg)) div(class = "alert alert-danger", msg)
-  })
+  output$apply_error <- renderUI(validation_alert(cible()))
+  output$sample_error <- renderUI(validation_alert(out()))
 
   output$sampling_frame <- DT::renderDataTable(
     quiet(frame()),
@@ -193,22 +235,12 @@ function(input, output, session) {
 
   # create the sample based on the sampling frame and the input parameters
   out <- eventReactive(input$desButton, {
-    strata_msg <- validate_strata_selection(input)
-    validate(need(is.null(strata_msg), strata_msg))
-    cluster_size_msg <- validate_cluster_size(frame(), input)
-    validate(need(is.null(cluster_size_msg), cluster_size_msg))
-    sframe <- db()
-    validate(need(
-      !is.null(sframe),
-      "Please upload a CSV file (or enable 'Use test data') before applying."
-    ))
-    psu_msg <- validate_psu_column(sframe, input)
-    validate(need(is.null(psu_msg), psu_msg))
-    pop_msg <- validate_population_column(sframe, input)
-    validate(need(is.null(pop_msg), pop_msg))
-    seed_msg <- validate_seed(input$seed_value)
-    validate(need(is.null(seed_msg), seed_msg))
-    run_with_seed(as.integer(input$seed_value), make_sample(sframe, input))
+    # frame() already validated the strata, cluster and population selections;
+    # the seed is checked again because it can change after Apply
+    frame()
+    require_valid(validate_cluster_size(frame(), input))
+    require_valid(validate_seed(input$seed_value))
+    run_with_seed(as.integer(input$seed_value), make_sample(db(), input))
   })
 
   # display the results
@@ -217,7 +249,7 @@ function(input, output, session) {
   # long or numerous column names readable.
   render_sample <- function() {
     DT::renderDataTable(
-      out()[[1]],
+      quiet(out())[[1]],
       rownames = FALSE,
       class = "display nowrap compact stripe hover",
       options = list(
@@ -233,7 +265,7 @@ function(input, output, session) {
 
   render_summary <- function() {
     DT::renderDataTable(
-      out()[[2]],
+      quiet(out())[[2]],
       rownames = FALSE,
       class = "display compact stripe hover",
       options = list(
@@ -249,10 +281,33 @@ function(input, output, session) {
   output$sampling_output <- render_sample()
   output$test_1 <- render_summary()
 
-  # downloads stay disabled until a sample has actually been drawn
-  observeEvent(out(), {
-    shinyjs::enable("downloadBtn")
-    shinyjs::enable("downloadBtn2")
+  # Real download buttons only exist once a sample has been drawn; before that
+  # (or after a failed draw) inert placeholders are shown. shinyjs::enable()
+  # would leave aria-disabled and tabindex=-1 on the links.
+  output$export_buttons <- renderUI({
+    ready <- succeeds(out())
+    export_button <- function(id, label, style) {
+      if (ready) {
+        downloadButton(id, label, class = "btn-success", style = style)
+      } else {
+        tags$button(
+          type = "button",
+          class = "btn btn-success",
+          style = style,
+          disabled = NA,
+          icon("download"),
+          label
+        )
+      }
+    }
+    tagList(
+      export_button(
+        "downloadBtn2",
+        "Sample summary",
+        "width: 100%; margin-bottom: 10px;"
+      ),
+      export_button("downloadBtn", "Sample", "width: 100%;")
+    )
   })
 
   output$downloadBtn <- downloadHandler(

@@ -166,15 +166,18 @@ navbarPage(
 							c("Not stratified", "Stratified")
 						)
 					),
-					column(
-						4,
-						numericInput(
-							'buf',
-							'Buffer',
-							0.05,
-							min = 0.00,
-							max = 0.50,
-							step = 0.01
+					conditionalPanel(
+						# the buffer only applies to a sample size computed from the population
+						condition = "input.topup != 'Enter sample size'",
+						column(
+							4,
+							numericInput(
+								'buf',
+								'Buffer',
+								0.05,
+								min = 0,
+								step = 0.01
+							)
 						)
 					),
 					column(
@@ -183,12 +186,14 @@ navbarPage(
 							'seed_value',
 							'Seed',
 							value = 1,
-							min = 1,
-							max = 1e6,
+							min = -2147483647,
+							max = 2147483647,
 							step = 1
 						)
 					)
 				),
+				# min/max mirror validate_parameters(); HTML cannot express a strict bound,
+				# so the closest value on the step grid is used.
 				fluidRow(
 					conditionalPanel(
 						condition = "input.topup != 'Enter sample size'",
@@ -198,8 +203,8 @@ navbarPage(
 								'conf_level',
 								'Confidence level',
 								0.95,
-								min = 0.70,
-								max = 0.99,
+								min = 0.005,
+								max = 0.995,
 								step = 0.005
 							)
 						)
@@ -212,8 +217,8 @@ navbarPage(
 								'e_marg',
 								'Error Margin',
 								0.05,
-								min = 0.01,
-								max = 0.25,
+								min = 0.005,
+								max = 0.995,
 								step = 0.005
 							)
 						)
@@ -226,8 +231,8 @@ navbarPage(
 								'pror',
 								'Proportion',
 								0.5,
-								min = 0.01,
-								max = 1,
+								min = 0.05,
+								max = 0.95,
 								step = 0.05
 							)
 						)
@@ -239,18 +244,16 @@ navbarPage(
 							numericInput(
 								'target',
 								'Enter target sample size',
-								0,
-								min = 0,
-								max = 10000,
+								NULL,
+								min = 1,
 								step = 1
 							)
 						)
 					)
 				),
-				div(class = "param-subhead", "Data source"),
 				radioButtons(
 					"data_source",
-					NULL,
+					tags$span(class = "param-subhead", "Data source"),
 					choices = c(
 						"Upload CSV" = "upload",
 						"Use test data" = "test"
@@ -262,15 +265,20 @@ navbarPage(
 						7,
 						conditionalPanel(
 							condition = "input.data_source == 'upload'",
-							fileInput(
-								'popdata',
-								NULL,
-								accept = c(
-									'text/csv',
-									'text/comma-separated-values,text/plain'
-								),
-								placeholder = "CSV, max 30 MB"
-							)
+							# aria-label on the inputs: a hidden label would still take up space
+							htmltools::tagQuery(
+								fileInput(
+									'popdata',
+									NULL,
+									accept = c(
+										'text/csv',
+										'text/comma-separated-values,text/plain'
+									),
+									placeholder = "CSV, max 30 MB"
+								)
+							)$find("input")$addAttrs(
+								"aria-label" = "CSV file"
+							)$allTags()
 						),
 						conditionalPanel(
 							condition = "input.data_source == 'test'",
@@ -288,39 +296,43 @@ navbarPage(
 					),
 					column(5, uiOutput("data_status"))
 				),
-				div(class = "param-subhead", "Column mapping"),
-				fluidRow(
-					conditionalPanel(
-						condition = "input.samp_type == 'Cluster sampling'",
-						column(
-							4,
-							selectInput(
-								'col_psu',
-								'Input cluster',
-								choices = NULL
+				# Simple random without stratification needs no column from the data
+				conditionalPanel(
+					condition = "input.samp_type != 'Simple random' || input.stratified == 'Stratified'",
+					div(class = "param-subhead", "Column mapping"),
+					fluidRow(
+						conditionalPanel(
+							condition = "input.samp_type == 'Cluster sampling'",
+							column(
+								4,
+								selectInput(
+									'col_psu',
+									'Input cluster',
+									choices = NULL
+								)
 							)
-						)
-					),
-					conditionalPanel(
-						condition = "input.stratified == 'Stratified'",
-						column(
-							4,
-							selectInput(
-								'strata',
-								'Input strata',
-								choices = NULL,
-								multiple = F
+						),
+						conditionalPanel(
+							condition = "input.stratified == 'Stratified'",
+							column(
+								4,
+								selectInput(
+									'strata',
+									'Input strata',
+									choices = NULL,
+									multiple = F
+								)
 							)
-						)
-					),
-					conditionalPanel(
-						condition = "input.samp_type == 'Cluster sampling'|input.samp_type =='Simple random - allocation'",
-						column(
-							4,
-							selectInput(
-								'colpop',
-								'Input population',
-								choices = NULL
+						),
+						conditionalPanel(
+							condition = "input.samp_type == 'Cluster sampling'|input.samp_type =='Simple random - allocation'",
+							column(
+								4,
+								selectInput(
+									'colpop',
+									'Input population',
+									choices = NULL
+								)
 							)
 						)
 					)
@@ -345,8 +357,8 @@ navbarPage(
 								'ICC',
 								'ICC',
 								0.06,
-								min = 0.01,
-								max = 0.5,
+								min = 0,
+								max = 1,
 								step = 0.01
 							)
 						)
@@ -392,28 +404,14 @@ navbarPage(
 					)
 				),
 				section_title("Export"),
-				shinyjs::disabled(
-					downloadButton(
-						"downloadBtn2",
-						"Sample summary",
-						class = "btn-success",
-						style = "width: 100%; margin-bottom: 10px;"
-					)
-				),
-				shinyjs::disabled(
-					downloadButton(
-						"downloadBtn",
-						"Sample",
-						class = "btn-success",
-						style = "width: 100%;"
-					)
-				)
+				uiOutput("export_buttons")
 			),
 			div(
 				class = "col-sm-10",
 				div(
 					class = "frame-card",
 					section_title("Sample summary"),
+					uiOutput("sample_error"),
 					DT::dataTableOutput("test_1")
 				),
 				div(
