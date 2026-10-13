@@ -17,14 +17,8 @@
 	border: 1px solid #e6e6e6;
 	border-radius: 6px;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-	padding: 16px 20px;
-	margin-bottom: 20px;
-}
-
-/* Slightly tighter vertical rhythm inside a card, so a form with many
-   fields (e.g. cluster sampling) has a better chance of fitting on screen */
-.frame-card .form-group {
-	margin-bottom: 6px;
+	padding: 12px 20px;
+	margin-bottom: 12px;
 }
 
 /* Sub-heading between groups of fields inside a form (e.g. "Cluster
@@ -34,47 +28,7 @@
 	font-size: 15px;
 	font-weight: 700;
 	color: #333333;
-	margin: 10px 0 4px;
-}
-
-/* Keep long select values on one line instead of growing the field */
-.frame-card .selectize-input {
-	white-space: nowrap;
-}
-
-.frame-card .selectize-input .item {
-	max-width: 100%;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-/* Thin upload progress bar */
-.frame-card .progress {
-	height: 14px;
-	margin: 2px 0 0;
-}
-
-.frame-card .progress-bar {
-	font-size: 10px;
-	line-height: 14px;
-}
-
-/* Export buttons: full width, green */
-.btn.btn-export {
-	width: 100%;
-	padding-left: 6px;
-	padding-right: 6px;
-	white-space: normal;
-	color: #ffffff;
-	background-color: #2e9e5b;
-	border-color: #278a4e;
-}
-
-.btn.btn-export:hover,
-.btn.btn-export:focus {
-	color: #ffffff;
-	background-color: #258a4d;
-	border-color: #1f7442;
+	margin: 6px 0 2px;
 }
 
 /* Loaded-data summary, shown to the right of the file box */

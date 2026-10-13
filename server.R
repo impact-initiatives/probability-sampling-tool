@@ -138,18 +138,36 @@ function(input, output, session) {
     ignoreInit = TRUE
   )
   # Display the results in the UI
+
+  # Body height of the large tables: what is left under the small table above.
+  big_table_height <- "max(120px, 100vh - 560px)"
+  small_table_height <- "18vh"
+
+  # A failed validation is shown once, as an alert, instead of inside each table.
+  quiet <- function(expr) {
+    tryCatch(expr, shiny.silent.error = function(e) req(FALSE))
+  }
+
+  output$apply_error <- renderUI({
+    msg <- tryCatch(
+      {
+        cible()
+        NULL
+      },
+      shiny.silent.error = function(e) conditionMessage(e)
+    )
+    if (length(msg) && nzchar(msg)) div(class = "alert alert-danger", msg)
+  })
+
   output$sampling_frame <- DT::renderDataTable(
-    frame(),
+    quiet(frame()),
     rownames = FALSE,
-    class = "display compact stripe hover",
-    # scrollY: fixed-height grid with its own scrollbar, so a long/wide
-    # uploaded frame doesn't push the whole page down; scrollX for frames
-    # with many columns.
+    class = "display nowrap compact stripe hover",
     options = list(
       searching = FALSE,
       lengthChange = FALSE,
       pageLength = 100,
-      scrollY = "360px",
+      scrollY = big_table_height,
       scrollCollapse = TRUE,
       scrollX = TRUE
     )
@@ -157,14 +175,20 @@ function(input, output, session) {
 
   output$target_frame <- DT::renderDataTable(
     {
-      req(cible())
+      target <- quiet(cible())
       # target_srs is an internal SRS-equivalent used by the cluster
       # sampling fallback, not meant for display
-      cible()[, setdiff(names(cible()), "target_srs")]
+      target[, setdiff(names(target), "target_srs")]
     },
     rownames = FALSE,
     class = "display compact stripe hover",
-    options = list(searching = FALSE, lengthChange = F)
+    options = list(
+      searching = FALSE,
+      lengthChange = F,
+      scrollY = small_table_height,
+      scrollCollapse = TRUE,
+      scrollX = TRUE
+    )
   )
 
   # create the sample based on the sampling frame and the input parameters
@@ -189,19 +213,18 @@ function(input, output, session) {
 
   # display the results
 
-  # scrollY: the drawn sample can run to hundreds of rows and carries every
-  # column from the uploaded frame, so it gets its own scrollbar (like the
-  # "Sampling frame" tab) instead of growing the page.
+  # The drawn sample carries every column of the uploaded frame: scrollX keeps
+  # long or numerous column names readable.
   render_sample <- function() {
     DT::renderDataTable(
       out()[[1]],
       rownames = FALSE,
-      class = "display compact stripe hover",
+      class = "display nowrap compact stripe hover",
       options = list(
         searching = FALSE,
         lengthChange = FALSE,
         pageLength = 100,
-        scrollY = "400px",
+        scrollY = big_table_height,
         scrollCollapse = TRUE,
         scrollX = TRUE
       )
@@ -213,7 +236,13 @@ function(input, output, session) {
       out()[[2]],
       rownames = FALSE,
       class = "display compact stripe hover",
-      options = list(searching = FALSE, lengthChange = FALSE, scrollX = TRUE)
+      options = list(
+        searching = FALSE,
+        lengthChange = FALSE,
+        scrollY = small_table_height,
+        scrollCollapse = TRUE,
+        scrollX = TRUE
+      )
     )
   }
 

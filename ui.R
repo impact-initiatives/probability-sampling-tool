@@ -133,7 +133,7 @@ navbarPage(
 				section_title("Sampling setup"),
 				fluidRow(
 					column(
-						5,
+						6,
 						selectInput(
 							"topup",
 							"Mode of sampling",
@@ -145,7 +145,7 @@ navbarPage(
 						)
 					),
 					column(
-						4,
+						6,
 						selectInput(
 							"samp_type",
 							"Type of sampling",
@@ -155,13 +155,37 @@ navbarPage(
 								"Cluster sampling"
 							)
 						)
-					),
+					)
+				),
+				fluidRow(
 					column(
-						3,
+						4,
 						selectInput(
 							"stratified",
 							"Stratified ?",
 							c("Not stratified", "Stratified")
+						)
+					),
+					column(
+						4,
+						numericInput(
+							'buf',
+							'Buffer',
+							0.05,
+							min = 0.00,
+							max = 0.50,
+							step = 0.01
+						)
+					),
+					column(
+						4,
+						numericInput(
+							'seed_value',
+							'Seed',
+							value = 1,
+							min = 1,
+							max = 1e6,
+							step = 1
 						)
 					)
 				),
@@ -220,30 +244,6 @@ navbarPage(
 								max = 10000,
 								step = 1
 							)
-						)
-					)
-				),
-				fluidRow(
-					column(
-						6,
-						numericInput(
-							'buf',
-							'Buffer',
-							0.05,
-							min = 0.00,
-							max = 0.50,
-							step = 0.01
-						)
-					),
-					column(
-						6,
-						numericInput(
-							'seed_value',
-							'Seed',
-							value = 1,
-							min = 1,
-							max = 1e6,
-							step = 1
 						)
 					)
 				),
@@ -352,7 +352,6 @@ navbarPage(
 						)
 					)
 				),
-				hr(style = "margin: 8px 0 10px;"),
 				fluidRow(
 					actionButton(
 						"f_apply",
@@ -368,6 +367,7 @@ navbarPage(
 				div(
 					class = "frame-card",
 					section_title("Target sampling"),
+					uiOutput("apply_error"),
 					DT::dataTableOutput("target_frame")
 				),
 				div(
@@ -395,16 +395,17 @@ navbarPage(
 				shinyjs::disabled(
 					downloadButton(
 						"downloadBtn2",
-						"Sample summary (CSV)",
-						class = "btn-export",
-						style = "margin-bottom: 10px;"
+						"Sample summary",
+						class = "btn-success",
+						style = "width: 100%; margin-bottom: 10px;"
 					)
 				),
 				shinyjs::disabled(
 					downloadButton(
 						"downloadBtn",
-						"Sample (CSV)",
-						class = "btn-export"
+						"Sample",
+						class = "btn-success",
+						style = "width: 100%;"
 					)
 				)
 			),
