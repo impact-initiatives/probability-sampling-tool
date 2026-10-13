@@ -3,6 +3,7 @@ library(bslib)
 
 page_navbar(
 	title = "Probability sampling tool",
+	lang = "en",
 	theme = bs_theme(
 		version = 5,
 		bootswatch = "united",
@@ -132,7 +133,7 @@ page_navbar(
 		layout_columns(
 			col_widths = c(5, 7),
 			card(
-				card_header("Sampling setup"),
+				card_header(h2("Sampling setup", class = "h6 mb-0")),
 				card_body(
 					fillable = FALSE,
 					fluidRow(
@@ -384,7 +385,7 @@ page_navbar(
 				heights_equal = "row",
 				fill = FALSE,
 				card(
-					card_header("Target sampling"),
+					card_header(h2("Target sampling", class = "h6 mb-0")),
 					card_body(
 						fillable = FALSE,
 						uiOutput("apply_error"),
@@ -392,7 +393,7 @@ page_navbar(
 					)
 				),
 				card(
-					card_header("Sampling frame"),
+					card_header(h2("Sampling frame", class = "h6 mb-0")),
 					card_body(
 						fillable = FALSE,
 						DT::dataTableOutput("sampling_frame")
@@ -410,7 +411,7 @@ page_navbar(
 				heights_equal = "row",
 				fill = FALSE,
 				card(
-					card_header("Actions"),
+					card_header(h2("Actions", class = "h6 mb-0")),
 					shinyjs::disabled(
 						actionButton(
 							"desButton",
@@ -421,7 +422,7 @@ page_navbar(
 					)
 				),
 				card(
-					card_header("Export"),
+					card_header(h2("Export", class = "h6 mb-0")),
 					uiOutput("export_buttons")
 				)
 			),
@@ -430,7 +431,7 @@ page_navbar(
 				heights_equal = "row",
 				fill = FALSE,
 				card(
-					card_header("Sample summary"),
+					card_header(h2("Sample summary", class = "h6 mb-0")),
 					card_body(
 						fillable = FALSE,
 						uiOutput("sample_error"),
@@ -438,7 +439,7 @@ page_navbar(
 					)
 				),
 				card(
-					card_header("Sample"),
+					card_header(h2("Sample", class = "h6 mb-0")),
 					card_body(
 						fillable = FALSE,
 						DT::dataTableOutput("sampling_output")
