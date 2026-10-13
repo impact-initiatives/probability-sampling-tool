@@ -275,18 +275,40 @@ navbarPage(
 					)
 				),
 				div(class = "param-subhead", "Data source"),
-				checkboxInput("testdata", "Use test data", FALSE),
+				radioButtons(
+					"data_source",
+					NULL,
+					choices = c(
+						"Upload CSV" = "upload",
+						"Use test data" = "test"
+					),
+					inline = TRUE
+				),
 				conditionalPanel(
-					condition = "!input.testdata",
+					condition = "input.data_source == 'upload'",
 					fileInput(
 						'popdata',
-						'Choose CSV file',
+						NULL,
 						accept = c(
 							'text/csv',
 							'text/comma-separated-values,text/plain'
+						),
+						placeholder = "CSV, max 30 MB"
+					)
+				),
+				div(
+					class = "data-status",
+					textOutput("data_status", inline = TRUE)
+				),
+				conditionalPanel(
+					condition = "input.data_source == 'test'",
+					div(
+						class = "example-link",
+						downloadLink(
+							"download_example",
+							tagList(icon("download"), "Download example CSV")
 						)
-					),
-					helpText("Maximum file size: 30 MB.")
+					)
 				),
 				div(class = "param-subhead", "Column mapping"),
 				fluidRow(

@@ -8,7 +8,7 @@ function(input, output, session) {
   # get the data
   db <- reactive({
     inFile <- input$popdata
-    if (input$testdata == TRUE) {
+    if (input$data_source == "test") {
       fread("data_example.csv")
     } else if (is.null(inFile)) {
       return(NULL)
@@ -16,6 +16,33 @@ function(input, output, session) {
       fread(inFile$datapath)
     }
   })
+
+  # one-line feedback under the data source selector
+  output$data_status <- renderText({
+    d <- db()
+    if (is.null(d)) {
+      return("No data loaded yet")
+    }
+    src <- if (input$data_source == "test") {
+      "data_example.csv"
+    } else {
+      input$popdata$name
+    }
+    paste0(
+      "\u2714 ",
+      src,
+      " - ",
+      format(nrow(d), big.mark = ","),
+      " rows x ",
+      ncol(d),
+      " columns"
+    )
+  })
+
+  output$download_example <- downloadHandler(
+    filename = "data_example.csv",
+    content = function(file) file.copy("data_example.csv", file)
+  )
 
   # update the check ox based on the data headings
   observe({
@@ -91,7 +118,7 @@ function(input, output, session) {
   observeEvent(
     list(
       input$popdata,
-      input$testdata,
+      input$data_source,
       input$samp_type,
       input$stratified,
       input$col_psu,
