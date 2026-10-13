@@ -1,0 +1,46 @@
+/* App-specific styles layered on top of the bootswatch theme (bootstrap.css).
+   Kept in a separate file so the vendored theme stays untouched. */
+
+/* Section headers: one shared look instead of a repeated inline style */
+.section-title {
+	color: #707070;
+	background-color: #f8f8f8;
+	border-left: 4px solid #F15B55;
+	padding: 8px 12px;
+	margin: 0 0 10px 0;
+	font-size: 16px;
+}
+
+/* Card container to visually group a section's inputs */
+.frame-card {
+	background-color: #ffffff;
+	border: 1px solid #e6e6e6;
+	border-radius: 6px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+	padding: 12px 20px;
+	margin-bottom: 12px;
+}
+
+/* Sub-heading between groups of fields inside a form (e.g. "Cluster
+   design", "Data source", "Column mapping") - visible but lighter than a
+   full section-title so it doesn't add much height. */
+.param-subhead {
+	font-size: 15px;
+	font-weight: 700;
+	color: #333333;
+	margin: 6px 0 2px;
+}
+
+/* Loaded-data summary, shown to the right of the file box */
+.data-status {
+	font-size: 12px;
+	line-height: 1.35;
+	color: #707070;
+	padding-top: 4px;
+}
+
+/* Link to the bundled example CSV, shown where the file box would be */
+.example-link {
+	font-size: 13px;
+	padding-top: 6px;
+}

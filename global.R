@@ -167,6 +167,54 @@ validate_seed <- function(seed) {
 }
 
 
+# TRUE for a single finite number (FALSE for NULL, NA, NaN, Inf or vectors).
+is_number <- function(x) {
+  length(x) == 1 && is.numeric(x) && is.finite(x)
+}
+
+
+# Check the sampling parameters that make the sample size computation or the
+# draw fail when they are mathematically invalid. The min/max of the numeric
+# inputs mirror these rules, but Shiny does not enforce them: it sends whatever
+# is typed. Only the parameters
+# used by the selected mode and sampling type are checked.
+# Returns an error message string if one is invalid, or NULL if all are valid.
+validate_parameters <- function(input) {
+  strictly_between_0_and_1 <- function(x) is_number(x) && x > 0 && x < 1
+
+  if (input$topup == "Enter sample size") {
+    target <- input$target
+    if (!is_number(target) || target <= 0 || target != floor(target)) {
+      return("Enter a target sample size: a whole number greater than 0.")
+    }
+  } else {
+    if (!strictly_between_0_and_1(input$conf_level)) {
+      return("Confidence level must be a number strictly between 0 and 1.")
+    }
+    if (!strictly_between_0_and_1(input$e_marg)) {
+      return("Error margin must be a number strictly between 0 and 1.")
+    }
+    if (!strictly_between_0_and_1(input$pror)) {
+      return("Proportion must be a number strictly between 0 and 1.")
+    }
+    if (!is_number(input$buf) || input$buf < 0) {
+      return("Buffer must be a number greater than or equal to 0.")
+    }
+  }
+
+  if (input$samp_type == "Cluster sampling") {
+    cls <- input$cls
+    if (!is_number(cls) || cls < 2 || cls != floor(cls)) {
+      return("Cluster size must be a whole number of at least 2.")
+    }
+    if (!is_number(input$ICC) || input$ICC < 0 || input$ICC > 1) {
+      return("ICC must be a number between 0 and 1.")
+    }
+  }
+  return(NULL)
+}
+
+
 # Check that every stratum has at least one PSU large enough for the requested cluster size.
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_cluster_size <- function(sampl_f, input) {
@@ -465,12 +513,22 @@ make_sample <- function(sampling_frame, input) {
     # a matrix instead of a list, which unlist() keeps 2-D and breaks the
     # merge() below.
     output <- apply(
-      target, 1, stage2rdsample, sframe = sampl_f, buf = buf, simplify = FALSE
+      target,
+      1,
+      stage2rdsample,
+      sframe = sampl_f,
+      buf = buf,
+      simplify = FALSE
     ) %>%
       unlist
   } else if (input$samp_type == "Simple random") {
     output <- apply(
-      target, 1, randomsample, sframe = sampl_f, buf = buf, simplify = FALSE
+      target,
+      1,
+      randomsample,
+      sframe = sampl_f,
+      buf = buf,
+      simplify = FALSE
     ) %>%
       unlist
   }
@@ -557,8 +615,13 @@ make_sample <- function(sampling_frame, input) {
     # "# PSUs to assess" is the draw count; it only differs from "# surveys"
     # when a draw yields more than one survey, i.e. cluster sampling.
     summary_sample[c(
-      "PSUs", "Cluster_size_realized", "Cluster_size_planned",
-      "ICC", "DEFF_planned", "DEFF_realized", "Effective_sample"
+      "PSUs",
+      "Cluster_size_realized",
+      "Cluster_size_planned",
+      "ICC",
+      "DEFF_planned",
+      "DEFF_realized",
+      "Effective_sample"
     )] <- NA
     # plain SRS: no replacement and no PSU concept, so the distinct count
     # is just "# surveys" again.
@@ -567,8 +630,13 @@ make_sample <- function(sampling_frame, input) {
 
   if (input$topup == "Enter sample size") {
     summary_sample[c(
-      "ICC", "DEFF_planned", "DEFF_realized", "Effective_sample",
-      "Error_margin", "Confidence_level", "Surveys_buffer"
+      "ICC",
+      "DEFF_planned",
+      "DEFF_realized",
+      "Effective_sample",
+      "Error_margin",
+      "Confidence_level",
+      "Surveys_buffer"
     )] <- NA
   }
 
