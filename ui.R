@@ -168,7 +168,7 @@ page_navbar(
 					strong(
 						"The headers of the dataset must NOT contain special characters."
 					),
-					strong("Uploaded files are limited to 30 MB."),
+					strong(paste0("Uploaded files are limited to ", max_upload_mb, " MB.")),
 					("You can use some example data by ticking 'example data'")
 				),
 				p(
@@ -387,7 +387,7 @@ page_navbar(
 											'text/csv',
 											'text/comma-separated-values,text/plain'
 										),
-										placeholder = "CSV, max 30 MB"
+										placeholder = paste0("CSV, max ", max_upload_mb, " MB")
 									)
 								)$find("input")$addAttrs(
 									"aria-label" = "CSV file"

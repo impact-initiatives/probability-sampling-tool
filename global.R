@@ -13,7 +13,7 @@ library(crayon)
 
 # upload size limit, checked in the browser; Shiny refuses larger requests
 # before the server sees them, hence the margin for the multipart overhead
-max_upload_mb <- 30
+max_upload_mb <- 100
 options(shiny.maxRequestSize = (max_upload_mb + 1) * 1024^2)
 
 

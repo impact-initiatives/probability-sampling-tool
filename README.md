@@ -20,7 +20,7 @@ The tool supports common sampling approaches used in field data collection, incl
 
 ## Input data
 
-The sampling frame is uploaded as a CSV file, with one row per sampling unit. Uploaded files are limited to 30 MB (configured via `shiny.maxRequestSize` in [global.R](global.R)).
+The sampling frame is uploaded as a CSV file, with one row per sampling unit. Uploaded files are limited to 100 MB (configured via `max_upload_mb` in [global.R](global.R)).
 
 ## Local development
 
