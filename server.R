@@ -127,13 +127,13 @@ function(input, output, session) {
     tables_stale(TRUE),
     ignoreInit = TRUE
   )
-  # what Apply found wrong with the cluster size, for the downloadable list
-  cluster_issues <- reactiveVal(NULL)
+  # what Apply found wrong in the data, for the downloadable list
+  issue_list <- reactiveVal(NULL)
   observeEvent(
     input$f_apply,
     {
       tables_stale(FALSE)
-      cluster_issues(NULL)
+      issue_list(NULL)
     },
     priority = 10
   )
@@ -149,6 +149,9 @@ function(input, output, session) {
     ))
     require_valid(validate_psu_column(sframe, input))
     require_valid(validate_population_column(sframe, input))
+    pop_issues <- population_issues(sframe, input)
+    issue_list(pop_issues)
+    require_valid(population_message(pop_issues, input$colpop))
     require_valid(validate_parameters(input))
     # not needed for the frame, but reported here rather than at the draw
     require_valid(validate_seed(input$seed_value))
@@ -159,7 +162,7 @@ function(input, output, session) {
   cible <- eventReactive(input$f_apply, {
     targets <- create_targets(frame(), input)
     issues <- cluster_size_issues(frame(), targets, input)
-    cluster_issues(issues)
+    issue_list(issues)
     require_valid(cluster_size_message(issues, input$cls))
     targets
   })
@@ -272,11 +275,11 @@ function(input, output, session) {
     if (!tables_stale()) {
       validation_alert(
         cible(),
-        extra = if (!is.null(cluster_issues())) {
+        extra = if (!is.null(issue_list())) {
           div(
             class = "mt-2",
             downloadLink(
-              "download_cluster_issues",
+              "download_issues",
               tagList(icon("download"), "Download the full list (CSV)")
             )
           )
@@ -285,10 +288,10 @@ function(input, output, session) {
     }
   )
 
-  output$download_cluster_issues <- downloadHandler(
-    filename = function() paste0("cluster_size_issues_", humanTime(), ".csv"),
+  output$download_issues <- downloadHandler(
+    filename = function() paste0("sampling_issues_", humanTime(), ".csv"),
     content = function(file) {
-      write.csv(cluster_issues(), file, row.names = FALSE, na = "")
+      write.csv(issue_list(), file, row.names = FALSE, na = "")
     }
   )
   # out() keeps its error until the next draw, so gate it on draw_failed()

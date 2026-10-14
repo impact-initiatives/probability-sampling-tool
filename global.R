@@ -166,6 +166,71 @@ validate_population_column <- function(sframe, input) {
 }
 
 
+# Rows whose population is missing or negative: a missing value would silently
+# drop the row out of the frame and a negative one breaks the draw.
+# Returns one row per problem (`data_row` ignores the header), or NULL.
+population_issues <- function(sframe, input) {
+  if (
+    !(input$samp_type %in% c("Cluster sampling", "Simple random - allocation"))
+  ) {
+    return(NULL)
+  }
+  values <- sframe[[as.character(input$colpop)]]
+  bad <- which(is.na(values) | values < 0)
+  if (length(bad) == 0) {
+    return(NULL)
+  }
+  data.frame(
+    issue = ifelse(
+      is.na(values[bad]),
+      "Missing population",
+      "Negative population"
+    ),
+    data_row = bad,
+    psu = if (input$samp_type == "Cluster sampling") {
+      as.character(sframe[[as.character(input$col_psu)]][bad])
+    } else {
+      NA_character_
+    },
+    population = values[bad]
+  )
+}
+
+
+# Error message for the output of population_issues(), NULL when there is none.
+population_message <- function(issues, col) {
+  if (is.null(issues)) {
+    return(NULL)
+  }
+  describe <- function(label, what) {
+    rows <- issues$data_row[issues$issue == label]
+    if (length(rows) > 0) {
+      paste0(
+        "Population column '",
+        col,
+        "' ",
+        what,
+        " in ",
+        length(rows),
+        " row(s): ",
+        preview_ids(rows),
+        " (header excluded)."
+      )
+    }
+  }
+  paste0(
+    paste(
+      c(
+        describe("Missing population", "has missing values"),
+        describe("Negative population", "has negative values")
+      ),
+      collapse = "\n"
+    ),
+    "\n\nThe population must be a number greater than or equal to 0: fix these values or remove the rows from the sampling frame."
+  )
+}
+
+
 # Check that the seed is a single finite whole number within set.seed()'s range.
 # Guards against a cleared field (NA) or a decimal/out-of-range value that would
 # make set.seed() throw and break the sampling reactive.
