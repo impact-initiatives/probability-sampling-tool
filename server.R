@@ -148,7 +148,9 @@ function(input, output, session) {
 
   # create the target sampling size by strata
   cible <- eventReactive(input$f_apply, {
-    create_targets(frame(), input)
+    targets <- create_targets(frame(), input)
+    require_valid(validate_cluster_size(frame(), targets, input))
+    targets
   })
 
   # "Sample" is usable after a successful Apply, until a parameter changes or a
@@ -291,10 +293,10 @@ function(input, output, session) {
 
   # create the sample based on the sampling frame and the input parameters
   out <- eventReactive(input$desButton, {
-    # frame() already validated the strata, cluster and population selections;
-    # the seed is checked again because it can change after Apply
+    # frame() already validated the strata, cluster and population selections
+    # and cible() the cluster size; the seed is checked again because it can
+    # change after Apply
     frame()
-    require_valid(validate_cluster_size(frame(), input))
     require_valid(validate_seed(input$seed_value))
     run_with_seed(as.integer(input$seed_value), make_sample(db(), input))
   })

@@ -264,25 +264,81 @@ validate_parameters <- function(input) {
 }
 
 
-# Check that every stratum has at least one PSU large enough for the requested cluster size.
+# Shows at most `n` ids, e.g. "a, b, c, ... +4 more".
+preview_ids <- function(ids, n = 5) {
+  ids <- as.character(ids)
+  if (length(ids) <= n) {
+    return(paste(ids, collapse = ", "))
+  }
+  paste0(paste(ids[1:n], collapse = ", "), ", ... +", length(ids) - n, " more")
+}
+
+
+# Cluster sampling guard, run before any draw: it depends on the data and the
+# parameters only, never on the seed. It blocks when
+# - a PSU is smaller than the cluster size: it cannot host a cluster;
+# - a stratum cannot host the clusters its target requires: it needs
+#   ceiling(target / cls) clusters but its PSUs have room for
+#   sum(floor(population / cls)).
+# `target` is the output of create_targets().
 # Returns an error message string if the input is invalid, or NULL if valid.
-validate_cluster_size <- function(sampl_f, input) {
+validate_cluster_size <- function(sampl_f, target, input) {
   if (input$samp_type != "Cluster sampling") {
     return(NULL)
   }
-  eligible <- tapply(
-    sampl_f$pop_numbers,
-    sampl_f$strata_id,
-    function(x) any(x >= input$cls, na.rm = TRUE)
-  )
-  invalid_strata <- names(eligible)[!eligible]
-  if (length(invalid_strata) > 0) {
+  cls <- input$cls
+  strata <- as.character(sampl_f$strata_id)
+  pop <- sampl_f$pop_numbers
+
+  too_small <- !is.na(pop) & pop < cls
+  if (any(too_small)) {
+    by_stratum <- vapply(
+      unique(strata[too_small]),
+      function(s) {
+        ids <- sampl_f$psu_id[too_small & strata == s]
+        paste0(
+          "stratum '",
+          s,
+          "': ",
+          length(ids),
+          " PSU(s) (",
+          preview_ids(ids),
+          ")"
+        )
+      },
+      character(1)
+    )
     return(paste0(
       "Cluster size (",
-      input$cls,
-      ") exceeds the population of every PSU in stratum(s): ",
-      paste(invalid_strata, collapse = ", "),
-      ". Reduce the cluster size or review the population column."
+      cls,
+      ") is larger than the population of some PSUs, which cannot host a cluster - ",
+      paste(by_stratum, collapse = "; "),
+      ". Reduce the cluster size or filter these PSUs out of the sampling frame."
+    ))
+  }
+
+  capacity <- tapply(floor(pop / cls), strata, sum, na.rm = TRUE)
+  target_by_stratum <- setNames(
+    target$target.with.buffer,
+    as.character(target$strata_id)
+  )
+  needed <- ceiling(target_by_stratum[names(capacity)] / cls)
+  short <- names(capacity)[capacity < needed]
+  if (length(short) > 0) {
+    return(paste0(
+      "Not enough room for the clusters required (cluster size ",
+      cls,
+      ") in stratum(s): ",
+      paste0(
+        short,
+        " (needs ",
+        needed[short],
+        " clusters, room for ",
+        capacity[short],
+        ")",
+        collapse = "; "
+      ),
+      ". Reduce the cluster size or the target sample size, or merge PSUs."
     ))
   }
   return(NULL)
