@@ -46,8 +46,8 @@ jobs:
       - name: Check R files parse cleanly
         run: |
           Rscript -e "
-            files <- c('global.R', 'ui.R', 'server.R')
-            for (f in files) {
+            source('global.R')
+            for (f in c('ui.R', 'server.R')) {
               source(f, local = new.env())
             }
             cat('R files parsed successfully\n')
