@@ -127,7 +127,16 @@ function(input, output, session) {
     tables_stale(TRUE),
     ignoreInit = TRUE
   )
-  observeEvent(input$f_apply, tables_stale(FALSE), priority = 10)
+  # what Apply found wrong with the cluster size, for the downloadable list
+  cluster_issues <- reactiveVal(NULL)
+  observeEvent(
+    input$f_apply,
+    {
+      tables_stale(FALSE)
+      cluster_issues(NULL)
+    },
+    priority = 10
+  )
 
   # create the sampling frame
   frame <- eventReactive(input$f_apply, {
@@ -149,7 +158,9 @@ function(input, output, session) {
   # create the target sampling size by strata
   cible <- eventReactive(input$f_apply, {
     targets <- create_targets(frame(), input)
-    require_valid(validate_cluster_size(frame(), targets, input))
+    issues <- cluster_size_issues(frame(), targets, input)
+    cluster_issues(issues)
+    require_valid(cluster_size_message(issues, input$cls))
     targets
   })
 
@@ -242,9 +253,15 @@ function(input, output, session) {
   dt_class_wide <- paste(dt_class, "nowrap")
 
   # A failed validation is shown once, as an alert, instead of inside each table.
-  validation_alert <- function(expr) {
+  validation_alert <- function(expr, extra = NULL) {
     msg <- validation_message(expr)
-    if (length(msg) && nzchar(msg)) div(class = "alert alert-danger", msg)
+    if (length(msg) && nzchar(msg)) {
+      div(
+        class = "alert alert-danger",
+        span(style = "white-space: pre-line;", msg),
+        extra
+      )
+    }
   }
 
   quiet <- function(expr) {
@@ -252,7 +269,27 @@ function(input, output, session) {
   }
 
   output$apply_error <- renderUI(
-    if (!tables_stale()) validation_alert(cible())
+    if (!tables_stale()) {
+      validation_alert(
+        cible(),
+        extra = if (!is.null(cluster_issues())) {
+          div(
+            class = "mt-2",
+            downloadLink(
+              "download_cluster_issues",
+              tagList(icon("download"), "Download the full list (CSV)")
+            )
+          )
+        }
+      )
+    }
+  )
+
+  output$download_cluster_issues <- downloadHandler(
+    filename = function() paste0("cluster_size_issues_", humanTime(), ".csv"),
+    content = function(file) {
+      write.csv(cluster_issues(), file, row.names = FALSE, na = "")
+    }
   )
   # out() keeps its error until the next draw, so gate it on draw_failed()
   output$sample_error <- renderUI(if (draw_failed()) validation_alert(out()))
@@ -278,10 +315,7 @@ function(input, output, session) {
   output$target_frame <- DT::renderDataTable(
     {
       req(!tables_stale())
-      target <- quiet(cible())
-      # target_srs is an internal SRS-equivalent used by the cluster
-      # sampling fallback, not meant for display
-      target[, setdiff(names(target), "target_srs")]
+      quiet(cible())
     },
     rownames = FALSE,
     style = dt_style,
