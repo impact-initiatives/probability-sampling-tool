@@ -487,6 +487,65 @@ cluster_size_message <- function(issues, cls) {
 }
 
 
+# Cluster sampling draws PSUs with replacement: a PSU drawn several times is
+# assigned cluster size x draws surveys, which can exceed its population. Unlike
+# the guard at Apply this depends on the seed, so it is checked on the drawn
+# sample (the output of make_sample()$sample).
+# Returns one row per PSU concerned, or NULL when there is none.
+psu_overflow_issues <- function(sample, input) {
+  if (input$samp_type != "Cluster sampling") {
+    return(NULL)
+  }
+  over <- which(sample$Survey > sample$pop_numbers)
+  if (length(over) == 0) {
+    return(NULL)
+  }
+  s <- sample[over, ]
+  out <- data.frame(
+    issue = "PSU drawn more often than its population allows",
+    stratum = as.character(s$strata_id),
+    psu = as.character(s$psu_id),
+    times_drawn = s$Survey / input$cls,
+    cluster_size = input$cls,
+    surveys_assigned = s$Survey,
+    population = s$pop_numbers,
+    excess = s$Survey - s$pop_numbers
+  )
+  out[order(-out$excess), ]
+}
+
+
+# Error message for the output of psu_overflow_issues(), NULL when there is none.
+psu_overflow_message <- function(issues) {
+  if (is.null(issues)) {
+    return(NULL)
+  }
+  fmt <- function(x) format(x, big.mark = ",", scientific = FALSE, trim = TRUE)
+  paste0(
+    "Draw blocked: ",
+    nrow(issues),
+    " PSU(s) were selected several times and would need more surveys than their population - ",
+    preview_ids(
+      paste0(
+        "'",
+        issues$psu,
+        "' in '",
+        issues$stratum,
+        "' (drawn ",
+        issues$times_drawn,
+        " times, ",
+        fmt(issues$surveys_assigned),
+        " surveys for a population of ",
+        fmt(issues$population),
+        ")"
+      ),
+      n = 3
+    ),
+    ".\nReduce the cluster size or the target sample size, or merge PSUs."
+  )
+}
+
+
 # Check whether the requested target exceeds the available population in any stratum.
 # Returns a character vector of affected stratum names, or NULL if none.
 check_target_vs_population <- function(cible) {

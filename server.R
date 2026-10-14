@@ -129,11 +129,14 @@ function(input, output, session) {
   )
   # what Apply found wrong in the data, for the downloadable list
   issue_list <- reactiveVal(NULL)
+  # same for a draw blocked because a PSU is assigned too many surveys
+  draw_issues <- reactiveVal(NULL)
   observeEvent(
     input$f_apply,
     {
       tables_stale(FALSE)
       issue_list(NULL)
+      draw_issues(NULL)
     },
     priority = 10
   )
@@ -295,7 +298,29 @@ function(input, output, session) {
     }
   )
   # out() keeps its error until the next draw, so gate it on draw_failed()
-  output$sample_error <- renderUI(if (draw_failed()) validation_alert(out()))
+  output$sample_error <- renderUI(
+    if (draw_failed()) {
+      validation_alert(
+        out(),
+        extra = if (!is.null(draw_issues())) {
+          div(
+            class = "mt-2",
+            downloadLink(
+              "download_draw_issues",
+              tagList(icon("download"), "Download the full list (CSV)")
+            )
+          )
+        }
+      )
+    }
+  )
+
+  output$download_draw_issues <- downloadHandler(
+    filename = function() paste0("draw_issues_", humanTime(), ".csv"),
+    content = function(file) {
+      write.csv(draw_issues(), file, row.names = FALSE, na = "")
+    }
+  )
 
   output$sampling_frame <- DT::renderDataTable(
     {
@@ -339,7 +364,14 @@ function(input, output, session) {
     # change after Apply
     frame()
     require_valid(validate_seed(input$seed_value))
-    run_with_seed(as.integer(input$seed_value), make_sample(db(), input))
+    sample_out <- run_with_seed(
+      as.integer(input$seed_value),
+      make_sample(db(), input)
+    )
+    issues <- psu_overflow_issues(sample_out$sample, input)
+    draw_issues(issues)
+    require_valid(psu_overflow_message(issues))
+    sample_out
   })
 
   # display the results
