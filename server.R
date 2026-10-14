@@ -5,15 +5,42 @@ function(input, output, session) {
   # give each session a random default seed, visible and editable by the user
   updateNumericInput(session, "seed_value", value = sample.int(1e6, 1))
 
+  # an uploaded file is either a usable CSV or an error message, never a crash
+  upload <- reactive({
+    if (!is.null(input$popdata_too_large)) {
+      return(list(
+        data = NULL,
+        error = csv_format_error(input$popdata_too_large) %||%
+          paste0(
+            "'",
+            input$popdata_too_large,
+            "' is larger than the ",
+            max_upload_mb,
+            " MB limit."
+          )
+      ))
+    }
+    f <- input$popdata
+    if (is.null(f)) {
+      return(NULL)
+    }
+    read_uploaded_csv(f$name, f$datapath)
+  })
+
+  file_error <- reactive(if (input$data_source == "upload") upload()$error)
+
   # get the data
   db <- reactive({
-    inFile <- input$popdata
     if (input$data_source == "test") {
       fread("data_example.csv")
-    } else if (is.null(inFile)) {
-      return(NULL)
     } else {
-      fread(inFile$datapath)
+      upload()$data
+    }
+  })
+
+  output$file_error <- renderUI({
+    if (!is.null(file_error())) {
+      div(class = "alert alert-danger py-2 mb-0 mt-2", file_error())
     }
   })
 
@@ -93,13 +120,23 @@ function(input, output, session) {
     )
   }
 
+  # a new upload hides the frame and target tables until the next Apply
+  tables_stale <- reactiveVal(FALSE)
+  observeEvent(
+    list(input$popdata, input$popdata_too_large),
+    tables_stale(TRUE),
+    ignoreInit = TRUE
+  )
+  observeEvent(input$f_apply, tables_stale(FALSE), priority = 10)
+
   # create the sampling frame
   frame <- eventReactive(input$f_apply, {
     require_valid(validate_strata_selection(input))
+    require_valid(file_error())
     sframe <- db()
     validate(need(
       !is.null(sframe),
-      "Please upload a CSV file (or enable 'Use test data') before applying."
+      "Please upload a CSV file before applying."
     ))
     require_valid(validate_psu_column(sframe, input))
     require_valid(validate_population_column(sframe, input))
@@ -153,6 +190,7 @@ function(input, output, session) {
   observeEvent(
     list(
       input$popdata,
+      input$popdata_too_large,
       input$data_source,
       input$samp_type,
       input$stratified,
@@ -207,12 +245,17 @@ function(input, output, session) {
     tryCatch(expr, shiny.silent.error = function(e) req(FALSE))
   }
 
-  output$apply_error <- renderUI(validation_alert(cible()))
+  output$apply_error <- renderUI(
+    if (!tables_stale()) validation_alert(cible())
+  )
   # out() keeps its error until the next draw, so gate it on draw_failed()
   output$sample_error <- renderUI(if (draw_failed()) validation_alert(out()))
 
   output$sampling_frame <- DT::renderDataTable(
-    quiet(frame()),
+    {
+      req(!tables_stale())
+      quiet(frame())
+    },
     rownames = FALSE,
     style = dt_style,
     class = dt_class_wide,
@@ -228,6 +271,7 @@ function(input, output, session) {
 
   output$target_frame <- DT::renderDataTable(
     {
+      req(!tables_stale())
       target <- quiet(cible())
       # target_srs is an internal SRS-equivalent used by the cluster
       # sampling fallback, not meant for display

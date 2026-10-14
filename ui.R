@@ -14,6 +14,21 @@ sidebar_header <- function(text) {
 	)
 }
 
+# Help icon opening a tooltip, to put inside a field label.
+info_tip <- function(label, tip, source = NULL) {
+	tooltip(
+		tags$span(
+			class = "info-tip",
+			tabindex = "0",
+			role = "img",
+			`aria-label` = paste("About", label),
+			icon("circle-info", `aria-hidden` = "true")
+		),
+		tip,
+		if (!is.null(source)) div(class = "info-tip-source", source)
+	)
+}
+
 # numericInput() whose label carries a help icon with a tooltip. The input is
 # named by the label text only, not by the icon.
 numeric_input_with_tip <- function(inputId, label, tip, source = NULL, ...) {
@@ -23,17 +38,7 @@ numeric_input_with_tip <- function(inputId, label, tip, source = NULL, ...) {
 			inputId,
 			tagList(
 				tags$span(id = name_id, label),
-				tooltip(
-					tags$span(
-						class = "info-tip",
-						tabindex = "0",
-						role = "img",
-						`aria-label` = paste("About", label),
-						icon("circle-info", `aria-hidden` = "true")
-					),
-					tip,
-					if (!is.null(source)) div(class = "info-tip-source", source)
-				)
+				info_tip(label, tip, source)
 			),
 			...
 		)
@@ -77,6 +82,17 @@ page_navbar(
 		shinyjs::useShinyjs(),
 		# Spinner on the outputs being recalculated and a pulse while the app is busy
 		useBusyIndicators(),
+		# Shiny drops a file above the size limit silently: report its name to the
+		# server (input$popdata_too_large) and do not upload it
+		tags$script(HTML(sprintf(
+			"document.addEventListener('change', function(e) {
+				if (e.target.id !== 'popdata') return;
+				var big = Array.from(e.target.files).find(function(f) { return f.size > %d; });
+				Shiny.setInputValue('popdata_too_large', big ? big.name : null, {priority: 'event'});
+				if (big) { e.stopImmediatePropagation(); }
+			}, true);",
+			as.integer(max_upload_mb * 1024^2)
+		))),
 		# Cache-bust: without a version query string, browsers keep serving a
 		# previously-cached app.css after it changes on disk.
 		tags$link(
@@ -152,7 +168,11 @@ page_navbar(
 					strong(
 						"The headers of the dataset must NOT contain special characters."
 					),
-					strong("Uploaded files are limited to 30 MB."),
+					strong(paste0(
+						"Uploaded files are limited to ",
+						max_upload_mb,
+						" MB."
+					)),
 					("You can use some example data by ticking 'example data'")
 				),
 				p(
@@ -333,15 +353,29 @@ page_navbar(
 							)
 						)
 					),
-					radioButtons(
-						"data_source",
-						tags$span(class = "param-subhead", "Data source"),
-						choices = c(
-							"Upload CSV" = "upload",
-							"Use test data" = "test"
-						),
-						inline = TRUE
-					),
+					htmltools::tagQuery(
+						radioButtons(
+							"data_source",
+							tagList(
+								tags$span(
+									id = "data_source-name",
+									class = "param-subhead",
+									"Data source"
+								),
+								info_tip(
+									"Data source",
+									"One CSV file holds a single table. If your data is in an Excel workbook, save the sheet you need as a CSV file first: only .csv files are accepted."
+								)
+							),
+							choices = c(
+								"Upload CSV" = "upload",
+								"Use test data" = "test"
+							),
+							inline = TRUE
+						)
+					)$removeAttrs("aria-labelledby")$addAttrs(
+						"aria-labelledby" = "data_source-name"
+					)$allTags(),
 					fluidRow(
 						class = "mt-2",
 						column(
@@ -357,7 +391,11 @@ page_navbar(
 											'text/csv',
 											'text/comma-separated-values,text/plain'
 										),
-										placeholder = "CSV, max 30 MB"
+										placeholder = paste0(
+											"CSV, max ",
+											max_upload_mb,
+											" MB"
+										)
 									)
 								)$find("input")$addAttrs(
 									"aria-label" = "CSV file"
@@ -379,6 +417,7 @@ page_navbar(
 						),
 						column(5, uiOutput("data_status"))
 					),
+					uiOutput("file_error"),
 					# Simple random without stratification needs no column from the data
 					conditionalPanel(
 						condition = "input.samp_type != 'Simple random' || input.stratified == 'Stratified'",

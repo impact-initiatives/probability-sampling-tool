@@ -48,6 +48,7 @@ jobs:
             options(shiny.autoload.r = FALSE)
             options(shiny.launch.browser = FALSE)
             library(shiny)
+            source('global.R')
             app <- shinyApp(ui = source('ui.R', local = new.env())$value, server = function(input, output, session) source('server.R', local = environment()) )
             cat('Shiny app object created successfully\n')
           "
