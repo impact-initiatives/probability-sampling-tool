@@ -1,18 +1,82 @@
 library(markdown)
+library(bslib)
 
-# Section header used across the app, styled once via www/app.css instead of
-# a repeated inline style on every h4().
-section_title <- function(text) h4(text, class = "section-title")
+# Kish, L. (1965). Survey Sampling. New York: Wiley.
+kish_1965 <- tagList("Kish, ", tags$em("Survey Sampling"), " (1965)")
+# Cochran, W. G. (1977). Sampling Techniques, 3rd ed. New York: Wiley.
+cochran_1977 <- tagList("Cochran, ", tags$em("Sampling Techniques"), " (1977)")
 
-navbarPage(
-	"Probability sampling tool",
-	shinyjs::useShinyjs(),
-	tags$head(
-		tags$link(
-			rel = "stylesheet",
-			type = "text/css",
-			href = "bootstrap.css"
+# Header of a sidebar section, identical to the card headers of the main area
+sidebar_header <- function(text) {
+	div(
+		class = "card bslib-card border-0 rounded-0 bg-transparent",
+		card_header(h2(text, class = "h6 mb-0"))
+	)
+}
+
+# numericInput() whose label carries a help icon with a tooltip. The input is
+# named by the label text only, not by the icon.
+numeric_input_with_tip <- function(inputId, label, tip, source = NULL, ...) {
+	name_id <- paste0(inputId, "-name")
+	htmltools::tagQuery(
+		numericInput(
+			inputId,
+			tagList(
+				tags$span(id = name_id, label),
+				tooltip(
+					tags$span(
+						class = "info-tip",
+						tabindex = "0",
+						role = "img",
+						`aria-label` = paste("About", label),
+						icon("circle-info", `aria-hidden` = "true")
+					),
+					tip,
+					if (!is.null(source)) div(class = "info-tip-source", source)
+				)
+			),
+			...
+		)
+	)$find("input")$addAttrs("aria-labelledby" = name_id)$allTags()
+}
+
+page_navbar(
+	title = "Probability sampling tool",
+	lang = "en",
+	theme = bs_theme(
+		version = 5,
+		# WCAG AA: white text on primary/danger/success is above 4.5:1
+		primary = "#1A56A0",
+		secondary = "#5C6670",
+		success = "#146C43",
+		danger = "#B42318",
+		"body-bg" = "#F5F7FA",
+		# form control borders need 3:1 against the background (WCAG 1.4.11)
+		"input-border-color" = "#8A939C",
+		"card-cap-bg" = "#EEF3FA",
+		"card-cap-color" = "#12355B",
+		base_font = font_collection(
+			"system-ui",
+			"-apple-system",
+			"Segoe UI",
+			"Roboto",
+			"Helvetica Neue",
+			"Arial",
+			"sans-serif"
 		),
+		# the Bootstrap 3 base size, to keep the setup card on one screen
+		"font-size-base" = "0.875rem",
+		# the Bootstrap 3 paragraph spacing, which keeps the Introduction compact
+		"paragraph-margin-bottom" = "0.7rem",
+		"h1-font-size" = "2rem",
+		"h2-font-size" = "1.4rem"
+	),
+	navbar_options = navbar_options(bg = "#12355B", theme = "dark"),
+	fillable = FALSE,
+	header = tagList(
+		shinyjs::useShinyjs(),
+		# Spinner on the outputs being recalculated and a pulse while the app is busy
+		useBusyIndicators(),
 		# Cache-bust: without a version query string, browsers keep serving a
 		# previously-cached app.css after it changes on disk.
 		tags$link(
@@ -21,16 +85,16 @@ navbarPage(
 			href = paste0("app.css?v=", as.integer(file.mtime("www/app.css")))
 		)
 	),
-	tabPanel(
+	nav_panel(
 		"Introduction",
 		fluidRow(
 			h1("Brief overview of the tool"),
-			align = "center"
+			class = "text-center"
 		),
 		fluidRow(
-			column(1, br()),
 			column(
-				4,
+				5,
+				offset = 1,
 				h2("Mode of sampling"),
 				p(
 					strong("Enter sample size:"),
@@ -77,9 +141,8 @@ navbarPage(
 					"Intracluster  correlation : average value estimated in previous assessments = 0.06."
 				)
 			),
-			column(1, br()),
 			column(
-				4,
+				5,
 				h2("Loading files"),
 				p(
 					"The CSV is your sampling frame: one row per sampling unit, covering the entire population of interest (not a pre-drawn subset). For Simple random, each row is a unit and the frame size is the population. For Cluster sampling and Simple random - allocation, each row is a cluster or area, and the Population column gives the number of sub-units (e.g. households) it contains."
@@ -125,299 +188,349 @@ navbarPage(
 			)
 		)
 	),
-	tabPanel(
+	nav_panel(
 		"Sampling frame",
-		fluidRow(
-			div(
-				class = "col-sm-5 frame-card",
-				section_title("Sampling setup"),
-				fluidRow(
-					column(
-						6,
-						selectInput(
-							"topup",
-							"Mode of sampling",
-							c(
-								"Enter sample size",
+		layout_sidebar(
+			fill = FALSE,
+			fillable = FALSE,
+			padding = "1rem",
+			sidebar = sidebar(
+				id = "setup_sidebar",
+				width = 600,
+				open = "desktop",
+				resizable = TRUE,
+				fillable = FALSE,
+				gap = 0,
+				padding = 0,
+				sidebar_header("Sampling setup"),
+				div(
+					class = "p-3",
+					fluidRow(
+						column(
+							7,
+							selectInput(
+								"topup",
+								"Mode of sampling",
+								c(
+									"Enter sample size",
+									"Sample size based on population"
+								),
 								"Sample size based on population"
-							),
-							"Sample size based on population"
-						)
-					),
-					column(
-						6,
-						selectInput(
-							"samp_type",
-							"Type of sampling",
-							c(
-								"Simple random",
-								"Simple random - allocation",
-								"Cluster sampling"
 							)
-						)
-					)
-				),
-				fluidRow(
-					column(
-						4,
-						selectInput(
-							"stratified",
-							"Stratified ?",
-							c("Not stratified", "Stratified")
-						)
-					),
-					conditionalPanel(
-						# the buffer only applies to a sample size computed from the population
-						condition = "input.topup != 'Enter sample size'",
+						),
 						column(
-							4,
-							numericInput(
-								'buf',
-								'Buffer',
-								0.05,
-								min = 0,
-								step = 0.01
+							5,
+							selectInput(
+								"samp_type",
+								"Type of sampling",
+								c(
+									"Simple random",
+									"Simple random - allocation",
+									"Cluster sampling"
+								)
 							)
 						)
 					),
-					column(
-						4,
-						numericInput(
-							'seed_value',
-							'Seed',
-							value = 1,
-							min = -2147483647,
-							max = 2147483647,
-							step = 1
-						)
-					)
-				),
-				# min/max mirror validate_parameters(); HTML cannot express a strict bound,
-				# so the closest value on the step grid is used.
-				fluidRow(
-					conditionalPanel(
-						condition = "input.topup != 'Enter sample size'",
+					fluidRow(
 						column(
 							4,
-							numericInput(
-								'conf_level',
-								'Confidence level',
-								0.95,
-								min = 0.005,
-								max = 0.995,
-								step = 0.005
+							selectInput(
+								"stratified",
+								"Stratified ?",
+								c("Not stratified", "Stratified")
 							)
-						)
-					),
-					conditionalPanel(
-						condition = "input.topup != 'Enter sample size'",
-						column(
-							4,
-							numericInput(
-								'e_marg',
-								'Error Margin',
-								0.05,
-								min = 0.005,
-								max = 0.995,
-								step = 0.005
+						),
+						conditionalPanel(
+							# the buffer only applies to a sample size computed from the population
+							condition = "input.topup != 'Enter sample size'",
+							column(
+								4,
+								numeric_input_with_tip(
+									'buf',
+									"Buffer",
+									tip = "Extra share added to the target to cover non-response or unusable interviews: target \u00d7 (1 + buffer). Base it on the non-response rate you expect.",
+									value = 0.05,
+									min = 0,
+									step = 0.01
+								)
 							)
-						)
-					),
-					conditionalPanel(
-						condition = "input.topup != 'Enter sample size'",
+						),
 						column(
 							4,
-							numericInput(
-								'pror',
-								'Proportion',
-								0.5,
-								min = 0.05,
-								max = 0.95,
-								step = 0.05
-							)
-						)
-					),
-					conditionalPanel(
-						condition = "input.topup == 'Enter sample size'",
-						column(
-							4,
-							numericInput(
-								'target',
-								'Enter target sample size',
-								NULL,
-								min = 1,
+							numeric_input_with_tip(
+								'seed_value',
+								"Seed",
+								tip = "Starting point of the random draw. The same seed with the same settings gives the same sample, so a draw can be reproduced. Change it to get a different sample.",
+								value = 1,
+								min = -2147483647,
+								max = 2147483647,
 								step = 1
 							)
 						)
-					)
-				),
-				radioButtons(
-					"data_source",
-					tags$span(class = "param-subhead", "Data source"),
-					choices = c(
-						"Upload CSV" = "upload",
-						"Use test data" = "test"
 					),
-					inline = TRUE
-				),
-				fluidRow(
-					column(
-						7,
+					# min/max mirror validate_parameters(); HTML cannot express a strict bound,
+					# so the closest value on the step grid is used.
+					fluidRow(
 						conditionalPanel(
-							condition = "input.data_source == 'upload'",
-							# aria-label on the inputs: a hidden label would still take up space
-							htmltools::tagQuery(
-								fileInput(
-									'popdata',
-									NULL,
-									accept = c(
-										'text/csv',
-										'text/comma-separated-values,text/plain'
-									),
-									placeholder = "CSV, max 30 MB"
+							condition = "input.topup != 'Enter sample size'",
+							column(
+								4,
+								numeric_input_with_tip(
+									'conf_level',
+									"Confidence level",
+									tip = "How often the interval around your estimate would contain the true value if the survey were repeated (0.95 = 95% of the time). Higher confidence needs a larger sample.",
+									source = cochran_1977,
+									value = 0.95,
+									min = 0.005,
+									max = 0.995,
+									step = 0.005
 								)
-							)$find("input")$addAttrs(
-								"aria-label" = "CSV file"
-							)$allTags()
+							)
 						),
 						conditionalPanel(
-							condition = "input.data_source == 'test'",
-							div(
-								class = "example-link",
-								downloadLink(
-									"download_example",
-									tagList(
-										icon("download"),
-										"Download example CSV"
+							condition = "input.topup != 'Enter sample size'",
+							column(
+								4,
+								numeric_input_with_tip(
+									'e_marg',
+									"Error Margin",
+									tip = "Largest gap you accept between the estimate and the true value, at the chosen confidence level (0.05 = \u00b15 percentage points). A smaller margin needs a larger sample.",
+									source = cochran_1977,
+									value = 0.05,
+									min = 0.005,
+									max = 0.995,
+									step = 0.005
+								)
+							)
+						),
+						conditionalPanel(
+							condition = "input.topup != 'Enter sample size'",
+							column(
+								4,
+								numeric_input_with_tip(
+									'pror',
+									"Proportion",
+									tip = "Share of the population expected to have the characteristic you measure. With no estimate, keep 0.5: it gives the largest, most cautious sample size.",
+									source = cochran_1977,
+									value = 0.5,
+									min = 0.05,
+									max = 0.95,
+									step = 0.05
+								)
+							)
+						),
+						conditionalPanel(
+							condition = "input.topup == 'Enter sample size'",
+							column(
+								4,
+								numericInput(
+									'target',
+									'Enter target sample size',
+									NULL,
+									min = 1,
+									step = 1
+								)
+							)
+						)
+					),
+					radioButtons(
+						"data_source",
+						tags$span(class = "param-subhead", "Data source"),
+						choices = c(
+							"Upload CSV" = "upload",
+							"Use test data" = "test"
+						),
+						inline = TRUE
+					),
+					fluidRow(
+						class = "mt-2",
+						column(
+							7,
+							conditionalPanel(
+								condition = "input.data_source == 'upload'",
+								# aria-label on the inputs: a hidden label would still take up space
+								htmltools::tagQuery(
+									fileInput(
+										'popdata',
+										NULL,
+										accept = c(
+											'text/csv',
+											'text/comma-separated-values,text/plain'
+										),
+										placeholder = "CSV, max 30 MB"
+									)
+								)$find("input")$addAttrs(
+									"aria-label" = "CSV file"
+								)$allTags()
+							),
+							conditionalPanel(
+								condition = "input.data_source == 'test'",
+								div(
+									class = "example-link",
+									downloadLink(
+										"download_example",
+										tagList(
+											icon("download"),
+											"Download example CSV"
+										)
+									)
+								)
+							)
+						),
+						column(5, uiOutput("data_status"))
+					),
+					# Simple random without stratification needs no column from the data
+					conditionalPanel(
+						condition = "input.samp_type != 'Simple random' || input.stratified == 'Stratified'",
+						div(class = "param-subhead", "Column mapping"),
+						fluidRow(
+							conditionalPanel(
+								condition = "input.samp_type == 'Cluster sampling'",
+								column(
+									4,
+									selectInput(
+										'col_psu',
+										'Input cluster',
+										choices = NULL
+									)
+								)
+							),
+							conditionalPanel(
+								condition = "input.stratified == 'Stratified'",
+								column(
+									4,
+									selectInput(
+										'strata',
+										'Input strata',
+										choices = NULL,
+										multiple = F
+									)
+								)
+							),
+							conditionalPanel(
+								condition = "input.samp_type == 'Cluster sampling'|input.samp_type =='Simple random - allocation'",
+								column(
+									4,
+									selectInput(
+										'colpop',
+										'Input population',
+										choices = NULL
 									)
 								)
 							)
 						)
 					),
-					column(5, uiOutput("data_status"))
-				),
-				# Simple random without stratification needs no column from the data
-				conditionalPanel(
-					condition = "input.samp_type != 'Simple random' || input.stratified == 'Stratified'",
-					div(class = "param-subhead", "Column mapping"),
-					fluidRow(
-						conditionalPanel(
-							condition = "input.samp_type == 'Cluster sampling'",
+					conditionalPanel(
+						condition = "input.samp_type == 'Cluster sampling'",
+						div(class = "param-subhead", "Cluster design"),
+						fluidRow(
 							column(
-								4,
-								selectInput(
-									'col_psu',
-									'Input cluster',
-									choices = NULL
+								6,
+								numeric_input_with_tip(
+									'cls',
+									"Cluster size",
+									tip = "Number of interviews planned in each selected cluster (at least 2). Larger clusters lower the fieldwork cost but raise the design effect.",
+									source = kish_1965,
+									value = 5,
+									min = 2,
+									step = 1
 								)
-							)
-						),
-						conditionalPanel(
-							condition = "input.stratified == 'Stratified'",
+							),
 							column(
-								4,
-								selectInput(
-									'strata',
-									'Input strata',
-									choices = NULL,
-									multiple = F
-								)
-							)
-						),
-						conditionalPanel(
-							condition = "input.samp_type == 'Cluster sampling'|input.samp_type =='Simple random - allocation'",
-							column(
-								4,
-								selectInput(
-									'colpop',
-									'Input population',
-									choices = NULL
+								6,
+								numeric_input_with_tip(
+									'ICC',
+									"ICC",
+									tip = "Intracluster correlation: how alike the units of a cluster are (0 = not at all, 1 = identical). It inflates the sample through the design effect, 1 + (cluster size \u2212 1) \u00d7 ICC. Use a value from a similar past survey.",
+									source = kish_1965,
+									value = 0.06,
+									min = 0,
+									max = 1,
+									step = 0.01
 								)
 							)
 						)
-					)
-				),
-				conditionalPanel(
-					condition = "input.samp_type == 'Cluster sampling'",
-					div(class = "param-subhead", "Cluster design"),
-					fluidRow(
-						column(
-							6,
-							numericInput(
-								'cls',
-								'Cluster size',
-								5,
-								min = 2,
-								step = 1
-							)
-						),
-						column(
-							6,
-							numericInput(
-								'ICC',
-								'ICC',
-								0.06,
-								min = 0,
-								max = 1,
-								step = 0.01
-							)
-						)
-					)
-				),
-				fluidRow(
-					actionButton(
-						"f_apply",
-						"Apply",
-						width = "200px",
-						style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"
 					),
-					align = "center"
+					div(
+						class = "text-center mt-2",
+						input_task_button(
+							"f_apply",
+							"Apply",
+							label_busy = "Applying...",
+							style = "width: 200px;"
+						)
+					)
 				)
 			),
-			div(
-				class = "col-sm-7",
-				div(
-					class = "frame-card",
-					section_title("Target sampling"),
-					uiOutput("apply_error"),
-					DT::dataTableOutput("target_frame")
+			layout_column_wrap(
+				width = 1,
+				heights_equal = "row",
+				fill = FALSE,
+				card(
+					card_header(h2("Target sampling", class = "h6 mb-0")),
+					card_body(
+						fillable = FALSE,
+						uiOutput("apply_error"),
+						DT::dataTableOutput("target_frame")
+					)
 				),
-				div(
-					class = "frame-card",
-					section_title("Sampling frame"),
-					DT::dataTableOutput("sampling_frame")
+				card(
+					card_header(h2("Sampling frame", class = "h6 mb-0")),
+					card_body(
+						fillable = FALSE,
+						DT::dataTableOutput("sampling_frame")
+					)
 				)
 			)
 		)
 	),
-	tabPanel(
+	nav_panel(
 		"Sampling",
-		fluidRow(
-			div(
-				class = "col-sm-2 frame-card",
-				section_title("Actions"),
-				shinyjs::disabled(
-					actionButton(
-						"desButton",
-						"Sample",
-						style = "width: 100%; margin-bottom: 20px; color: #fff; background-color: #337ab7; border-color: #2e6da4"
+		layout_sidebar(
+			fill = FALSE,
+			fillable = FALSE,
+			padding = "1rem",
+			sidebar = sidebar(
+				id = "sampling_sidebar",
+				width = 300,
+				open = "desktop",
+				resizable = TRUE,
+				fillable = FALSE,
+				gap = 0,
+				padding = 0,
+				sidebar_header("Actions"),
+				div(
+					class = "p-3",
+					shinyjs::disabled(
+						actionButton(
+							"desButton",
+							"Sample",
+							class = "btn-primary",
+							width = "100%"
+						)
 					)
 				),
-				section_title("Export"),
-				uiOutput("export_buttons")
+				sidebar_header("Export"),
+				div(class = "p-3", uiOutput("export_buttons"))
 			),
-			div(
-				class = "col-sm-10",
-				div(
-					class = "frame-card",
-					section_title("Sample summary"),
-					uiOutput("sample_error"),
-					DT::dataTableOutput("test_1")
+			layout_column_wrap(
+				width = 1,
+				heights_equal = "row",
+				fill = FALSE,
+				card(
+					card_header(h2("Sample summary", class = "h6 mb-0")),
+					card_body(
+						fillable = FALSE,
+						uiOutput("sample_error"),
+						DT::dataTableOutput("test_1")
+					)
 				),
-				div(
-					class = "frame-card",
-					section_title("Sample"),
-					DT::dataTableOutput("sampling_output")
+				card(
+					card_header(h2("Sample", class = "h6 mb-0")),
+					card_body(
+						fillable = FALSE,
+						DT::dataTableOutput("sampling_output")
+					)
 				)
 			)
 		)

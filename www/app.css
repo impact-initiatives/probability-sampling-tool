@@ -1,29 +1,30 @@
-/* App-specific styles layered on top of the bootswatch theme (bootstrap.css).
-   Kept in a separate file so the vendored theme stays untouched. */
+/* App-specific styles layered on top of the bslib theme (see ui.R). */
 
-/* Section headers: one shared look instead of a repeated inline style */
-.section-title {
-	color: #707070;
-	background-color: #f8f8f8;
-	border-left: 4px solid #F15B55;
-	padding: 8px 12px;
-	margin: 0 0 10px 0;
-	font-size: 16px;
+/* A conditionalPanel() wrapping columns inside a row: Bootstrap 5 rows are
+   flex containers, so the panel must not become the flex item itself. */
+.row > .shiny-panel-conditional.shiny-conditional--shown {
+	display: contents;
 }
 
-/* Card container to visually group a section's inputs */
-.frame-card {
-	background-color: #ffffff;
-	border: 1px solid #e6e6e6;
-	border-radius: 6px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-	padding: 12px 20px;
-	margin-bottom: 12px;
+/* ...so the gutter that Bootstrap 5 gives to the row's direct children goes to the columns */
+.row > .shiny-panel-conditional > [class*="col-"] {
+	padding-right: calc(var(--bs-gutter-x) * 0.5);
+	padding-left: calc(var(--bs-gutter-x) * 0.5);
+}
+
+/* Shiny still emits Bootstrap 3 markup for inline radios: give them a gap */
+.shiny-options-group .radio-inline {
+	margin-right: 1.5rem;
+}
+
+/* bslib does not pick up the card-cap-bg theme variable */
+.card-header {
+	background-color: #eef3fa;
 }
 
 /* Sub-heading between groups of fields inside a form (e.g. "Cluster
-   design", "Data source", "Column mapping") - visible but lighter than a
-   full section-title so it doesn't add much height. */
+   design", "Data source", "Column mapping") - lighter than a card header
+   so it doesn't add much height. */
 .param-subhead {
 	font-size: 15px;
 	font-weight: 700;
@@ -43,4 +44,38 @@
 .example-link {
 	font-size: 13px;
 	padding-top: 6px;
+}
+
+/* Help icon next to a field label, opening a tooltip (see info_tip() in ui.R) */
+.info-tip {
+	margin-left: 0.25rem;
+	font-size: 0.85em;
+	color: var(--bs-secondary);
+	cursor: help;
+}
+
+.info-tip:hover,
+.info-tip:focus-visible {
+	color: var(--bs-primary);
+}
+
+.tooltip-inner {
+	max-width: 18rem;
+	text-align: left;
+}
+
+.info-tip-source {
+	margin-top: 0.35rem;
+	font-size: 0.85em;
+	opacity: 0.8;
+}
+
+/* Centre the sidebar collapse arrow on the 40px section header */
+.bslib-sidebar-layout > .collapse-toggle {
+	margin-top: -4px;
+}
+
+/* Leave room for the collapse arrow once the sidebar is closed */
+.bslib-sidebar-layout.sidebar-collapsed > .main {
+	padding-left: 3rem !important;
 }
