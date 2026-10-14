@@ -11,9 +11,10 @@ library(shiny)
 library(shinyjs)
 library(crayon)
 
-# upload size limit (Shiny refuses larger files before the server sees them)
+# upload size limit, checked in the browser; Shiny refuses larger requests
+# before the server sees them, hence the margin for the multipart overhead
 max_upload_mb <- 30
-options(shiny.maxRequestSize = max_upload_mb * 1024^2)
+options(shiny.maxRequestSize = (max_upload_mb + 1) * 1024^2)
 
 
 # humanTime function returns the current time in a specific format.
@@ -191,8 +192,20 @@ read_uploaded_csv <- function(name, path) {
     return(fail(format_error))
   }
 
-  data <- tryCatch(suppressWarnings(fread(path)), error = function(e) NULL)
-  if (is.null(data) || nrow(data) == 0 || ncol(data) == 0) {
+  # a parse warning means rows were dropped (e.g. a ragged line): reject the file.
+  # Raising an error from the warning handler would leave fread() in a bad state.
+  parse_warned <- FALSE
+  data <- tryCatch(
+    withCallingHandlers(
+      fread(path),
+      warning = function(w) {
+        parse_warned <<- TRUE
+        invokeRestart("muffleWarning")
+      }
+    ),
+    error = function(e) NULL
+  )
+  if (parse_warned || is.null(data) || nrow(data) == 0 || ncol(data) == 0) {
     return(fail(paste0(
       "'",
       name,
