@@ -167,7 +167,11 @@ function(input, output, session) {
     }
     applied(TRUE)
 
-    affected <- check_target_vs_population(cible())
+    # cluster sampling never caps the draw: cible() already blocks a target
+    # above the room of a stratum
+    affected <- if (input$samp_type != "Cluster sampling") {
+      check_target_vs_population(cible())
+    }
     if (!is.null(affected)) {
       showModal(modalDialog(
         title = tagList(
