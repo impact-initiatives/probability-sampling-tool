@@ -17,7 +17,7 @@ test_that("the cluster summary has one cluster size, one DEFF and one effective 
     e_marg = 0.05,
     pror = 0.5,
     buf = 0.05,
-    samp_type = "Cluster sampling",
+    samp_type = "Two-stage PPS cluster sampling with replacement",
     stratified = "Stratified",
     strata = "region",
     col_psu = "psu_name",
