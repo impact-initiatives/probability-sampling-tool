@@ -250,16 +250,60 @@ function(input, output, session) {
 
   # Display the results in the UI
 
-  # Body height of the large tables: what is left under the small table above.
-  big_table_height <- "max(120px, 100vh - 605px)"
-  # 584px = the rest of the Sampling tab, so the page fits whatever the height
-  sample_table_height <- "max(80px, 100vh - 14vh - 584px)"
-  small_table_height <- "14vh"
+  # Body height of the tables. The two small ones have one row per stratum
+  # (29px each, up to 5 rows, then they scroll) and sit above the two large
+  # ones, which take what is left of the page: the two constants are the rest
+  # of the Sampling frame tab and of the Sampling tab (headers, filter rows and
+  # footers included), so the page fits whatever the height.
+  small_table_height <- function(data) {
+    paste0(min(nrow(data), 5) * 29 + 2, "px")
+  }
+  big_table_height <- function(small) {
+    paste0("max(120px, 100vh - ", small, " - 520px)")
+  }
+  sample_table_height <- function(small) {
+    paste0("max(80px, 100vh - ", small, " - 520px)")
+  }
 
-  # Bootstrap 5 table look; the wide tables also keep their cells on one line.
+  # Bootstrap 5 table look, with one line per cell and per header: a wide
+  # table scrolls sideways.
   dt_style <- "bootstrap5"
-  dt_class <- "table table-sm table-striped table-hover"
-  dt_class_wide <- paste(dt_class, "nowrap")
+  dt_class <- "table table-sm table-striped table-hover nowrap"
+
+  # The four result tables share one look: a filter per column and shorter
+  # numbers for the columns the tool adds. These formats are display only: the
+  # data, and the CSV files, are untouched.
+  result_table <- function(data, height, paging = FALSE) {
+    table <- DT::datatable(
+      data,
+      rownames = FALSE,
+      style = dt_style,
+      class = dt_class,
+      filter = "top",
+      options = list(
+        # table, then the number of entries and the pages on one line
+        dom = if (paging) {
+          "<'row'<'col-12'tr>><'row'<'col-md-5'i><'col-md-7'p>>"
+        } else {
+          "t"
+        },
+        paging = paging,
+        pageLength = 100,
+        scrollY = height,
+        scrollCollapse = TRUE,
+        scrollX = TRUE
+      )
+    )
+    signif_cols <- intersect("PST_prob", names(data))
+    round_cols <- intersect(c("DEFF", "ICC"), names(data))
+    if (length(signif_cols) > 0) {
+      table <- DT::formatSignif(table, signif_cols, digits = 4)
+    }
+    if (length(round_cols) > 0) {
+      table <- DT::formatRound(table, round_cols, digits = 2)
+    }
+    table
+  }
 
   # A failed validation is shown once, as an alert, instead of inside each table.
   validation_alert <- function(expr, extra = NULL) {
@@ -325,40 +369,21 @@ function(input, output, session) {
     }
   )
 
-  output$sampling_frame <- DT::renderDataTable(
-    {
-      req(!tables_stale())
-      quiet(frame())
-    },
-    rownames = FALSE,
-    style = dt_style,
-    class = dt_class_wide,
-    options = list(
-      searching = FALSE,
-      lengthChange = FALSE,
-      pageLength = 100,
-      scrollY = big_table_height,
-      scrollCollapse = TRUE,
-      scrollX = TRUE
+  output$sampling_frame <- DT::renderDataTable({
+    req(!tables_stale())
+    targets <- quiet(cible())
+    result_table(
+      quiet(frame()),
+      big_table_height(small_table_height(targets)),
+      paging = TRUE
     )
-  )
+  })
 
-  output$target_frame <- DT::renderDataTable(
-    {
-      req(!tables_stale())
-      label_target_table(quiet(cible()))
-    },
-    rownames = FALSE,
-    style = dt_style,
-    class = dt_class,
-    options = list(
-      searching = FALSE,
-      lengthChange = F,
-      scrollY = small_table_height,
-      scrollCollapse = TRUE,
-      scrollX = TRUE
-    )
-  )
+  output$target_frame <- DT::renderDataTable({
+    req(!tables_stale())
+    targets <- label_target_table(quiet(cible()))
+    result_table(targets, small_table_height(targets))
+  })
 
   # create the sample based on the sampling frame and the input parameters
   out <- eventReactive(input$desButton, {
@@ -379,49 +404,23 @@ function(input, output, session) {
 
   # display the results
 
-  # The drawn sample carries every column of the uploaded frame: scrollX keeps
-  # long or numerous column names readable.
-  render_sample <- function() {
-    DT::renderDataTable(
-      {
-        req(sample_current())
-        quiet(out())[[1]]
-      },
-      rownames = FALSE,
-      style = dt_style,
-      class = dt_class_wide,
-      options = list(
-        searching = FALSE,
-        lengthChange = FALSE,
-        pageLength = 100,
-        scrollY = sample_table_height,
-        scrollCollapse = TRUE,
-        scrollX = TRUE
-      )
+  # The drawn sample carries every column of the uploaded frame: the sideways
+  # scroll keeps long or numerous column names readable.
+  output$sampling_output <- DT::renderDataTable({
+    req(sample_current())
+    result <- quiet(out())
+    result_table(
+      result[[1]],
+      sample_table_height(small_table_height(result[[2]])),
+      paging = TRUE
     )
-  }
+  })
 
-  render_summary <- function() {
-    DT::renderDataTable(
-      {
-        req(sample_current())
-        quiet(out())[[2]]
-      },
-      rownames = FALSE,
-      style = dt_style,
-      class = dt_class,
-      options = list(
-        searching = FALSE,
-        lengthChange = FALSE,
-        scrollY = small_table_height,
-        scrollCollapse = TRUE,
-        scrollX = TRUE
-      )
-    )
-  }
-
-  output$sampling_output <- render_sample()
-  output$test_1 <- render_summary()
+  output$test_1 <- DT::renderDataTable({
+    req(sample_current())
+    summary <- quiet(out())[[2]]
+    result_table(summary, small_table_height(summary))
+  })
 
   # Real download buttons only exist once a sample has been drawn; before that
   # (or after a failed draw) inert placeholders are shown. shinyjs::enable()
