@@ -71,7 +71,7 @@ test_that("a capped draw shows the requested target next to the drawn surveys", 
   summary <- run_with_seed(1, make_sample(frame_24(), input))$summary_sample
   expect_equal(summary$`Requested Target (with buffer)`, rep(500, 4))
   # Simple random sampling: the population of a stratum is its number of rows (6)
-  expect_equal(summary$`# surveys`, rep(6, 4))
+  expect_equal(summary$`Surveys`, rep(6, 4))
 })
 
 test_that("the warning modal says will be before the draw and was after it", {

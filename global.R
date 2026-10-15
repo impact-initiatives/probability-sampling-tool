@@ -94,17 +94,17 @@ sample_column_order <- c(
 # the summary: stratum and population, the result, the draw, the design, the
 # parameters, then the seed and the sampling type
 summary_column_order <- c(
-  "Stratification",
+  "Stratum",
   "Population",
-  "# surveys",
+  "Surveys",
   "Requested Target (with buffer)",
-  "# PSUs to assess",
-  "# Unique PSUs",
+  "Clusters drawn",
+  "Distinct PSUs",
   "Cluster size",
   "DEFF",
-  "Effective sample size (SRS-equivalent)",
+  "Effective sample size",
   "ICC",
-  "% buffer",
+  "Buffer",
   "Confidence level",
   "Error margin",
   "Seed",
@@ -989,7 +989,7 @@ make_sample <- function(sampling_frame, input) {
     dplyr::relocate(target.with.buffer, .after = NB_Population)
 
   if (input$samp_type != "Two-stage PPS cluster sampling with replacement") {
-    # "# PSUs to assess" is the draw count; it only differs from "# surveys"
+    # "Clusters drawn" is the draw count; it only differs from "Surveys"
     # when a draw yields more than one survey, i.e. cluster sampling.
     summary_sample[c(
       "PSUs",
@@ -999,7 +999,7 @@ make_sample <- function(sampling_frame, input) {
       "Effective_sample"
     )] <- NA
     # plain SRS: no replacement and no PSU concept, so the distinct count
-    # is just "# surveys" again.
+    # is just "Surveys" again.
     if (input$samp_type == "Simple random sampling") summary_sample["Unique_PSUs"] <- NA
   }
 
@@ -1018,17 +1018,17 @@ make_sample <- function(sampling_frame, input) {
   # not applicable to this run, so the table only shows relevant statistics.
   summary_sample <- summary_sample |>
     dplyr::rename(
-      "Stratification" = "PST_stratum_id",
-      "# surveys" = "Surveys",
-      "# PSUs to assess" = "PSUs",
-      "# Unique PSUs" = "Unique_PSUs",
+      "Stratum" = "PST_stratum_id",
+      "Surveys" = "Surveys",
+      "Clusters drawn" = "PSUs",
+      "Distinct PSUs" = "Unique_PSUs",
       "Population" = "NB_Population",
       "Requested Target (with buffer)" = "target.with.buffer",
       "Cluster size" = "Cluster_size",
       "ICC" = "ICC",
       "DEFF" = "DEFF",
-      "Effective sample size (SRS-equivalent)" = "Effective_sample",
-      "% buffer" = "Surveys_buffer",
+      "Effective sample size" = "Effective_sample",
+      "Buffer" = "Surveys_buffer",
       "Confidence level" = "Confidence_level",
       "Error margin" = "Error_margin",
       "Sampling type" = "Sampling_type",
