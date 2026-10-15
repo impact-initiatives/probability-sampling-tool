@@ -150,6 +150,7 @@ function(input, output, session) {
       !is.null(sframe),
       "Please upload a CSV file before applying."
     ))
+    require_valid(validate_reserved_columns(sframe))
     require_valid(validate_psu_column(sframe, input))
     require_valid(validate_population_column(sframe, input))
     pop_issues <- population_issues(sframe, input)
@@ -468,7 +469,7 @@ function(input, output, session) {
     },
     content = function(file) {
       req(sample_current())
-      write.csv(out()[[1]], file)
+      write.csv(out()[[1]], file, row.names = FALSE)
     }
   )
 
@@ -478,7 +479,7 @@ function(input, output, session) {
     },
     content = function(file) {
       req(sample_current())
-      write.csv(out()[[2]], file)
+      write.csv(out()[[2]], file, row.names = FALSE)
     }
   )
 }
