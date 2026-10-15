@@ -193,7 +193,7 @@ function(input, output, session) {
 
     # cluster sampling never caps the draw: cible() already blocks a target
     # above the room of a stratum
-    affected <- if (input$samp_type != "Cluster sampling") {
+    affected <- if (input$samp_type != "Two-stage PPS cluster sampling with replacement") {
       check_target_vs_population(cible())
     }
     if (!is.null(affected)) showModal(exceeds_population_modal(affected))
@@ -231,7 +231,7 @@ function(input, output, session) {
     }
     # same warning as at Apply: the draw has just been capped
     affected <- if (
-      input$samp_type != "Cluster sampling" && succeeds(cible())
+      input$samp_type != "Two-stage PPS cluster sampling with replacement" && succeeds(cible())
     ) {
       check_target_vs_population(cible())
     }

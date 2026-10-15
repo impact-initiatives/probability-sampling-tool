@@ -136,15 +136,15 @@ page_navbar(
 				h2("Type of sampling"),
 
 				p(
-					strong("Random sampling:"),
+					strong("Simple random sampling:"),
 					"Simple Random sampling, a random sample directly from the sampling frame which consists of every unit in the population of interest, thus ensuring equal probability of each unit to be selected."
 				),
 				p(
-					strong("Simple random - allocation:"),
+					strong("PPS sampling with replacement:"),
 					"Use when the sampling frame lists geographic units (e.g. cities, wards) with their population sizes but no household-level frame is available. Surveys are allocated across units with probability proportional to population size, so larger units receive more surveys and a unit can be selected several times. The output gives the number of surveys to collect in each selected unit."
 				),
 				p(
-					strong("Cluster sampling:"),
+					strong("Two-stage PPS cluster sampling with replacement:"),
 					"Clusters, or Primary Sampling Units (PSUs), are first randomly selected, before a set number of units (e.g. households) at each cluster is randomly selected."
 				),
 				p(
@@ -173,7 +173,7 @@ page_navbar(
 				5,
 				h2("Loading files"),
 				p(
-					"The CSV is your sampling frame: one row per sampling unit, covering the entire population of interest (not a pre-drawn subset). For Simple random, each row is a unit and the frame size is the population. For Cluster sampling and Simple random - allocation, each row is a cluster or area, and the Population column gives the number of sub-units (e.g. households) it contains."
+					"The CSV is your sampling frame: one row per sampling unit, covering the entire population of interest (not a pre-drawn subset). For Simple random sampling, each row is a unit and the frame size is the population. For PPS sampling with replacement and Two-stage PPS cluster sampling with replacement, each row is a cluster or area, and the Population column gives the number of sub-units (e.g. households) it contains."
 				),
 				p(
 					"The app takes only files .csv; each row of the csv need to be the primary sampling unit.",
@@ -239,7 +239,7 @@ page_navbar(
 					class = "p-3",
 					fluidRow(
 						column(
-							7,
+							12,
 							select_input_overlay(
 								"topup",
 								"Mode of sampling",
@@ -251,14 +251,14 @@ page_navbar(
 							)
 						),
 						column(
-							5,
+							12,
 							select_input_overlay(
 								"samp_type",
 								"Type of sampling",
 								c(
-									"Simple random",
-									"Simple random - allocation",
-									"Cluster sampling"
+									"Simple random sampling",
+									"PPS sampling with replacement",
+									"Two-stage PPS cluster sampling with replacement"
 								)
 							)
 						)
@@ -429,13 +429,13 @@ page_navbar(
 						column(5, uiOutput("data_status"))
 					),
 					uiOutput("file_error"),
-					# Simple random without stratification needs no column from the data
+					# Simple random sampling without stratification needs no column from the data
 					conditionalPanel(
-						condition = "input.samp_type != 'Simple random' || input.stratified == 'Stratified'",
+						condition = "input.samp_type != 'Simple random sampling' || input.stratified == 'Stratified'",
 						div(class = "param-subhead", "Column mapping"),
 						fluidRow(
 							conditionalPanel(
-								condition = "input.samp_type == 'Cluster sampling'",
+								condition = "input.samp_type == 'Two-stage PPS cluster sampling with replacement'",
 								column(
 									4,
 									select_input_overlay(
@@ -458,7 +458,7 @@ page_navbar(
 								)
 							),
 							conditionalPanel(
-								condition = "input.samp_type == 'Cluster sampling'|input.samp_type =='Simple random - allocation'",
+								condition = "input.samp_type == 'Two-stage PPS cluster sampling with replacement'|input.samp_type =='PPS sampling with replacement'",
 								column(
 									4,
 									select_input_overlay(
@@ -471,7 +471,7 @@ page_navbar(
 						)
 					),
 					conditionalPanel(
-						condition = "input.samp_type == 'Cluster sampling'",
+						condition = "input.samp_type == 'Two-stage PPS cluster sampling with replacement'",
 						div(class = "param-subhead", "Cluster design"),
 						fluidRow(
 							column(

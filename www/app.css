@@ -79,3 +79,9 @@
 .bslib-sidebar-layout.sidebar-collapsed > .main {
 	padding-left: 3rem !important;
 }
+
+/* Keep the text of a select clear of its arrow: a long option wraps instead of
+   running under it */
+.selectize-control.single .selectize-input {
+	padding-right: 2rem;
+}

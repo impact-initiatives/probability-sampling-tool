@@ -1,5 +1,5 @@
 # This script contains functions related to probability sampling.
-# It includes functions for creating a sampling frame, performing cluster sampling, random sampling, and two-stage random sampling.
+# It includes functions for creating a sampling frame and for the three sampling types: simple random sampling, PPS sampling with replacement and two-stage PPS cluster sampling with replacement.
 # The functions are used to simulate samples based on user-defined parameters.
 
 require(data.table)
@@ -75,14 +75,14 @@ Ssize <- function(population_size, conf_level, prop, margin_error, DEFF = 1) {
 # It adds additional columns to the input data frame, such as PST_id_sample, PST_stratum_id, PST_psu_id, PST_pop_size, and PST_prob.
 # The PST_id_sample column is created by concatenating "id_" with the row names of the input data frame.
 # If the sampling method is "Stratified", the PST_stratum_id column is created by extracting the values from the specified strata column in the input data frame.
-# If the sampling method is "Cluster sampling", the PST_psu_id column is created by extracting the values from the specified col_psu column in the input data frame,
+# If the sampling method is "Two-stage PPS cluster sampling with replacement", the PST_psu_id column is created by extracting the values from the specified col_psu column in the input data frame,
 # and the PST_pop_size column is created by extracting the values from the specified colpop column in the input data frame.
-# If the sampling method is "Simple random - allocation" or any other method, the PST_psu_id column is created using the PST_id_sample column,
+# If the sampling method is "PPS sampling with replacement" or any other method, the PST_psu_id column is created using the PST_id_sample column,
 # and the PST_pop_size column is created with a value of 1 for each row.
 # The PST_pop_size_stratum column is calculated by summing the PST_pop_size column within each PST_stratum_id group.
 # The PST_prob column is calculated by dividing the PST_pop_size column by the PST_pop_size_stratum column.
 # Any rows with missing values in the PST_prob column are removed.
-# If the sampling method is "Cluster sampling", the PST_psu_id column is converted to a factor.
+# If the sampling method is "Two-stage PPS cluster sampling with replacement", the PST_psu_id column is converted to a factor.
 # The resulting data frame is returned.
 format_sampling_frame <- function(sframe, input) {
   sframe$PST_id_sample <- paste0("id_", rownames(sframe))
@@ -92,10 +92,10 @@ format_sampling_frame <- function(sframe, input) {
     sframe$PST_stratum_id <- rep("all", nrow(sframe))
   }
 
-  if (input$samp_type == "Cluster sampling") {
+  if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
     sframe$PST_psu_id <- sframe[[as.character(input$col_psu)]]
     sframe$PST_pop_size <- sframe[[as.character(input$colpop)]]
-  } else if (input$samp_type == "Simple random - allocation") {
+  } else if (input$samp_type == "PPS sampling with replacement") {
     sframe$PST_psu_id <- sframe$PST_id_sample
     sframe$PST_pop_size <- sframe[[as.character(input$colpop)]]
   } else {
@@ -110,13 +110,13 @@ format_sampling_frame <- function(sframe, input) {
   PST_prob <- as.numeric(sframe$PST_pop_size) / as.numeric(sframe$PST_pop_size_stratum)
   # an empty PSU alone in its stratum gives 0/0: keep it so that the cluster
   # size guard reports it instead of the row vanishing from the frame
-  if (input$samp_type == "Cluster sampling") {
+  if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
     PST_prob[is.nan(PST_prob)] <- 0
   }
   sframe <- cbind(sframe, PST_prob)
   sframe <- sframe[!is.na(sframe$PST_prob), ]
 
-  if (input$samp_type == "Cluster sampling") {
+  if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
     sframe$PST_psu_id <- as.factor(sframe$PST_psu_id)
   }
   return(sframe)
@@ -162,7 +162,7 @@ validate_reserved_columns <- function(sframe) {
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_population_column <- function(sframe, input) {
   if (
-    !(input$samp_type %in% c("Cluster sampling", "Simple random - allocation"))
+    !(input$samp_type %in% c("Two-stage PPS cluster sampling with replacement", "PPS sampling with replacement"))
   ) {
     return(NULL)
   }
@@ -185,7 +185,7 @@ validate_population_column <- function(sframe, input) {
     ))
   }
   if (
-    input$samp_type == "Cluster sampling" &&
+    input$samp_type == "Two-stage PPS cluster sampling with replacement" &&
       identical(col, as.character(input$col_psu))
   ) {
     return("Cluster and population variables must be different columns.")
@@ -205,7 +205,7 @@ validate_population_column <- function(sframe, input) {
 # Returns one row per problem (`data_row` ignores the header), or NULL.
 population_issues <- function(sframe, input) {
   if (
-    !(input$samp_type %in% c("Cluster sampling", "Simple random - allocation"))
+    !(input$samp_type %in% c("Two-stage PPS cluster sampling with replacement", "PPS sampling with replacement"))
   ) {
     return(NULL)
   }
@@ -221,7 +221,7 @@ population_issues <- function(sframe, input) {
       "Negative population"
     ),
     data_row = bad,
-    psu = if (input$samp_type == "Cluster sampling") {
+    psu = if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
       as.character(sframe[[as.character(input$col_psu)]][bad])
     } else {
       NA_character_
@@ -364,7 +364,7 @@ validate_parameters <- function(input) {
     }
   }
 
-  if (input$samp_type == "Cluster sampling") {
+  if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
     cls <- input$cls
     if (!is_number(cls) || cls < 2 || cls != floor(cls)) {
       return("Cluster size must be a whole number of at least 2.")
@@ -397,7 +397,7 @@ preview_ids <- function(ids, n = 5) {
 # Returns one row per problem (a PSU row has a `psu`, a stratum row has none),
 # or NULL when there is no problem.
 cluster_size_issues <- function(sampl_f, target, input) {
-  if (input$samp_type != "Cluster sampling") {
+  if (input$samp_type != "Two-stage PPS cluster sampling with replacement") {
     return(NULL)
   }
   cls <- input$cls
@@ -524,7 +524,7 @@ cluster_size_message <- function(issues, cls) {
 # sample (the output of make_sample()$sample).
 # Returns one row per PSU concerned, or NULL when there is none.
 psu_overflow_issues <- function(sample, input) {
-  if (input$samp_type != "Cluster sampling") {
+  if (input$samp_type != "Two-stage PPS cluster sampling with replacement") {
     return(NULL)
   }
   over <- which(sample$PST_survey > sample$PST_pop_size)
@@ -625,7 +625,7 @@ exceeds_population_modal <- function(affected, drawn = FALSE) {
 # stratification column, and contains unique values (no duplicate PSU IDs).
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_psu_column <- function(sframe, input) {
-  if (input$samp_type != "Cluster sampling") {
+  if (input$samp_type != "Two-stage PPS cluster sampling with replacement") {
     return(NULL)
   }
   if (is.null(input$col_psu) || input$col_psu == "None") {
@@ -674,7 +674,7 @@ create_targets <- function(sframe, input) {
   # that the target sample size (and the "Target sampling" tab shown to the
   # user) already reflects the design-effect-adjusted number for Cluster
   # sampling. DEFF=1 (no adjustment) for the other sampling methods.
-  DEFF <- if (input$samp_type == "Cluster sampling") {
+  DEFF <- if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
     1 + (input$cls - 1) * input$ICC
   } else {
     1
@@ -707,7 +707,7 @@ create_targets <- function(sframe, input) {
 }
 
 
-# clustersample draws the PSUs of one stratum. The guard in
+# pps_cluster_sampling draws the PSUs of one stratum (two-stage PPS cluster sampling). The guard in
 # validate_cluster_size() must have passed: there is no fallback.
 # Parameters:
 # - sframe: The sampling frame.
@@ -715,8 +715,8 @@ create_targets <- function(sframe, input) {
 # - cls: The cluster size.
 # Returns:
 # - A vector of sampled PSU IDs (one entry per draw).
-clustersample <- function(sframe, sampling_target, cls) {
-  cluster_sampling(
+pps_cluster_sampling <- function(sframe, sampling_target, cls) {
+  draw_pps_clusters(
     sframe,
     cls = cls,
     dist = as.character(sampling_target[["PST_stratum_id"]]),
@@ -726,15 +726,20 @@ clustersample <- function(sframe, sampling_target, cls) {
   )
 }
 
-#' Randomly samples from a sampling frame
-#' This function takes a sampling frame, and a buffer size as input.
-#' It randomly samples from the sampling frame dataset based on the sampling frame, ensuring that the number of samples does not exceed the population size.
-#' The buffer size is used to determine the maximum number of samples to be taken.
-#' sframe A sampling frame dataset containing the population information
-#' sampling_target A sampling frame containing the strata ID, target with buffer, and population information
-#' buf The buffer size to for the samples
-#' Returns A vector of randomly selected IDs from the sampling frame dataset
-randomsample <- function(sframe, sampling_target, buf) {
+#' Simple random sampling, for one stratum
+#'
+#' Draws units with equal probability and without replacement, so a unit is
+#' drawn at most once. The frame lists the units to survey (households,
+#' individuals). The number of units is the target with buffer of the stratum,
+#' capped to its population.
+#'
+#' sframe The sampling frame, as returned by format_sampling_frame().
+#' sampling_target One row of create_targets(): the stratum, its population and
+#'   its target with buffer.
+#' buf Not used: the buffer is already in the target with buffer. Kept so that
+#'   all the draw functions are called the same way.
+#' returns A vector of the sampled ids (PST_id_sample), each one once.
+simple_random_sampling <- function(sframe, sampling_target, buf) {
   dist <- as.character(sampling_target[["PST_stratum_id"]])
   dbr <- sframe[as.character(sframe$PST_stratum_id) == dist, ]
   tosample <- as.numeric(sampling_target[["target.with.buffer"]])
@@ -749,13 +754,24 @@ randomsample <- function(sframe, sampling_target, buf) {
   return(out)
 }
 
-#' stage2rdsample Function
-#' This function performs stage 2 random sampling based on given parameters.
-#' sframe A data frame containing the sampling frame data.
-#' sampling_target A data frame containing the sampling data.
-#' buf The buffer size for sampling.
-#' returns A vector of randomly selected IDs from the sampling frame data.
-stage2rdsample <- function(sframe, sampling_target, buf) {
+#' PPS sampling with replacement, for one stratum
+#'
+#' Draws the units of a stratum one at a time, with replacement, with a
+#' probability proportional to their size (PST_prob, from the population
+#' column): a large unit can be drawn several times and receives one survey per
+#' draw. The frame lists areas with their population, not the individuals to
+#' survey (see simple_random_sampling() for that). The number of draws is the
+#' target with buffer of the stratum, capped to its population. It is the same
+#' draw as the first stage of pps_cluster_sampling(), with one survey per draw.
+#'
+#' sframe The sampling frame, as returned by format_sampling_frame().
+#' sampling_target One row of create_targets(): the stratum, its population and
+#'   its target with buffer.
+#' buf Not used: the buffer is already in the target with buffer. Kept so that
+#'   all the draw functions are called the same way.
+#' returns A vector of the sampled ids (PST_id_sample), one entry per draw, so
+#'   an id can appear several times.
+pps_sampling <- function(sframe, sampling_target, buf) {
   dist <- as.character(sampling_target[["PST_stratum_id"]])
   dbr <- sframe[as.character(sframe$PST_stratum_id) == dist, ]
   tosample <- as.numeric(sampling_target[["target.with.buffer"]])
@@ -776,18 +792,21 @@ stage2rdsample <- function(sframe, sampling_target, buf) {
 }
 
 
-#' Perform cluster sampling
+#' First stage of two-stage PPS cluster sampling with replacement
 #'
-#' This function performs cluster sampling based on specified parameters.
+#' Draws the PSUs of one stratum with replacement, with a probability
+#' proportional to their population. Each draw stands for one cluster of `cls`
+#' surveys: the households of the cluster are selected afterwards, at data
+#' collection.
 #' sframe A data frame containing the sampling frame data.
 #' cls The (planned) cluster size.
 #' dist The stratum ID.
 #' target_with_buffer The target sample size, buffer included. Already
-#'   DEFF-adjusted by create_targets() for Cluster sampling, so no design
+#'   DEFF-adjusted by create_targets() for cluster sampling, so no design
 #'   effect is applied here.
 #' returns A vector of sampled PSU IDs (one entry per draw). Every PSU must be
 #'   able to host a cluster: validate_cluster_size() blocks the other cases.
-cluster_sampling <- function(
+draw_pps_clusters <- function(
   sframe,
   cls,
   dist,
@@ -803,7 +822,7 @@ cluster_sampling <- function(
 #' Function to create a sample based on different sampling methods
 #'
 #' This function takes a sampling frame and input parameters as input and creates a sample based on the specified sampling method.
-#' The sampling methods supported are Cluster sampling, Simple random - allocation, and Simple random sampling.
+#' The sampling types supported are two-stage PPS cluster sampling with replacement, PPS sampling with replacement and simple random sampling.
 #' The function formats the sampling frame, creates the target sample, and applies the specified sampling method to generate the output.
 #' It also calculates various summary statistics related to the sample.
 #'
@@ -823,17 +842,17 @@ make_sample <- function(sampling_frame, input) {
   buf <- input$buf
   ICC <- input$ICC
 
-  if (input$samp_type == "Cluster sampling") {
+  if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
     output <- apply(
       target,
       1,
-      clustersample,
+      pps_cluster_sampling,
       sframe = sampl_f,
       cls = cls,
       simplify = FALSE
     ) %>%
       unlist
-  } else if (input$samp_type == "Simple random - allocation") {
+  } else if (input$samp_type == "PPS sampling with replacement") {
     # simplify = FALSE: when every stratum draws the same number of units
     # (e.g. "Enter sample size" + stratified), apply() would otherwise return
     # a matrix instead of a list, which unlist() keeps 2-D and breaks the
@@ -841,17 +860,17 @@ make_sample <- function(sampling_frame, input) {
     output <- apply(
       target,
       1,
-      stage2rdsample,
+      pps_sampling,
       sframe = sampl_f,
       buf = buf,
       simplify = FALSE
     ) %>%
       unlist
-  } else if (input$samp_type == "Simple random") {
+  } else if (input$samp_type == "Simple random sampling") {
     output <- apply(
       target,
       1,
-      randomsample,
+      simple_random_sampling,
       sframe = sampl_f,
       buf = buf,
       simplify = FALSE
@@ -869,7 +888,7 @@ make_sample <- function(sampling_frame, input) {
     all.y = F
   )
 
-  if (input$samp_type == "Cluster sampling") {
+  if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
     dbout$PST_survey <- cls
   } else {
     dbout$PST_survey <- 1
@@ -920,7 +939,7 @@ make_sample <- function(sampling_frame, input) {
     ) |>
     dplyr::relocate(target.with.buffer, .after = NB_Population)
 
-  if (input$samp_type != "Cluster sampling") {
+  if (input$samp_type != "Two-stage PPS cluster sampling with replacement") {
     # "# PSUs to assess" is the draw count; it only differs from "# surveys"
     # when a draw yields more than one survey, i.e. cluster sampling.
     summary_sample[c(
@@ -934,7 +953,7 @@ make_sample <- function(sampling_frame, input) {
     )] <- NA
     # plain SRS: no replacement and no PSU concept, so the distinct count
     # is just "# surveys" again.
-    if (input$samp_type == "Simple random") summary_sample["Unique_PSUs"] <- NA
+    if (input$samp_type == "Simple random sampling") summary_sample["Unique_PSUs"] <- NA
   }
 
   if (input$topup == "Enter sample size") {
