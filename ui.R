@@ -45,6 +45,18 @@ numeric_input_with_tip <- function(inputId, label, tip, source = NULL, ...) {
 	)$find("input")$addAttrs("aria-labelledby" = name_id)$allTags()
 }
 
+# selectInput() whose list opens over the page. Inside the setup sidebar, which
+# scrolls its content, a list opening near the bottom of the card is cut off.
+select_input_overlay <- function(inputId, label, choices = NULL, ...) {
+	selectizeInput(
+		inputId,
+		label,
+		choices = choices,
+		...,
+		options = list(dropdownParent = "body")
+	)
+}
+
 page_navbar(
 	title = "Probability sampling tool",
 	lang = "en",
@@ -228,7 +240,7 @@ page_navbar(
 					fluidRow(
 						column(
 							7,
-							selectInput(
+							select_input_overlay(
 								"topup",
 								"Mode of sampling",
 								c(
@@ -240,7 +252,7 @@ page_navbar(
 						),
 						column(
 							5,
-							selectInput(
+							select_input_overlay(
 								"samp_type",
 								"Type of sampling",
 								c(
@@ -254,7 +266,7 @@ page_navbar(
 					fluidRow(
 						column(
 							4,
-							selectInput(
+							select_input_overlay(
 								"stratified",
 								"Stratified ?",
 								c("Not stratified", "Stratified")
@@ -427,7 +439,7 @@ page_navbar(
 								condition = "input.samp_type == 'Cluster sampling'",
 								column(
 									4,
-									selectInput(
+									select_input_overlay(
 										'col_psu',
 										'Input cluster',
 										choices = NULL
@@ -438,7 +450,7 @@ page_navbar(
 								condition = "input.stratified == 'Stratified'",
 								column(
 									4,
-									selectInput(
+									select_input_overlay(
 										'strata',
 										'Input strata',
 										choices = NULL,
@@ -450,7 +462,7 @@ page_navbar(
 								condition = "input.samp_type == 'Cluster sampling'|input.samp_type =='Simple random - allocation'",
 								column(
 									4,
-									selectInput(
+									select_input_overlay(
 										'colpop',
 										'Input population',
 										choices = NULL
