@@ -239,7 +239,7 @@ page_navbar(
 					class = "p-3",
 					fluidRow(
 						column(
-							7,
+							12,
 							select_input_overlay(
 								"topup",
 								"Mode of sampling",
@@ -251,7 +251,7 @@ page_navbar(
 							)
 						),
 						column(
-							5,
+							12,
 							select_input_overlay(
 								"samp_type",
 								"Type of sampling",
