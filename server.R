@@ -469,7 +469,7 @@ function(input, output, session) {
     },
     content = function(file) {
       req(sample_current())
-      write.csv(out()[[1]], file)
+      write.csv(out()[[1]], file, row.names = FALSE)
     }
   )
 
@@ -479,7 +479,7 @@ function(input, output, session) {
     },
     content = function(file) {
       req(sample_current())
-      write.csv(out()[[2]], file)
+      write.csv(out()[[2]], file, row.names = FALSE)
     }
   )
 }
