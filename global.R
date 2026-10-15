@@ -95,6 +95,11 @@ format_sampling_frame <- function(sframe, input) {
     dplyr::summarise(SumDist = sum(pop_numbers, na.rm = T))
   sframe <- merge(sframe, sumdist, by = "strata_id")
   proba <- as.numeric(sframe$pop_numbers) / as.numeric(sframe$SumDist)
+  # an empty PSU alone in its stratum gives 0/0: keep it so that the cluster
+  # size guard reports it instead of the row vanishing from the frame
+  if (input$samp_type == "Cluster sampling") {
+    proba[is.nan(proba)] <- 0
+  }
   sframe <- cbind(sframe, proba)
   sframe <- sframe[!is.na(sframe$proba), ]
 
@@ -145,7 +150,84 @@ validate_population_column <- function(sframe, input) {
       "' is not a numeric column. Select a numeric population column."
     ))
   }
+  if (
+    input$samp_type == "Cluster sampling" &&
+      identical(col, as.character(input$col_psu))
+  ) {
+    return("Cluster and population variables must be different columns.")
+  }
+  if (
+    input$stratified == "Stratified" &&
+      identical(col, as.character(input$strata))
+  ) {
+    return("Stratification and population variables must be different columns.")
+  }
   return(NULL)
+}
+
+
+# Rows whose population is missing or negative: a missing value would silently
+# drop the row out of the frame and a negative one breaks the draw.
+# Returns one row per problem (`data_row` ignores the header), or NULL.
+population_issues <- function(sframe, input) {
+  if (
+    !(input$samp_type %in% c("Cluster sampling", "Simple random - allocation"))
+  ) {
+    return(NULL)
+  }
+  values <- sframe[[as.character(input$colpop)]]
+  bad <- which(is.na(values) | values < 0)
+  if (length(bad) == 0) {
+    return(NULL)
+  }
+  data.frame(
+    issue = ifelse(
+      is.na(values[bad]),
+      "Missing population",
+      "Negative population"
+    ),
+    data_row = bad,
+    psu = if (input$samp_type == "Cluster sampling") {
+      as.character(sframe[[as.character(input$col_psu)]][bad])
+    } else {
+      NA_character_
+    },
+    population = values[bad]
+  )
+}
+
+
+# Error message for the output of population_issues(), NULL when there is none.
+population_message <- function(issues, col) {
+  if (is.null(issues)) {
+    return(NULL)
+  }
+  describe <- function(label, what) {
+    rows <- issues$data_row[issues$issue == label]
+    if (length(rows) > 0) {
+      paste0(
+        "Population column '",
+        col,
+        "' ",
+        what,
+        " in ",
+        length(rows),
+        " row(s): ",
+        preview_ids(rows),
+        " (header excluded)."
+      )
+    }
+  }
+  paste0(
+    paste(
+      c(
+        describe("Missing population", "has missing values"),
+        describe("Negative population", "has negative values")
+      ),
+      collapse = "\n"
+    ),
+    "\n\nThe population must be a number greater than or equal to 0: fix these values or remove the rows from the sampling frame."
+  )
 }
 
 
@@ -264,28 +346,203 @@ validate_parameters <- function(input) {
 }
 
 
-# Check that every stratum has at least one PSU large enough for the requested cluster size.
-# Returns an error message string if the input is invalid, or NULL if valid.
-validate_cluster_size <- function(sampl_f, input) {
+# Shows at most `n` ids, e.g. "a, b, c, ... +4 more".
+preview_ids <- function(ids, n = 5) {
+  ids <- as.character(ids)
+  if (length(ids) <= n) {
+    return(paste(ids, collapse = ", "))
+  }
+  paste0(paste(ids[1:n], collapse = ", "), ", ... +", length(ids) - n, " more")
+}
+
+
+# Cluster sampling guard, run before any draw: it depends on the data and the
+# parameters only, never on the seed. It looks for
+# - PSUs smaller than the cluster size: they cannot host a cluster;
+# - strata that cannot host the clusters their target requires: they need
+#   ceiling(target / cls) clusters but their PSUs have room for
+#   sum(floor(population / cls)).
+# `target` is the output of create_targets().
+# Returns one row per problem (a PSU row has a `psu`, a stratum row has none),
+# or NULL when there is no problem.
+cluster_size_issues <- function(sampl_f, target, input) {
   if (input$samp_type != "Cluster sampling") {
     return(NULL)
   }
-  eligible <- tapply(
-    sampl_f$pop_numbers,
-    sampl_f$strata_id,
-    function(x) any(x >= input$cls, na.rm = TRUE)
-  )
-  invalid_strata <- names(eligible)[!eligible]
-  if (length(invalid_strata) > 0) {
-    return(paste0(
-      "Cluster size (",
-      input$cls,
-      ") exceeds the population of every PSU in stratum(s): ",
-      paste(invalid_strata, collapse = ", "),
-      ". Reduce the cluster size or review the population column."
-    ))
+  cls <- input$cls
+  strata <- as.character(sampl_f$strata_id)
+  pop <- sampl_f$pop_numbers
+  psu_rows <- NULL
+  stratum_rows <- NULL
+
+  too_small <- !is.na(pop) & pop < cls
+  if (any(too_small)) {
+    psu_rows <- data.frame(
+      issue = "PSU too small for the cluster size",
+      stratum = strata[too_small],
+      psu = as.character(sampl_f$psu_id[too_small]),
+      n_psus = NA_integer_,
+      population = pop[too_small],
+      cluster_size = cls,
+      target_with_buffer = NA_real_,
+      max_surveys = NA_real_,
+      shortfall = NA_real_
+    )
   }
-  return(NULL)
+
+  capacity <- tapply(floor(pop / cls), strata, sum, na.rm = TRUE)
+  target_by_stratum <- setNames(
+    target$target.with.buffer,
+    as.character(target$strata_id)
+  )
+  needed <- ceiling(target_by_stratum[names(capacity)] / cls)
+  short <- names(capacity)[capacity < needed]
+  if (length(short) > 0) {
+    stratum_rows <- data.frame(
+      issue = "Stratum cannot reach its target with this cluster size",
+      stratum = short,
+      psu = NA_character_,
+      n_psus = as.integer(table(strata)[short]),
+      population = setNames(target$Population, as.character(target$strata_id))[
+        short
+      ],
+      cluster_size = cls,
+      target_with_buffer = target_by_stratum[short],
+      max_surveys = capacity[short] * cls,
+      shortfall = target_by_stratum[short] - capacity[short] * cls
+    )
+    stratum_rows <- stratum_rows[order(-stratum_rows$shortfall), ]
+  }
+  out <- rbind(psu_rows, stratum_rows)
+  if (!is.null(out)) {
+    rownames(out) <- NULL
+  }
+  out
+}
+
+
+# Error message for the output of cluster_size_issues(), NULL when there is none.
+# Each problem has its own paragraph and only a few examples: the full list is
+# downloadable.
+cluster_size_message <- function(issues, cls) {
+  if (is.null(issues)) {
+    return(NULL)
+  }
+  fmt <- function(x) format(x, big.mark = ",", scientific = FALSE, trim = TRUE)
+  blocks <- character()
+
+  psus <- issues[!is.na(issues$psu), ]
+  if (nrow(psus) > 0) {
+    blocks <- c(
+      blocks,
+      paste0(
+        "PSUs smaller than the cluster size (",
+        cls,
+        "): ",
+        nrow(psus),
+        " PSU(s) cannot host a cluster - ",
+        preview_ids(
+          paste0(
+            psus$psu,
+            " in '",
+            psus$stratum,
+            "' (population ",
+            fmt(psus$population),
+            ")"
+          ),
+          n = 3
+        ),
+        ".\nReduce the cluster size or filter these PSUs out of the sampling frame."
+      )
+    )
+  }
+
+  strata <- issues[is.na(issues$psu), ]
+  if (nrow(strata) > 0) {
+    blocks <- c(
+      blocks,
+      paste0(
+        "Insufficient stratum capacity: ",
+        nrow(strata),
+        " stratum(s) cannot reach their target with clusters of ",
+        cls,
+        " surveys. Largest shortfalls - ",
+        preview_ids(
+          paste0(
+            "'",
+            strata$stratum,
+            "' (target ",
+            fmt(strata$target_with_buffer),
+            ", maximum ",
+            fmt(strata$max_surveys),
+            ")"
+          ),
+          n = 3
+        ),
+        ".\nReduce the cluster size or the target sample size, or merge PSUs."
+      )
+    )
+  }
+  paste(blocks, collapse = "\n\n")
+}
+
+
+# Cluster sampling draws PSUs with replacement: a PSU drawn several times is
+# assigned cluster size x draws surveys, which can exceed its population. Unlike
+# the guard at Apply this depends on the seed, so it is checked on the drawn
+# sample (the output of make_sample()$sample).
+# Returns one row per PSU concerned, or NULL when there is none.
+psu_overflow_issues <- function(sample, input) {
+  if (input$samp_type != "Cluster sampling") {
+    return(NULL)
+  }
+  over <- which(sample$Survey > sample$pop_numbers)
+  if (length(over) == 0) {
+    return(NULL)
+  }
+  s <- sample[over, ]
+  out <- data.frame(
+    issue = "PSU drawn more often than its population allows",
+    stratum = as.character(s$strata_id),
+    psu = as.character(s$psu_id),
+    times_drawn = s$Survey / input$cls,
+    cluster_size = input$cls,
+    surveys_assigned = s$Survey,
+    population = s$pop_numbers,
+    excess = s$Survey - s$pop_numbers
+  )
+  out[order(-out$excess), ]
+}
+
+
+# Error message for the output of psu_overflow_issues(), NULL when there is none.
+psu_overflow_message <- function(issues) {
+  if (is.null(issues)) {
+    return(NULL)
+  }
+  fmt <- function(x) format(x, big.mark = ",", scientific = FALSE, trim = TRUE)
+  paste0(
+    "Draw blocked: ",
+    nrow(issues),
+    " PSU(s) were selected several times and would need more surveys than their population - ",
+    preview_ids(
+      paste0(
+        "'",
+        issues$psu,
+        "' in '",
+        issues$stratum,
+        "' (drawn ",
+        issues$times_drawn,
+        " times, ",
+        fmt(issues$surveys_assigned),
+        " surveys for a population of ",
+        fmt(issues$population),
+        ")"
+      ),
+      n = 3
+    ),
+    ".\nReduce the cluster size or the target sample size, or merge PSUs."
+  )
 }
 
 
@@ -364,20 +621,6 @@ create_targets <- function(sframe, input) {
       Population = sum(pop_numbers, na.rm = T)
     ) |>
     dplyr::mutate(
-      # base SRS-equivalent target, no design effect - used by the
-      # cluster sampling random-sampling fallback (cls=1, DEFF=1)
-      target_srs = (if (input$topup == "Enter sample size") {
-        input$target
-      } else {
-        Ssize(
-          population_size = Population,
-          conf_level = input$conf_level,
-          prop = input$pror,
-          margin_error = input$e_marg,
-          DEFF = 1
-        )
-      }) |>
-        as.numeric(),
       target = (if (input$topup == "Enter sample size") {
         input$target
       } else {
@@ -399,45 +642,23 @@ create_targets <- function(sframe, input) {
 }
 
 
-# clustersample function performs cluster sampling based on the given parameters.
+# clustersample draws the PSUs of one stratum. The guard in
+# validate_cluster_size() must have passed: there is no fallback.
 # Parameters:
 # - sframe: The sampling frame.
 # - sampling_target: a dataframe with the sampling targets by strata.
 # - cls: The cluster size.
-# - buf: The buffer size, used for the random-sampling fallback only (the
-#   main draw uses target.with.buffer, already buffer-adjusted).
-# - sw_rand: The list of strata IDs that have been switched to random sampling.
 # Returns:
-# - A list containing the sampled output and the updated sw_rand list.
-clustersample <- function(
-  sframe,
-  sampling_target,
-  cls,
-  buf,
-  sw_rand = c()
-) {
-  dist <- as.character(sampling_target[["strata_id"]])
-  out <- cluster_sampling(
+# - A vector of sampled PSU IDs (one entry per draw).
+clustersample <- function(sframe, sampling_target, cls) {
+  cluster_sampling(
     sframe,
     cls = cls,
-    dist = dist,
+    dist = as.character(sampling_target[["strata_id"]]),
     target_with_buffer = as.numeric(as.character(
       sampling_target[["target.with.buffer"]]
     ))
   )
-
-  # no PSU big enough for the cluster size: fall back to SRS. Only use of `buf`.
-  if (is.null(out)) {
-    dbr <- sframe[as.character(sframe$strata_id) == dist, ]
-    out <- sample(
-      as.character(dbr$id_sampl),
-      ceiling(as.numeric(sampling_target[["target_srs"]]) * (1 + buf)),
-      prob = dbr$proba,
-      replace = TRUE
-    )
-    sw_rand <- c(sw_rand, dist)
-  }
-  return(list(output = out, sw_rand = sw_rand))
 }
 
 #' Randomly samples from a sampling frame
@@ -499,8 +720,8 @@ stage2rdsample <- function(sframe, sampling_target, buf) {
 #' target_with_buffer The target sample size, buffer included. Already
 #'   DEFF-adjusted by create_targets() for Cluster sampling, so no design
 #'   effect is applied here.
-#' returns A vector of sampled PSU IDs (one entry per draw), or NULL if no
-#'   PSU in the stratum is large enough to support the requested cluster size.
+#' returns A vector of sampled PSU IDs (one entry per draw). Every PSU must be
+#'   able to host a cluster: validate_cluster_size() blocks the other cases.
 cluster_sampling <- function(
   sframe,
   cls,
@@ -508,12 +729,6 @@ cluster_sampling <- function(
   target_with_buffer
 ) {
   dbr <- sframe[as.character(sframe$strata_id) == dist, ]
-  dbr <- dbr[dbr$pop_numbers >= cls, ]
-
-  if (nrow(dbr) == 0) {
-    return(NULL)
-  }
-
   m <- ceiling(as.numeric(target_with_buffer) / cls)
 
   sample(as.character(dbr$id_sampl), size = m, prob = dbr$proba, replace = TRUE)
@@ -537,7 +752,6 @@ make_sample <- function(sampling_frame, input) {
   # create the target sample.
   target <- create_targets(sampl_f, input)
 
-  sw_rand <- c()
   output <- c()
 
   cls <- input$cls
@@ -545,17 +759,15 @@ make_sample <- function(sampling_frame, input) {
   ICC <- input$ICC
 
   if (input$samp_type == "Cluster sampling") {
-    clsampling <- apply(
+    output <- apply(
       target,
       1,
       clustersample,
       sframe = sampl_f,
       cls = cls,
-      # no buffer when the user entered an explicit sample size
-      buf = if (input$topup == "Enter sample size") 0 else buf
-    )
-    output <- lapply(clsampling, function(x) x$output) %>% unlist %>% c
-    sw_rand <- lapply(clsampling, function(x) x$sw_rand) %>% unlist %>% c
+      simplify = FALSE
+    ) %>%
+      unlist
   } else if (input$samp_type == "Simple random - allocation") {
     # simplify = FALSE: when every stratum draws the same number of units
     # (e.g. "Enter sample size" + stratified), apply() would otherwise return
@@ -594,7 +806,7 @@ make_sample <- function(sampling_frame, input) {
   )
 
   if (input$samp_type == "Cluster sampling") {
-    dbout$Survey <- ifelse(dbout$strata_id %in% sw_rand, 1, cls)
+    dbout$Survey <- cls
   } else {
     dbout$Survey <- 1
   }
@@ -628,8 +840,7 @@ make_sample <- function(sampling_frame, input) {
       # planned: what was set at design stage, used to compute the target
       # sample size in create_targets()
       Cluster_size_planned = input$cls,
-      # realized: measured from the actual draw (can differ from the plan,
-      # e.g. a stratum falling back to random sampling with cluster size 1)
+      # realized: measured from the actual draw
       Cluster_size_realized = round(Surveys / PSUs, 2),
       ICC = input$ICC,
       DEFF_planned = 1 + (Cluster_size_planned - 1) * ICC,
@@ -646,19 +857,6 @@ make_sample <- function(sampling_frame, input) {
       by = "strata_id"
     ) |>
     dplyr::relocate(target.with.buffer, .after = NB_Population)
-
-  if (input$samp_type == "Cluster sampling") {
-    for (i in 1:nrow(summary_sample)) {
-      if (summary_sample$strata_id[i] %in% sw_rand) {
-        summary_sample$Cluster_size_realized[i] <- 1
-        summary_sample$DEFF_realized[i] <- 1
-        summary_sample$Effective_sample[i] <- summary_sample$Surveys[i]
-        summary_sample$Sampling_type[
-          i
-        ] <- "Cluster sampling with size 1 = random sampling"
-      }
-    }
-  }
 
   if (input$samp_type != "Cluster sampling") {
     # "# PSUs to assess" is the draw count; it only differs from "# surveys"
@@ -715,7 +913,6 @@ make_sample <- function(sampling_frame, input) {
 
   return(list(
     sample = dbout_sample,
-    summary_sample = summary_sample,
-    sw_rand = sw_rand
+    summary_sample = summary_sample
   ))
 }

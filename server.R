@@ -127,7 +127,19 @@ function(input, output, session) {
     tables_stale(TRUE),
     ignoreInit = TRUE
   )
-  observeEvent(input$f_apply, tables_stale(FALSE), priority = 10)
+  # what Apply found wrong in the data, for the downloadable list
+  issue_list <- reactiveVal(NULL)
+  # same for a draw blocked because a PSU is assigned too many surveys
+  draw_issues <- reactiveVal(NULL)
+  observeEvent(
+    input$f_apply,
+    {
+      tables_stale(FALSE)
+      issue_list(NULL)
+      draw_issues(NULL)
+    },
+    priority = 10
+  )
 
   # create the sampling frame
   frame <- eventReactive(input$f_apply, {
@@ -140,6 +152,9 @@ function(input, output, session) {
     ))
     require_valid(validate_psu_column(sframe, input))
     require_valid(validate_population_column(sframe, input))
+    pop_issues <- population_issues(sframe, input)
+    issue_list(pop_issues)
+    require_valid(population_message(pop_issues, input$colpop))
     require_valid(validate_parameters(input))
     # not needed for the frame, but reported here rather than at the draw
     require_valid(validate_seed(input$seed_value))
@@ -148,7 +163,11 @@ function(input, output, session) {
 
   # create the target sampling size by strata
   cible <- eventReactive(input$f_apply, {
-    create_targets(frame(), input)
+    targets <- create_targets(frame(), input)
+    issues <- cluster_size_issues(frame(), targets, input)
+    issue_list(issues)
+    require_valid(cluster_size_message(issues, input$cls))
+    targets
   })
 
   # "Sample" is usable after a successful Apply, until a parameter changes or a
@@ -165,7 +184,11 @@ function(input, output, session) {
     }
     applied(TRUE)
 
-    affected <- check_target_vs_population(cible())
+    # cluster sampling never caps the draw: cible() already blocks a target
+    # above the room of a stratum
+    affected <- if (input$samp_type != "Cluster sampling") {
+      check_target_vs_population(cible())
+    }
     if (!is.null(affected)) {
       showModal(modalDialog(
         title = tagList(
@@ -236,9 +259,15 @@ function(input, output, session) {
   dt_class_wide <- paste(dt_class, "nowrap")
 
   # A failed validation is shown once, as an alert, instead of inside each table.
-  validation_alert <- function(expr) {
+  validation_alert <- function(expr, extra = NULL) {
     msg <- validation_message(expr)
-    if (length(msg) && nzchar(msg)) div(class = "alert alert-danger", msg)
+    if (length(msg) && nzchar(msg)) {
+      div(
+        class = "alert alert-danger",
+        span(style = "white-space: pre-line;", msg),
+        extra
+      )
+    }
   }
 
   quiet <- function(expr) {
@@ -246,10 +275,52 @@ function(input, output, session) {
   }
 
   output$apply_error <- renderUI(
-    if (!tables_stale()) validation_alert(cible())
+    if (!tables_stale()) {
+      validation_alert(
+        cible(),
+        extra = if (!is.null(issue_list())) {
+          div(
+            class = "mt-2",
+            downloadLink(
+              "download_issues",
+              tagList(icon("download"), "Download the full list (CSV)")
+            )
+          )
+        }
+      )
+    }
+  )
+
+  output$download_issues <- downloadHandler(
+    filename = function() paste0("sampling_issues_", humanTime(), ".csv"),
+    content = function(file) {
+      write.csv(issue_list(), file, row.names = FALSE, na = "")
+    }
   )
   # out() keeps its error until the next draw, so gate it on draw_failed()
-  output$sample_error <- renderUI(if (draw_failed()) validation_alert(out()))
+  output$sample_error <- renderUI(
+    if (draw_failed()) {
+      validation_alert(
+        out(),
+        extra = if (!is.null(draw_issues())) {
+          div(
+            class = "mt-2",
+            downloadLink(
+              "download_draw_issues",
+              tagList(icon("download"), "Download the full list (CSV)")
+            )
+          )
+        }
+      )
+    }
+  )
+
+  output$download_draw_issues <- downloadHandler(
+    filename = function() paste0("draw_issues_", humanTime(), ".csv"),
+    content = function(file) {
+      write.csv(draw_issues(), file, row.names = FALSE, na = "")
+    }
+  )
 
   output$sampling_frame <- DT::renderDataTable(
     {
@@ -272,10 +343,7 @@ function(input, output, session) {
   output$target_frame <- DT::renderDataTable(
     {
       req(!tables_stale())
-      target <- quiet(cible())
-      # target_srs is an internal SRS-equivalent used by the cluster
-      # sampling fallback, not meant for display
-      target[, setdiff(names(target), "target_srs")]
+      quiet(cible())
     },
     rownames = FALSE,
     style = dt_style,
@@ -291,12 +359,19 @@ function(input, output, session) {
 
   # create the sample based on the sampling frame and the input parameters
   out <- eventReactive(input$desButton, {
-    # frame() already validated the strata, cluster and population selections;
-    # the seed is checked again because it can change after Apply
+    # frame() already validated the strata, cluster and population selections
+    # and cible() the cluster size; the seed is checked again because it can
+    # change after Apply
     frame()
-    require_valid(validate_cluster_size(frame(), input))
     require_valid(validate_seed(input$seed_value))
-    run_with_seed(as.integer(input$seed_value), make_sample(db(), input))
+    sample_out <- run_with_seed(
+      as.integer(input$seed_value),
+      make_sample(db(), input)
+    )
+    issues <- psu_overflow_issues(sample_out$sample, input)
+    draw_issues(issues)
+    require_valid(psu_overflow_message(issues))
+    sample_out
   })
 
   # display the results
