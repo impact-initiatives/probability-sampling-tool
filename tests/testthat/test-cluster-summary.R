@@ -41,5 +41,5 @@ test_that("the cluster summary has one cluster size, one DEFF and one effective 
     round(summary$`Surveys` / summary$DEFF)
   )
   # some PSUs are drawn several times: the design effect does not depend on it
-  expect_true(all(summary$`PSUs drawn` > summary$`Distinct PSUs`))
+  expect_true(all(summary$`Clusters drawn` > summary$`Distinct PSUs`))
 })

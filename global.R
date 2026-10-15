@@ -98,7 +98,7 @@ summary_column_order <- c(
   "Population",
   "Surveys",
   "Requested Target (with buffer)",
-  "PSUs drawn",
+  "Clusters drawn",
   "Distinct PSUs",
   "Cluster size",
   "DEFF",
@@ -989,7 +989,7 @@ make_sample <- function(sampling_frame, input) {
     dplyr::relocate(target.with.buffer, .after = NB_Population)
 
   if (input$samp_type != "Two-stage PPS cluster sampling with replacement") {
-    # "PSUs drawn" is the draw count; it only differs from "Surveys"
+    # "Clusters drawn" is the draw count; it only differs from "Surveys"
     # when a draw yields more than one survey, i.e. cluster sampling.
     summary_sample[c(
       "PSUs",
@@ -1020,7 +1020,7 @@ make_sample <- function(sampling_frame, input) {
     dplyr::rename(
       "Stratum" = "PST_stratum_id",
       "Surveys" = "Surveys",
-      "PSUs drawn" = "PSUs",
+      "Clusters drawn" = "PSUs",
       "Distinct PSUs" = "Unique_PSUs",
       "Population" = "NB_Population",
       "Requested Target (with buffer)" = "target.with.buffer",
