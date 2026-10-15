@@ -14,7 +14,7 @@ test_that("a new Apply hides the previous sample and its downloads", {
     session$setInputs(
       data_source = "test",
       topup = "Sample size based on population",
-      samp_type = "Simple random",
+      samp_type = "Simple random sampling",
       stratified = "Not stratified",
       col_psu = "None",
       strata = "None",

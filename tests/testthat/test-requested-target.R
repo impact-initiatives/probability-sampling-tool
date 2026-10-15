@@ -33,7 +33,7 @@ sampling_input <- function(samp_type, stratified, topup, target = 100) {
 
 test_that("the target table and the sample summary say requested", {
   modes <- c("Enter sample size", "Sample size based on population")
-  types <- c("Simple random", "Simple random - allocation", "Cluster sampling")
+  types <- c("Simple random sampling", "PPS sampling with replacement", "Two-stage PPS cluster sampling with replacement")
   for (topup in modes) {
     for (samp_type in types) {
       for (stratified in c("Not stratified", "Stratified")) {
@@ -57,7 +57,7 @@ test_that("the target table and the sample summary say requested", {
 })
 
 test_that("the labels are display only: the internal target names are kept", {
-  input <- sampling_input("Simple random", "Stratified", "Enter sample size")
+  input <- sampling_input("Simple random sampling", "Stratified", "Enter sample size")
   targets <- create_targets(format_sampling_frame(frame_24(), input), input)
   expect_true(all(c("target", "target.with.buffer") %in% names(targets)))
   expect_identical(
@@ -67,10 +67,10 @@ test_that("the labels are display only: the internal target names are kept", {
 })
 
 test_that("a capped draw shows the requested target next to the drawn surveys", {
-  input <- sampling_input("Simple random", "Stratified", "Enter sample size", 500)
+  input <- sampling_input("Simple random sampling", "Stratified", "Enter sample size", 500)
   summary <- run_with_seed(1, make_sample(frame_24(), input))$summary_sample
   expect_equal(summary$`Requested Target (with buffer)`, rep(500, 4))
-  # Simple random: the population of a stratum is its number of rows (6)
+  # Simple random sampling: the population of a stratum is its number of rows (6)
   expect_equal(summary$`# surveys`, rep(6, 4))
 })
 
@@ -93,13 +93,13 @@ test_that("a target above the population warns in the random types and blocks cl
     )
   }
   for (stratified in c("Not stratified", "Stratified")) {
-    for (samp_type in c("Simple random", "Simple random - allocation")) {
+    for (samp_type in c("Simple random sampling", "PPS sampling with replacement")) {
       r <- exceeds(samp_type, stratified)
       expect_false(is.null(r$warning), label = paste(samp_type, stratified))
       expect_null(r$guard)
     }
     # cluster sampling never caps the draw: the target is refused at Apply
-    r <- exceeds("Cluster sampling", stratified)
-    expect_false(is.null(r$guard), label = paste("Cluster sampling", stratified))
+    r <- exceeds("Two-stage PPS cluster sampling with replacement", stratified)
+    expect_false(is.null(r$guard), label = paste("Two-stage PPS cluster sampling with replacement", stratified))
   }
 })

@@ -16,9 +16,9 @@ tool_columns <- c(
 )
 
 sampling_types <- c(
-  "Simple random",
-  "Simple random - allocation",
-  "Cluster sampling"
+  "Simple random sampling",
+  "PPS sampling with replacement",
+  "Two-stage PPS cluster sampling with replacement"
 )
 
 frame_24 <- function() {
@@ -100,7 +100,7 @@ test_that("the frame attached to issue #32 can be sampled", {
     id_sampl = c("A", "B", rep(NA, 14)),
     SumDist = c("AA", "AA", rep("BB", 14))
   )
-  for (samp_type in c("Cluster sampling", "Simple random - allocation")) {
+  for (samp_type in c("Two-stage PPS cluster sampling with replacement", "PPS sampling with replacement")) {
     input <- sampling_input(samp_type, "Stratified")
     input$target <- 30
     input$cls <- 2
@@ -109,7 +109,7 @@ test_that("the frame attached to issue #32 can be sampled", {
 })
 
 test_that("the sample carries the columns the tool adds, all with the PST_ prefix", {
-  out <- draw(frame_24(), "Cluster sampling", "Stratified")
+  out <- draw(frame_24(), "Two-stage PPS cluster sampling with replacement", "Stratified")
   added <- setdiff(names(out$sample), names(frame_24()))
   expect_setequal(added, tool_columns)
   expect_true(all(startsWith(tool_columns, reserved_prefix)))
@@ -140,7 +140,7 @@ test_that("a reloaded sample is blocked at Apply with the reserved columns liste
   withr::local_dir(app_root)
   server <- source("server.R")$value
 
-  previous <- draw(frame_24(), "Simple random", "Not stratified")$sample
+  previous <- draw(frame_24(), "Simple random sampling", "Not stratified")$sample
   path <- withr::local_tempfile(fileext = ".csv")
   write.csv(previous, path, row.names = FALSE)
 
@@ -149,7 +149,7 @@ test_that("a reloaded sample is blocked at Apply with the reserved columns liste
       data_source = "upload",
       popdata = list(name = "previous_sample.csv", datapath = path),
       topup = "Enter sample size",
-      samp_type = "Simple random",
+      samp_type = "Simple random sampling",
       stratified = "Not stratified",
       col_psu = "None",
       strata = "None",
@@ -178,7 +178,7 @@ test_that("the downloads have no unnamed row-number column", {
     session$setInputs(
       data_source = "test",
       topup = "Sample size based on population",
-      samp_type = "Simple random",
+      samp_type = "Simple random sampling",
       stratified = "Not stratified",
       col_psu = "None",
       strata = "None",
