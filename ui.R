@@ -339,16 +339,15 @@ page_navbar(
 							condition = "input.topup != 'Enter sample size'",
 							column(
 								4,
-								numeric_input_with_tip(
-									'pror',
-									"Proportion",
-									tip = "Share of the population expected to have the characteristic you measure. With no estimate, keep 0.5: it gives the largest, most cautious sample size.",
-									source = cochran_1977,
-									value = 0.5,
-									min = 0.05,
-									max = 0.95,
-									step = 0.05
-								)
+								# fixed in the computation (fixed_proportion): shown, not editable
+								htmltools::tagQuery(
+									numeric_input_with_tip(
+										'pror',
+										"Proportion",
+										tip = "Fixed at 0.5, the most cautious value: it gives the largest sample size. See the Introduction page for details.",
+										value = fixed_proportion
+									)
+								)$find("input")$addAttrs(disabled = NA)$allTags()
 							)
 						),
 						conditionalPanel(

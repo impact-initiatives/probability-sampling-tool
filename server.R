@@ -213,7 +213,6 @@ function(input, output, session) {
       input$topup,
       input$target,
       input$conf_level,
-      input$pror,
       input$e_marg,
       input$buf,
       input$cls,
