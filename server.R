@@ -5,6 +5,29 @@ function(input, output, session) {
   # give each session a random default seed, visible and editable by the user
   updateNumericInput(session, "seed_value", value = sample.int(1e6, 1))
 
+  # The links of the guide: to its own sections, to the types, and to the app
+  guide_sections <- c(
+    guide_to_data = "data",
+    guide_to_parameters = "parameters",
+    guide_to_results = "results",
+    guide_to_news = "news"
+  )
+  guide_types <- c(
+    guide_open_simple_random = "simple_random",
+    guide_open_pps = "pps",
+    guide_open_cluster = "cluster"
+  )
+  lapply(names(guide_sections), function(id) {
+    observeEvent(input[[id]], bslib::nav_select("guide_nav", guide_sections[[id]]))
+  })
+  lapply(names(guide_types), function(id) {
+    observeEvent(input[[id]], {
+      bslib::nav_select("guide_nav", "types")
+      bslib::accordion_panel_set("types_accordion", guide_types[[id]])
+    })
+  })
+  observeEvent(input$guide_to_app, bslib::nav_select("main_nav", "Sampling frame"))
+
   # an uploaded file is either a usable CSV or an error message, never a crash
   upload <- reactive({
     if (!is.null(input$popdata_too_large)) {

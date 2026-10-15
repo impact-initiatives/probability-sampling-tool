@@ -57,8 +57,201 @@ select_input_overlay <- function(inputId, label, choices = NULL, ...) {
 	)
 }
 
+# Text of the guide: Markdown files in guide/ (and NEWS.md), so that it can be
+# reviewed and corrected without touching the code. {{max_upload_mb}} is filled in.
+guide_markdown <- function(text) {
+	text <- gsub("{{max_upload_mb}}", max_upload_mb, text, fixed = TRUE)
+	# markdown::mark() turns $...$ into \(...\) for MathJax, unlike shiny::markdown()
+	div(
+		class = "guide-text",
+		HTML(markdown::mark(text = text, format = "html", template = FALSE))
+	)
+}
+
+guide_text <- function(file) {
+	guide_markdown(paste(readLines(file, warn = FALSE), collapse = "\n"))
+}
+
+# A Markdown file shown as one card per second level heading, in a grid. What
+# comes before the first heading is shown above the cards.
+guide_sections <- function(file, width = "30rem") {
+	lines <- readLines(file, warn = FALSE)
+	starts <- grep("^## ", lines)
+	intro <- if (starts[1] > 1) lines[seq_len(starts[1] - 1)] else character()
+	ends <- c(starts[-1] - 1, length(lines))
+	cards <- lapply(seq_along(starts), function(i) {
+		body <- lines[(starts[i] + 1):ends[i]]
+		card(
+			class = "guide-card h-100",
+			fill = FALSE,
+			card_header(h3(sub("^## ", "", lines[starts[i]]), class = "h6 fw-semibold mb-0")),
+			card_body(fillable = FALSE, guide_markdown(paste(body, collapse = "\n")))
+		)
+	})
+	tagList(
+		if (length(intro) > 0 && any(nzchar(intro))) {
+			guide_markdown(paste(intro, collapse = "\n"))
+		},
+		do.call(
+			layout_column_wrap,
+			c(list(width = width, fill = FALSE, heights_equal = "row"), cards)
+		)
+	)
+}
+
+# A titled block of the guide, around a Markdown file
+guide_card <- function(title, file) {
+	card(
+		class = "guide-card h-100",
+		fill = FALSE,
+		card_header(h3(title, class = "h6 fw-semibold mb-0")),
+		card_body(fillable = FALSE, guide_text(file))
+	)
+}
+
+# The checks of the app, by group, closed until opened
+guide_checks <- function() {
+	card(
+		class = "guide-card",
+		fill = FALSE,
+		card_header(h3("What the tool checks", class = "h6 fw-semibold mb-0")),
+		card_body(
+			fillable = FALSE,
+			accordion(
+				id = "checks_accordion",
+				open = FALSE,
+				multiple = TRUE,
+				accordion_panel("The file", value = "file", guide_text("guide/checks-file.md")),
+				accordion_panel("The columns", value = "columns", guide_text("guide/checks-columns.md")),
+				accordion_panel("The parameters", value = "parameters", guide_text("guide/checks-parameters.md")),
+				accordion_panel("The cluster design", value = "cluster", guide_text("guide/checks-cluster.md")),
+				accordion_panel("The draw", value = "draw", guide_text("guide/checks-draw.md"))
+			)
+		)
+	)
+}
+
+# A step of the "How it works" row of the guide; the link sits at the bottom
+guide_step <- function(number, title, text, link = NULL) {
+	card(
+		class = "guide-step",
+		card_body(
+			class = "d-flex flex-column",
+			div(
+				class = "d-flex align-items-center gap-2 mb-1",
+				span(class = "guide-step-number", number),
+				h3(title, class = "h6 fw-semibold mb-0")
+			),
+			p(text, class = "small mb-2"),
+			if (!is.null(link)) div(class = "mt-auto small", link)
+		)
+	)
+}
+
+# A card of the "Three sampling types" row of the guide; the link sits at the bottom
+guide_type_card <- function(name, before, one_row, needs, button_id) {
+	card(
+		class = "guide-type",
+		card_header(
+			div(
+				h3(name, class = "h6 fw-semibold mb-1"),
+				span(class = "badge text-bg-light fw-normal", paste("before:", before))
+			)
+		),
+		card_body(
+			class = "d-flex flex-column",
+			p(strong("One row is "), one_row, class = "small mb-1"),
+			p(strong("Needs "), needs, class = "small mb-2"),
+			div(class = "mt-auto small", actionLink(button_id, tagList("Details ", icon("arrow-right"))))
+		)
+	)
+}
+
+# The landing of the guide
+guide_start <- function() {
+	tagList(
+		div(
+			class = "guide-hero",
+			h1("Draw a probability sample from your sampling frame"),
+			p(
+				class = "lead",
+				"Load your CSV, choose a sampling type and set the parameters. The tool returns the units to survey and the number of surveys to run in each."
+			),
+			actionButton(
+				"guide_to_app",
+				tagList("Start sampling ", icon("arrow-right")),
+				class = "btn-primary"
+			)
+		),
+		h2("How it works", class = "h6 fw-semibold mt-3"),
+		layout_column_wrap(
+			width = "14rem",
+			fill = FALSE,
+			guide_step(
+				1,
+				"Prepare the frame",
+				"One CSV, one row per unit of your frame.",
+				actionLink("guide_to_data", "What the frame must contain")
+			),
+			guide_step(
+				2,
+				"Set up",
+				"Mode, type of sampling, columns and parameters in the Sampling frame tab.",
+				actionLink("guide_to_parameters", "The parameters")
+			),
+			guide_step(
+				3,
+				"Apply",
+				"Computes the target per stratum and checks the frame and the parameters."
+			),
+			guide_step(
+				4,
+				"Sample and export",
+				"Draws the sample in the Sampling tab, then download the Sample and its summary.",
+				actionLink("guide_to_results", "Reading the results")
+			)
+		),
+		h2("Three sampling types", class = "h6 fw-semibold mt-3"),
+		layout_column_wrap(
+			width = "17rem",
+			fill = FALSE,
+			guide_type_card(
+				"Simple random sampling",
+				"Simple random",
+				"a unit to survey (household, person).",
+				"no population column.",
+				"guide_open_simple_random"
+			),
+			guide_type_card(
+				"PPS sampling with replacement",
+				"Simple random - allocation",
+				"a PSU (an area) with its population.",
+				"a population column.",
+				"guide_open_pps"
+			),
+			guide_type_card(
+				"Two-stage PPS cluster sampling with replacement",
+				"Cluster sampling",
+				"a PSU with its population.",
+				"a cluster column and a population column.",
+				"guide_open_cluster"
+			)
+		),
+		div(
+			class = "alert alert-info mt-3 mb-0 py-2 d-flex justify-content-between align-items-center",
+			span(
+				icon("circle-info"),
+				strong(" Coming from the previous version? "),
+				"The sampling types and the columns of the results have new names."
+			),
+			actionLink("guide_to_news", "What's new")
+		)
+	)
+}
+
 page_navbar(
 	title = "Probability sampling tool",
+	id = "main_nav",
 	lang = "en",
 	theme = bs_theme(
 		version = 5,
@@ -114,108 +307,95 @@ page_navbar(
 		)
 	),
 	nav_panel(
-		"Introduction",
-		fluidRow(
-			h1("Brief overview of the tool"),
-			class = "text-center"
-		),
-		fluidRow(
-			column(
-				5,
-				offset = 1,
-				h2("Mode of sampling"),
-				p(
-					strong("Enter sample size:"),
-					"You can input the target sample size"
-				),
-				p(
-					strong("Sample size based on population:"),
-					"The sample size will be based on confidence level, error margin and proportion"
-				),
-
-				h2("Type of sampling"),
-
-				p(
-					strong("Simple random sampling:"),
-					"Simple Random sampling, a random sample directly from the sampling frame which consists of every unit in the population of interest, thus ensuring equal probability of each unit to be selected."
-				),
-				p(
-					strong("PPS sampling with replacement:"),
-					"Use when the sampling frame lists geographic units (e.g. cities, wards) with their population sizes but no household-level frame is available. Surveys are allocated across units with probability proportional to population size, so larger units receive more surveys and a unit can be selected several times. The output gives the number of surveys to collect in each selected unit."
-				),
-				p(
-					strong("Two-stage PPS cluster sampling with replacement:"),
-					"Clusters, or Primary Sampling Units (PSUs), are first randomly selected, before a set number of units (e.g. households) at each cluster is randomly selected."
-				),
-				p(
-					strong("Stratified:"),
-					"If ticked, a variable characterizing the stratification of the sampling will be ask to stratify the sample."
-				),
-
-				h2("Parameters"),
-				p(strong("Confidence level:"), "The desired confidence level."),
-				p(strong("Error Margin:"), "The desired error margin."),
-				p(
-					strong("Proportion:"),
-					"The expected proportion in the sample."
-				),
-				p(strong("Buffer:"), "The desired percentage buffer."),
-				p(
-					strong("Cluster size:"),
-					"The minimum number of interviews to conduct by cluster."
-				),
-				p(
-					strong("ICC:"),
-					"Intracluster  correlation : average value estimated in previous assessments = 0.06."
-				)
-			),
-			column(
-				5,
-				h2("Loading files"),
-				p(
-					"The CSV is your sampling frame: one row per sampling unit, covering the entire population of interest (not a pre-drawn subset). For Simple random sampling, each row is a unit and the frame size is the population. For PPS sampling with replacement and Two-stage PPS cluster sampling with replacement, each row is a cluster or area, and the Population column gives the number of sub-units (e.g. households) it contains."
-				),
-				p(
-					"The app takes only files .csv; each row of the csv need to be the primary sampling unit.",
-					strong(
-						"The headers of the dataset must NOT contain special characters."
+		"Guide",
+		withMathJax(
+			div(
+				class = "guide",
+				navset_pill(
+					id = "guide_nav",
+					nav_panel("Start", value = "start", guide_start()),
+					nav_panel(
+						"Sampling types",
+						value = "types",
+						accordion(
+							id = "types_accordion",
+							open = FALSE,
+							multiple = FALSE,
+							accordion_panel(
+								tagList(
+									"Simple random sampling",
+									span(
+										class = "badge text-bg-light fw-normal ms-2",
+										"before: Simple random"
+									)
+								),
+								value = "simple_random",
+								guide_text("guide/type-simple-random.md")
+							),
+							accordion_panel(
+								tagList(
+									"PPS sampling with replacement",
+									span(
+										class = "badge text-bg-light fw-normal ms-2",
+										"before: Simple random - allocation"
+									)
+								),
+								value = "pps",
+								guide_text("guide/type-pps.md")
+							),
+							accordion_panel(
+								tagList(
+									"Two-stage PPS cluster sampling with replacement",
+									span(
+										class = "badge text-bg-light fw-normal ms-2",
+										"before: Cluster sampling"
+									)
+								),
+								value = "cluster",
+								guide_text("guide/type-cluster.md")
+							)
+						)
 					),
-					strong(paste0(
-						"Uploaded files are limited to ",
-						max_upload_mb,
-						" MB."
-					)),
-					("You can use some example data by ticking 'example data'")
-				),
-				p(
-					"When the files is loaded, depending of the type of sampling loaded before, some parameters will have to be specify:"
-				),
-				p(
-					strong("Cluster:"),
-					"The variable including the name of each cluster (PSU). The sampling frame is expected to have one row per cluster, so this column must contain a unique value per row (no duplicates)."
-				),
-				p(
-					strong("Stratification:"),
-					"The variable in the data defining the stratification."
-				),
-				p(
-					strong("Population:"),
-					"The variable in the data defining the population number by PSU.",
-					strong("Must be > 0 and > to cluster size")
-				),
-				p(strong(
-					"When all this parameters are defined please press'Apply'."
-				)),
-
-				h2("Computing target"),
-				p(
-					"Under the target section will be compute the target based on the confidence level and margin error defined previously."
-				),
-				p("Click Apply to compute the target"),
-
-				h2("Sampling"),
-				p(
-					"When target appear in the tab, go to the 'Sampling tab' and click 'Sample!'. You can then download the list of units sampled and the sampling summary."
+					nav_panel(
+						"Your data",
+						value = "data",
+						layout_columns(
+							col_widths = c(5, 7),
+							fill = FALSE,
+							guide_card("The file", "guide/data-file.md"),
+							guide_card(
+								"What each type expects",
+								"guide/data-types.md"
+							)
+						),
+						guide_checks()
+					),
+					nav_panel(
+						"Parameters",
+						value = "parameters",
+						guide_card("Mode of sampling", "guide/parameters-mode.md"),
+						guide_card("Parameters", "guide/parameters-list.md"),
+						guide_card(
+							"Which parameters apply",
+							"guide/parameters-applies.md"
+						)
+					),
+					nav_panel(
+						"Results",
+						value = "results",
+						guide_card("The tables", "guide/results-tables.md"),
+						guide_card(
+							"Columns added by the tool",
+							"guide/results-columns.md"
+						),
+						guide_card("Sample summary", "guide/results-summary.md")
+					),
+					nav_panel("What's new", value = "news", guide_sections("NEWS.md", "27rem")),
+					nav_panel(
+						"Methods",
+						value = "methods",
+						guide_sections("guide/methods.md", "30rem")
+					)
 				)
 			)
 		)
@@ -344,7 +524,7 @@ page_navbar(
 									numeric_input_with_tip(
 										'pror',
 										"Proportion",
-										tip = "Fixed at 0.5, the most cautious value: it gives the largest sample size. See the Introduction page for details.",
+										tip = "Fixed at 0.5, the most cautious value: it gives the largest sample size. See the Guide for details.",
 										value = fixed_proportion
 									)
 								)$find("input")$addAttrs(disabled = NA)$allTags()

@@ -60,6 +60,124 @@ table.dataTable td.dt-right {
 	font-size: 0.8rem;
 }
 
+/* Guide: readable width, text blocks and steps */
+.guide {
+	max-width: 62rem;
+	margin: 0 auto;
+	padding: 0.25rem 0;
+}
+
+.guide .nav-pills {
+	margin-bottom: 0.5rem;
+}
+
+.guide-hero h1 {
+	font-size: 1.35rem;
+	margin-bottom: 0.25rem;
+}
+
+.guide-hero .lead {
+	font-size: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+.guide-step-number {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	width: 1.6rem;
+	height: 1.6rem;
+	border-radius: 50%;
+	background: var(--bs-primary);
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.85rem;
+}
+
+.guide-text {
+	max-width: 56rem;
+}
+
+.guide-text table {
+	width: 100%;
+	margin: 0.5rem 0 1rem;
+	border-collapse: collapse;
+}
+
+.guide-text th,
+.guide-text td {
+	padding: 0.4rem 0.6rem;
+	border-bottom: 1px solid var(--bs-border-color);
+	vertical-align: top;
+}
+
+.guide-text th {
+	background-color: var(--bs-light);
+	text-align: left;
+}
+
+.guide-text h2 {
+	font-size: 1.2rem;
+	margin-top: 1.5rem;
+}
+
+/* Blocks of the guide: compact, so that a section fits on one screen */
+.guide-card {
+	margin-bottom: 0.5rem;
+}
+
+.guide .tab-pane > .guide-card:last-child {
+	margin-bottom: 0;
+}
+
+.guide .bslib-grid .guide-card {
+	margin-bottom: 0;
+}
+
+.guide-card .card-header {
+	padding: 0.3rem 0.75rem;
+}
+
+.guide-card .card-body {
+	padding: 0.5rem 0.75rem;
+}
+
+.guide-card .guide-text {
+	font-size: 0.8rem;
+}
+
+.guide-card .guide-text table {
+	margin: 0.25rem 0 0.5rem;
+}
+
+.guide-card .guide-text th,
+.guide-card .guide-text td {
+	padding: 0.15rem 0.4rem;
+}
+
+.guide-card .accordion-button {
+	font-size: 0.9rem;
+	padding: 0.4rem 0.75rem;
+}
+
+.guide-card .guide-text p,
+.guide-card .guide-text ul {
+	margin-bottom: 0.4rem;
+}
+
+/* Sampling types: the title of each type is the first thing to read */
+.guide .accordion-button {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--bs-body-color);
+}
+
+.guide .accordion-button .badge {
+	font-size: 0.75rem;
+	font-weight: 400;
+}
+
 /* Help icon next to a field label, opening a tooltip (see info_tip() in ui.R) */
 .info-tip {
 	margin-left: 0.25rem;
