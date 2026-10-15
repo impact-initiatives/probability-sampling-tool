@@ -39,13 +39,26 @@ run_with_seed <- function(seed, expr) {
   expr
 }
 
-# Calculate the sample size required for a given population proportion
+# Proportion used by the sample size computation. It is fixed: 0.5 is the most
+# cautious value, since p * (1 - p) is largest there and so is the sample size.
+# The field stays visible, not editable, in the interface (issues #8 and #9).
+fixed_proportion <- 0.5
+
+# Calculate the sample size required to estimate a proportion
+#
+# Cochran's formula for a proportion (Cochran, 1977, Sampling Techniques, 3rd ed.)
+# with the finite population correction:
+#   n0 = z^2 * p * (1 - p) / e^2         sample size for an infinite population
+#   n  = n0 / (1 + (n0 - 1) / N)         finite population correction
+#      = z^2 * N * p * (1 - p) / (e^2 * (N - 1) + z^2 * p * (1 - p))
+# where z is the two-sided normal quantile of the confidence level: z^2 is also
+# qchisq(conf_level, df = 1). The result is then multiplied by the design effect.
 #
 # Parameters:
-#   population_size: The population size
+#   population_size: The population size (N)
 #   conf_level: The desired level of confidence (between 0 and 1)
-#   prop: The estimated population proportion (between 0 and 1)
-#   margin_error: The desired margin of error
+#   prop: The estimated population proportion (p, between 0 and 1)
+#   margin_error: The desired margin of error (e)
 #   DEFF: Design effect to inflate the sample size for (default 1, i.e. no inflation)
 # Returns:
 #   The sample size required to achieve the desired level of confidence and margin of error
@@ -345,9 +358,6 @@ validate_parameters <- function(input) {
     }
     if (!strictly_between_0_and_1(input$e_marg)) {
       return("Error margin must be a number strictly between 0 and 1.")
-    }
-    if (!strictly_between_0_and_1(input$pror)) {
-      return("Proportion must be a number strictly between 0 and 1.")
     }
     if (!is_number(input$buf) || input$buf < 0) {
       return("Buffer must be a number greater than or equal to 0.")
@@ -682,7 +692,7 @@ create_targets <- function(sframe, input) {
         Ssize(
           population_size = Population,
           conf_level = input$conf_level,
-          prop = input$pror,
+          prop = fixed_proportion,
           margin_error = input$e_marg,
           DEFF = DEFF
         )
