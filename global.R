@@ -556,6 +556,40 @@ check_target_vs_population <- function(cible) {
   return(NULL)
 }
 
+# Labels of the "Target sampling" table. The values are what was requested: in
+# a random sampling type the draw is capped to the population of the stratum, so
+# they can be larger than the population next to them.
+label_target_table <- function(target) {
+  names(target)[names(target) == "target"] <- "Requested Target"
+  names(target)[
+    names(target) == "target.with.buffer"
+  ] <- "Requested Target (with buffer)"
+  target
+}
+
+# Warning shown when the requested sample size exceeds the population of some
+# strata (`affected`). `drawn` is TRUE once the sample has been drawn.
+exceeds_population_modal <- function(affected, drawn = FALSE) {
+  modalDialog(
+    title = tagList(
+      icon("triangle-exclamation"),
+      "Sample size exceeds population"
+    ),
+    div(
+      class = "alert alert-warning",
+      paste0(
+        "The requested sample size exceeds the available population in stratum(s): ",
+        paste(affected, collapse = ", "),
+        ". The sample ",
+        if (drawn) "was" else "will be",
+        " capped to the available population there."
+      )
+    ),
+    easyClose = TRUE,
+    footer = modalButton("OK")
+  )
+}
+
 # Check that the PSU (cluster) column is selected, distinct from the
 # stratification column, and contains unique values (no duplicate PSU IDs).
 # Returns an error message string if the input is invalid, or NULL if valid.
@@ -896,7 +930,7 @@ make_sample <- function(sampling_frame, input) {
       "# PSUs to assess" = "PSUs",
       "# Unique PSUs" = "Unique_PSUs",
       "Population" = "NB_Population",
-      "Target (with buffer)" = "target.with.buffer",
+      "Requested Target (with buffer)" = "target.with.buffer",
       "Cluster size set (planned)" = "Cluster_size_planned",
       "Mean Cluster size (realized)" = "Cluster_size_realized",
       "ICC" = "ICC",
