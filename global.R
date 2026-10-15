@@ -124,30 +124,24 @@ validate_strata_selection <- function(input) {
   return(NULL)
 }
 
-# Columns the tool adds to the sampling frame and to the sample.
-reserved_columns <- c(
-  "PST_id_sample",
-  "PST_survey",
-  "PST_stratum_id",
-  "PST_psu_id",
-  "PST_pop_size",
-  "PST_pop_size_stratum",
-  "PST_prob"
-)
+# Prefix of the columns the tool adds to the sampling frame and to the sample.
+reserved_prefix <- "PST_"
 
-# Check that the sampling frame has none of the reserved columns: they would be
-# overwritten or break the draw. The usual cause is a previous sample reloaded
-# as a sampling frame.
+# Check that the sampling frame has no column starting with the reserved prefix:
+# it would be overwritten or break the draw. The usual cause is a previous
+# sample reloaded as a sampling frame.
 # Returns an error message string if one is present, or NULL if valid.
 validate_reserved_columns <- function(sframe) {
-  found <- intersect(reserved_columns, names(sframe))
+  found <- names(sframe)[startsWith(names(sframe), reserved_prefix)]
   if (length(found) == 0) {
     return(NULL)
   }
   paste0(
-    "The sampling frame has column(s) with names reserved for the tool: ",
+    "The sampling frame has column(s) with protected names: ",
     paste(found, collapse = ", "),
-    ".\n\nThe tool uses these names for the columns it adds to the sample: rename or remove them in the CSV."
+    ".\n\nNames starting with ",
+    reserved_prefix,
+    " are reserved: the tool creates columns with these names during the sampling and in the sample file, so yours would be overwritten or cause an error. Rename or remove them in the CSV."
   )
 }
 

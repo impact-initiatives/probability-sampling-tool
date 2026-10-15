@@ -4,6 +4,17 @@
 app_root <- normalizePath(testthat::test_path("..", ".."))
 source(file.path(app_root, "global.R"), chdir = TRUE)
 
+# the columns the tool adds to a sample
+tool_columns <- c(
+  "PST_id_sample",
+  "PST_survey",
+  "PST_stratum_id",
+  "PST_psu_id",
+  "PST_pop_size",
+  "PST_pop_size_stratum",
+  "PST_prob"
+)
+
 sampling_types <- c(
   "Simple random",
   "Simple random - allocation",
@@ -97,15 +108,16 @@ test_that("the frame attached to issue #32 can be sampled", {
   }
 })
 
-test_that("the sample carries the PST_ columns and all of them are reserved", {
+test_that("the sample carries the columns the tool adds, all with the PST_ prefix", {
   out <- draw(frame_24(), "Cluster sampling", "Stratified")
-  added <- grep("^PST_", names(out$sample), value = TRUE)
-  expect_setequal(added, reserved_columns)
+  added <- setdiff(names(out$sample), names(frame_24()))
+  expect_setequal(added, tool_columns)
+  expect_true(all(startsWith(tool_columns, reserved_prefix)))
 })
 
-test_that("a frame with a reserved column is blocked, naming the columns", {
+test_that("a frame with a PST_ column is blocked, naming the columns", {
   expect_null(validate_reserved_columns(frame_24()))
-  for (name in reserved_columns) {
+  for (name in c(tool_columns, "PST_notes")) {
     frame <- frame_24()
     frame[[name]] <- 1
     expect_match(validate_reserved_columns(frame), name, fixed = TRUE)
@@ -117,6 +129,11 @@ test_that("a frame with a reserved column is blocked, naming the columns", {
   expect_match(msg, "PST_prob", fixed = TRUE)
   expect_match(msg, "PST_survey", fixed = TRUE)
   expect_no_match(msg, "PST_psu_id", fixed = TRUE)
+
+  # the prefix is case sensitive: this name cannot collide with the tool's
+  frame <- frame_24()
+  frame$pst_prob <- 1
+  expect_null(validate_reserved_columns(frame))
 })
 
 test_that("a reloaded sample is blocked at Apply with the reserved columns listed", {
