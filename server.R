@@ -196,24 +196,7 @@ function(input, output, session) {
     affected <- if (input$samp_type != "Cluster sampling") {
       check_target_vs_population(cible())
     }
-    if (!is.null(affected)) {
-      showModal(modalDialog(
-        title = tagList(
-          icon("triangle-exclamation"),
-          "Sample size exceeds population"
-        ),
-        div(
-          class = "alert alert-warning",
-          paste0(
-            "The requested sample size exceeds the available population in stratum(s): ",
-            paste(affected, collapse = ", "),
-            ". The sample will be capped to the available population there."
-          )
-        ),
-        easyClose = TRUE,
-        footer = modalButton("OK")
-      ))
-    }
+    if (!is.null(affected)) showModal(exceeds_population_modal(affected))
   })
 
   # any change to a frame- or target-defining input invalidates the previous Apply
@@ -243,7 +226,19 @@ function(input, output, session) {
   observeEvent(input$desButton, {
     drawn <- succeeds(out())
     sample_current(drawn)
-    if (!drawn) draw_failed(TRUE)
+    if (!drawn) {
+      draw_failed(TRUE)
+      return()
+    }
+    # same warning as at Apply: the draw has just been capped
+    affected <- if (
+      input$samp_type != "Cluster sampling" && succeeds(cible())
+    ) {
+      check_target_vs_population(cible())
+    }
+    if (!is.null(affected)) {
+      showModal(exceeds_population_modal(affected, drawn = TRUE))
+    }
   })
   observeEvent(input$seed_value, draw_failed(FALSE), ignoreInit = TRUE)
 
@@ -352,7 +347,7 @@ function(input, output, session) {
   output$target_frame <- DT::renderDataTable(
     {
       req(!tables_stale())
-      quiet(cible())
+      label_target_table(quiet(cible()))
     },
     rownames = FALSE,
     style = dt_style,
