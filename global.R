@@ -59,52 +59,52 @@ Ssize <- function(population_size, conf_level, prop, margin_error, DEFF = 1) {
 
 # create the sampling frame
 # This function creates a sampling frame based on the input parameters.
-# It adds additional columns to the input data frame, such as id_sampl, strata_id, psu_id, pop_numbers, and proba.
-# The id_sampl column is created by concatenating "id_" with the row names of the input data frame.
-# If the sampling method is "Stratified", the strata_id column is created by extracting the values from the specified strata column in the input data frame.
-# If the sampling method is "Cluster sampling", the psu_id column is created by extracting the values from the specified col_psu column in the input data frame,
-# and the pop_numbers column is created by extracting the values from the specified colpop column in the input data frame.
-# If the sampling method is "Simple random - allocation" or any other method, the psu_id column is created using the id_sampl column,
-# and the pop_numbers column is created with a value of 1 for each row.
-# The SumDist column is calculated by summing the pop_numbers column within each strata_id group.
-# The proba column is calculated by dividing the pop_numbers column by the SumDist column.
-# Any rows with missing values in the proba column are removed.
-# If the sampling method is "Cluster sampling", the psu_id column is converted to a factor.
+# It adds additional columns to the input data frame, such as PST_id_sample, PST_stratum_id, PST_psu_id, PST_pop_size, and PST_prob.
+# The PST_id_sample column is created by concatenating "id_" with the row names of the input data frame.
+# If the sampling method is "Stratified", the PST_stratum_id column is created by extracting the values from the specified strata column in the input data frame.
+# If the sampling method is "Cluster sampling", the PST_psu_id column is created by extracting the values from the specified col_psu column in the input data frame,
+# and the PST_pop_size column is created by extracting the values from the specified colpop column in the input data frame.
+# If the sampling method is "Simple random - allocation" or any other method, the PST_psu_id column is created using the PST_id_sample column,
+# and the PST_pop_size column is created with a value of 1 for each row.
+# The PST_pop_size_stratum column is calculated by summing the PST_pop_size column within each PST_stratum_id group.
+# The PST_prob column is calculated by dividing the PST_pop_size column by the PST_pop_size_stratum column.
+# Any rows with missing values in the PST_prob column are removed.
+# If the sampling method is "Cluster sampling", the PST_psu_id column is converted to a factor.
 # The resulting data frame is returned.
 format_sampling_frame <- function(sframe, input) {
-  sframe$id_sampl <- paste0("id_", rownames(sframe))
+  sframe$PST_id_sample <- paste0("id_", rownames(sframe))
   if (input$stratified == "Stratified") {
-    sframe$strata_id <- sframe[[as.character(input$strata)]]
+    sframe$PST_stratum_id <- sframe[[as.character(input$strata)]]
   } else {
-    sframe$strata_id <- rep("all", nrow(sframe))
+    sframe$PST_stratum_id <- rep("all", nrow(sframe))
   }
 
   if (input$samp_type == "Cluster sampling") {
-    sframe$psu_id <- sframe[[as.character(input$col_psu)]]
-    sframe$pop_numbers <- sframe[[as.character(input$colpop)]]
+    sframe$PST_psu_id <- sframe[[as.character(input$col_psu)]]
+    sframe$PST_pop_size <- sframe[[as.character(input$colpop)]]
   } else if (input$samp_type == "Simple random - allocation") {
-    sframe$psu_id <- sframe$id_sampl
-    sframe$pop_numbers <- sframe[[as.character(input$colpop)]]
+    sframe$PST_psu_id <- sframe$PST_id_sample
+    sframe$PST_pop_size <- sframe[[as.character(input$colpop)]]
   } else {
-    sframe$psu_id <- sframe$id_sampl
-    sframe$pop_numbers <- rep(1, nrow(sframe))
+    sframe$PST_psu_id <- sframe$PST_id_sample
+    sframe$PST_pop_size <- rep(1, nrow(sframe))
   }
 
   sumdist <- sframe %>%
-    dplyr::group_by(strata_id) %>%
-    dplyr::summarise(SumDist = sum(pop_numbers, na.rm = T))
-  sframe <- merge(sframe, sumdist, by = "strata_id")
-  proba <- as.numeric(sframe$pop_numbers) / as.numeric(sframe$SumDist)
+    dplyr::group_by(PST_stratum_id) %>%
+    dplyr::summarise(PST_pop_size_stratum = sum(PST_pop_size, na.rm = T))
+  sframe <- merge(sframe, sumdist, by = "PST_stratum_id")
+  PST_prob <- as.numeric(sframe$PST_pop_size) / as.numeric(sframe$PST_pop_size_stratum)
   # an empty PSU alone in its stratum gives 0/0: keep it so that the cluster
   # size guard reports it instead of the row vanishing from the frame
   if (input$samp_type == "Cluster sampling") {
-    proba[is.nan(proba)] <- 0
+    PST_prob[is.nan(PST_prob)] <- 0
   }
-  sframe <- cbind(sframe, proba)
-  sframe <- sframe[!is.na(sframe$proba), ]
+  sframe <- cbind(sframe, PST_prob)
+  sframe <- sframe[!is.na(sframe$PST_prob), ]
 
   if (input$samp_type == "Cluster sampling") {
-    sframe$psu_id <- as.factor(sframe$psu_id)
+    sframe$PST_psu_id <- as.factor(sframe$PST_psu_id)
   }
   return(sframe)
 }
@@ -122,6 +122,33 @@ validate_strata_selection <- function(input) {
     )
   }
   return(NULL)
+}
+
+# Columns the tool adds to the sampling frame and to the sample.
+reserved_columns <- c(
+  "PST_id_sample",
+  "PST_survey",
+  "PST_stratum_id",
+  "PST_psu_id",
+  "PST_pop_size",
+  "PST_pop_size_stratum",
+  "PST_prob"
+)
+
+# Check that the sampling frame has none of the reserved columns: they would be
+# overwritten or break the draw. The usual cause is a previous sample reloaded
+# as a sampling frame.
+# Returns an error message string if one is present, or NULL if valid.
+validate_reserved_columns <- function(sframe) {
+  found <- intersect(reserved_columns, names(sframe))
+  if (length(found) == 0) {
+    return(NULL)
+  }
+  paste0(
+    "The sampling frame has column(s) with names reserved for the tool: ",
+    paste(found, collapse = ", "),
+    ".\n\nThe tool uses these names for the columns it adds to the sample: rename or remove them in the CSV."
+  )
 }
 
 # Check that the selected population column is numeric when required for the sampling type.
@@ -370,8 +397,8 @@ cluster_size_issues <- function(sampl_f, target, input) {
     return(NULL)
   }
   cls <- input$cls
-  strata <- as.character(sampl_f$strata_id)
-  pop <- sampl_f$pop_numbers
+  strata <- as.character(sampl_f$PST_stratum_id)
+  pop <- sampl_f$PST_pop_size
   psu_rows <- NULL
   stratum_rows <- NULL
 
@@ -380,7 +407,7 @@ cluster_size_issues <- function(sampl_f, target, input) {
     psu_rows <- data.frame(
       issue = "PSU too small for the cluster size",
       stratum = strata[too_small],
-      psu = as.character(sampl_f$psu_id[too_small]),
+      psu = as.character(sampl_f$PST_psu_id[too_small]),
       n_psus = NA_integer_,
       population = pop[too_small],
       cluster_size = cls,
@@ -393,7 +420,7 @@ cluster_size_issues <- function(sampl_f, target, input) {
   capacity <- tapply(floor(pop / cls), strata, sum, na.rm = TRUE)
   target_by_stratum <- setNames(
     target$target.with.buffer,
-    as.character(target$strata_id)
+    as.character(target$PST_stratum_id)
   )
   needed <- ceiling(target_by_stratum[names(capacity)] / cls)
   short <- names(capacity)[capacity < needed]
@@ -403,7 +430,7 @@ cluster_size_issues <- function(sampl_f, target, input) {
       stratum = short,
       psu = NA_character_,
       n_psus = as.integer(table(strata)[short]),
-      population = setNames(target$Population, as.character(target$strata_id))[
+      population = setNames(target$Population, as.character(target$PST_stratum_id))[
         short
       ],
       cluster_size = cls,
@@ -496,20 +523,20 @@ psu_overflow_issues <- function(sample, input) {
   if (input$samp_type != "Cluster sampling") {
     return(NULL)
   }
-  over <- which(sample$Survey > sample$pop_numbers)
+  over <- which(sample$PST_survey > sample$PST_pop_size)
   if (length(over) == 0) {
     return(NULL)
   }
   s <- sample[over, ]
   out <- data.frame(
     issue = "PSU drawn more often than its population allows",
-    stratum = as.character(s$strata_id),
-    psu = as.character(s$psu_id),
-    times_drawn = s$Survey / input$cls,
+    stratum = as.character(s$PST_stratum_id),
+    psu = as.character(s$PST_psu_id),
+    times_drawn = s$PST_survey / input$cls,
     cluster_size = input$cls,
-    surveys_assigned = s$Survey,
-    population = s$pop_numbers,
-    excess = s$Survey - s$pop_numbers
+    surveys_assigned = s$PST_survey,
+    population = s$PST_pop_size,
+    excess = s$PST_survey - s$PST_pop_size
   )
   out[order(-out$excess), ]
 }
@@ -549,7 +576,7 @@ psu_overflow_message <- function(issues) {
 # Check whether the requested target exceeds the available population in any stratum.
 # Returns a character vector of affected stratum names, or NULL if none.
 check_target_vs_population <- function(cible) {
-  affected <- cible$strata_id[cible$target.with.buffer > cible$Population]
+  affected <- cible$PST_stratum_id[cible$target.with.buffer > cible$Population]
   if (length(affected) > 0) {
     return(as.character(affected))
   }
@@ -593,8 +620,8 @@ validate_psu_column <- function(sframe, input) {
 # Calculate the sample size required for a given population proportion
 #
 # This function takes in a  dataframe and an input list, and calculates the sample size required for a given population proportion.
-# It creates a new column 'strata_id' in the  dataframe based on the input 'strata' value.
-# It then groups the dataframe by 'strata_id' and calculates the maximum population value for each group.
+# It creates a new column 'PST_stratum_id' in the  dataframe based on the input 'strata' value.
+# It then groups the dataframe by 'PST_stratum_id' and calculates the maximum population value for each group.
 # Finally, it calculates the target sample size based on the input parameters, and also calculates the target sample size with a buffer.
 #
 # Args:
@@ -616,9 +643,9 @@ create_targets <- function(sframe, input) {
   }
 
   sframe |>
-    dplyr::group_by(strata_id) |>
+    dplyr::group_by(PST_stratum_id) |>
     dplyr::summarise(
-      Population = sum(pop_numbers, na.rm = T)
+      Population = sum(PST_pop_size, na.rm = T)
     ) |>
     dplyr::mutate(
       target = (if (input$topup == "Enter sample size") {
@@ -654,7 +681,7 @@ clustersample <- function(sframe, sampling_target, cls) {
   cluster_sampling(
     sframe,
     cls = cls,
-    dist = as.character(sampling_target[["strata_id"]]),
+    dist = as.character(sampling_target[["PST_stratum_id"]]),
     target_with_buffer = as.numeric(as.character(
       sampling_target[["target.with.buffer"]]
     ))
@@ -670,8 +697,8 @@ clustersample <- function(sframe, sampling_target, cls) {
 #' buf The buffer size to for the samples
 #' Returns A vector of randomly selected IDs from the sampling frame dataset
 randomsample <- function(sframe, sampling_target, buf) {
-  dist <- as.character(sampling_target[["strata_id"]])
-  dbr <- sframe[as.character(sframe$strata_id) == dist, ]
+  dist <- as.character(sampling_target[["PST_stratum_id"]])
+  dbr <- sframe[as.character(sframe$PST_stratum_id) == dist, ]
   tosample <- as.numeric(sampling_target[["target.with.buffer"]])
   pop <- as.numeric(sampling_target[["Population"]])
   if (tosample > pop) {
@@ -679,7 +706,7 @@ randomsample <- function(sframe, sampling_target, buf) {
   } else {
     target <- ceiling(tosample)
   }
-  out <- sample(x = as.character(dbr$id_sampl), size = target, replace = FALSE)
+  out <- sample(x = as.character(dbr$PST_id_sample), size = target, replace = FALSE)
   # incProgress(round(1/nrow(sampling_target),2), detail = paste("Sampling", dist))
   return(out)
 }
@@ -691,8 +718,8 @@ randomsample <- function(sframe, sampling_target, buf) {
 #' buf The buffer size for sampling.
 #' returns A vector of randomly selected IDs from the sampling frame data.
 stage2rdsample <- function(sframe, sampling_target, buf) {
-  dist <- as.character(sampling_target[["strata_id"]])
-  dbr <- sframe[as.character(sframe$strata_id) == dist, ]
+  dist <- as.character(sampling_target[["PST_stratum_id"]])
+  dbr <- sframe[as.character(sframe$PST_stratum_id) == dist, ]
   tosample <- as.numeric(sampling_target[["target.with.buffer"]])
   pop <- as.numeric(sampling_target[["Population"]])
   if (tosample > pop) {
@@ -701,9 +728,9 @@ stage2rdsample <- function(sframe, sampling_target, buf) {
     target <- ceiling(tosample)
   }
   out <- sample(
-    x = as.character(dbr$id_sampl),
+    x = as.character(dbr$PST_id_sample),
     size = target,
-    prob = dbr$proba,
+    prob = dbr$PST_prob,
     replace = TRUE
   )
   # incProgress(round(1/nrow(sampling_target),2), detail = paste("Sampling", dist))
@@ -728,10 +755,10 @@ cluster_sampling <- function(
   dist,
   target_with_buffer
 ) {
-  dbr <- sframe[as.character(sframe$strata_id) == dist, ]
+  dbr <- sframe[as.character(sframe$PST_stratum_id) == dist, ]
   m <- ceiling(as.numeric(target_with_buffer) / cls)
 
-  sample(as.character(dbr$id_sampl), size = m, prob = dbr$proba, replace = TRUE)
+  sample(as.character(dbr$PST_id_sample), size = m, prob = dbr$PST_prob, replace = TRUE)
 }
 
 
@@ -797,44 +824,41 @@ make_sample <- function(sampling_frame, input) {
   # one row per PSU draw, so repeated draws stay separate visits instead of
   # being collapsed into a single row with a multiplied count
   dbout <- merge(
-    data.frame(output = output),
+    data.frame(PST_id_sample = output),
     sampl_f,
-    by.x = "output",
-    by.y = "id_sampl",
+    by = "PST_id_sample",
     all.x = T,
     all.y = F
   )
 
   if (input$samp_type == "Cluster sampling") {
-    dbout$Survey <- cls
+    dbout$PST_survey <- cls
   } else {
-    dbout$Survey <- 1
+    dbout$PST_survey <- 1
   }
-
-  names(dbout)[names(dbout) == "output"] <- "id_sampl"
 
   # user-facing sample: one row per selected PSU, with the total number of
   # surveys to run there. Cluster and PPS-allocation draw PSUs with
   # replacement, so dbout can hold the same PSU on several rows; the summary
   # statistics below still use the per-draw dbout.
   dbout_sample <- dbout |>
-    dplyr::group_by(id_sampl) |>
+    dplyr::group_by(PST_id_sample) |>
     dplyr::summarise(
-      Survey = sum(Survey, na.rm = TRUE),
-      dplyr::across(-Survey, dplyr::first),
+      PST_survey = sum(PST_survey, na.rm = TRUE),
+      dplyr::across(-PST_survey, dplyr::first),
       .groups = "drop"
     )
 
   # create the summary table
   summary_sample <- dbout |>
-    dplyr::group_by(strata_id) |>
+    dplyr::group_by(PST_stratum_id) |>
     dplyr::summarise(
-      Surveys = sum(Survey, na.rm = TRUE),
+      Surveys = sum(PST_survey, na.rm = TRUE),
       # PSUs counts draws (PSU selections, with replacement); Unique_PSUs is
       # the number of distinct PSUs a team actually has to visit.
       PSUs = n(),
-      Unique_PSUs = dplyr::n_distinct(id_sampl),
-      NB_Population = max(SumDist, na.rm = TRUE)
+      Unique_PSUs = dplyr::n_distinct(PST_id_sample),
+      NB_Population = max(PST_pop_size_stratum, na.rm = TRUE)
     ) |>
     dplyr::mutate(
       # planned: what was set at design stage, used to compute the target
@@ -853,8 +877,8 @@ make_sample <- function(sampling_frame, input) {
       Seed = as.integer(input$seed_value)
     ) |>
     dplyr::left_join(
-      target[, c("strata_id", "target.with.buffer")],
-      by = "strata_id"
+      target[, c("PST_stratum_id", "target.with.buffer")],
+      by = "PST_stratum_id"
     ) |>
     dplyr::relocate(target.with.buffer, .after = NB_Population)
 
@@ -891,7 +915,7 @@ make_sample <- function(sampling_frame, input) {
   # not applicable to this run, so the table only shows relevant statistics.
   summary_sample <- summary_sample |>
     dplyr::rename(
-      "Stratification" = "strata_id",
+      "Stratification" = "PST_stratum_id",
       "# surveys" = "Surveys",
       "# PSUs to assess" = "PSUs",
       "# Unique PSUs" = "Unique_PSUs",
