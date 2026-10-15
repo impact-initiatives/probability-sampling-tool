@@ -446,6 +446,19 @@ page_navbar(
 								)
 							),
 							conditionalPanel(
+								condition = "input.samp_type == 'Two-stage PPS cluster sampling with replacement'|input.samp_type =='PPS sampling with replacement'",
+								column(
+									4,
+									select_input_overlay(
+										'colpop',
+										'Input population',
+										choices = NULL
+									)
+								)
+							),
+							# last, so that the two other fields keep their place
+							# whether the sample is stratified or not
+							conditionalPanel(
 								condition = "input.stratified == 'Stratified'",
 								column(
 									4,
@@ -454,17 +467,6 @@ page_navbar(
 										'Input strata',
 										choices = NULL,
 										multiple = F
-									)
-								)
-							),
-							conditionalPanel(
-								condition = "input.samp_type == 'Two-stage PPS cluster sampling with replacement'|input.samp_type =='PPS sampling with replacement'",
-								column(
-									4,
-									select_input_overlay(
-										'colpop',
-										'Input population',
-										choices = NULL
 									)
 								)
 							)

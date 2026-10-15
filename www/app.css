@@ -46,6 +46,20 @@
 	padding-top: 6px;
 }
 
+/* Result tables: the header keeps room for the sort icon on its right, so the
+   numbers get the same room and end under the text of their header */
+table.dataTable td.dt-right {
+	padding-right: 20px;
+}
+
+/* Column filters: compact boxes, the full height of the default ones is not needed */
+.dataTables_scrollHead thead td input,
+.dataTables_scrollHead thead td select {
+	padding-top: 0.1rem;
+	padding-bottom: 0.1rem;
+	font-size: 0.8rem;
+}
+
 /* Help icon next to a field label, opening a tooltip (see info_tip() in ui.R) */
 .info-tip {
 	margin-left: 0.25rem;

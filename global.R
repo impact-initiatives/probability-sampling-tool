@@ -70,6 +70,55 @@ Ssize <- function(population_size, conf_level, prop, margin_error, DEFF = 1) {
 }
 
 
+# Order of the columns of the tables and of the CSV files. The columns the tool
+# adds come first, by order of importance, then the columns of the sampling
+# frame in their own order. A name that is not in the table is ignored, so one
+# order serves every sampling type and mode.
+frame_column_order <- c(
+  "PST_id_sample",
+  "PST_stratum_id",
+  "PST_psu_id",
+  "PST_pop_size",
+  "PST_pop_size_stratum",
+  "PST_prob"
+)
+sample_column_order <- c(
+  "PST_id_sample",
+  "PST_survey",
+  "PST_stratum_id",
+  "PST_psu_id",
+  "PST_pop_size",
+  "PST_pop_size_stratum",
+  "PST_prob"
+)
+# the summary: stratum and population, the result, the draw, the design, the
+# parameters, then the seed and the sampling type
+summary_column_order <- c(
+  "Stratum",
+  "Population",
+  "Surveys",
+  "Requested Target (with buffer)",
+  "Clusters drawn",
+  "Distinct PSUs",
+  "Cluster size",
+  "DEFF",
+  "Effective sample size",
+  "ICC",
+  "Buffer",
+  "Confidence level",
+  "Error margin",
+  "Seed",
+  "Sampling type"
+)
+
+# Puts the columns of `first` first, in this order, then the others in their
+# own order. A column of `first` that is not in `data` is ignored.
+order_columns <- function(data, first) {
+  first <- intersect(first, names(data))
+  # select(), not `[`: the frame read by fread() is a data.table
+  dplyr::select(data, dplyr::all_of(c(first, setdiff(names(data), first))))
+}
+
 # create the sampling frame
 # This function creates a sampling frame based on the input parameters.
 # It adds additional columns to the input data frame, such as PST_id_sample, PST_stratum_id, PST_psu_id, PST_pop_size, and PST_prob.
@@ -119,7 +168,7 @@ format_sampling_frame <- function(sframe, input) {
   if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
     sframe$PST_psu_id <- as.factor(sframe$PST_psu_id)
   }
-  return(sframe)
+  return(order_columns(sframe, frame_column_order))
 }
 
 
@@ -904,7 +953,8 @@ make_sample <- function(sampling_frame, input) {
       PST_survey = sum(PST_survey, na.rm = TRUE),
       dplyr::across(-PST_survey, dplyr::first),
       .groups = "drop"
-    )
+    ) |>
+    order_columns(sample_column_order)
 
   # create the summary table
   summary_sample <- dbout |>
@@ -939,7 +989,7 @@ make_sample <- function(sampling_frame, input) {
     dplyr::relocate(target.with.buffer, .after = NB_Population)
 
   if (input$samp_type != "Two-stage PPS cluster sampling with replacement") {
-    # "# PSUs to assess" is the draw count; it only differs from "# surveys"
+    # "Clusters drawn" is the draw count; it only differs from "Surveys"
     # when a draw yields more than one survey, i.e. cluster sampling.
     summary_sample[c(
       "PSUs",
@@ -949,7 +999,7 @@ make_sample <- function(sampling_frame, input) {
       "Effective_sample"
     )] <- NA
     # plain SRS: no replacement and no PSU concept, so the distinct count
-    # is just "# surveys" again.
+    # is just "Surveys" again.
     if (input$samp_type == "Simple random sampling") summary_sample["Unique_PSUs"] <- NA
   }
 
@@ -968,23 +1018,24 @@ make_sample <- function(sampling_frame, input) {
   # not applicable to this run, so the table only shows relevant statistics.
   summary_sample <- summary_sample |>
     dplyr::rename(
-      "Stratification" = "PST_stratum_id",
-      "# surveys" = "Surveys",
-      "# PSUs to assess" = "PSUs",
-      "# Unique PSUs" = "Unique_PSUs",
+      "Stratum" = "PST_stratum_id",
+      "Surveys" = "Surveys",
+      "Clusters drawn" = "PSUs",
+      "Distinct PSUs" = "Unique_PSUs",
       "Population" = "NB_Population",
       "Requested Target (with buffer)" = "target.with.buffer",
       "Cluster size" = "Cluster_size",
       "ICC" = "ICC",
       "DEFF" = "DEFF",
-      "Effective sample size (SRS-equivalent)" = "Effective_sample",
-      "% buffer" = "Surveys_buffer",
+      "Effective sample size" = "Effective_sample",
+      "Buffer" = "Surveys_buffer",
       "Confidence level" = "Confidence_level",
       "Error margin" = "Error_margin",
       "Sampling type" = "Sampling_type",
       "Seed" = "Seed"
     ) |>
-    dplyr::select(dplyr::where(~ !all(is.na(.x))))
+    dplyr::select(dplyr::where(~ !all(is.na(.x)))) |>
+    order_columns(summary_column_order)
 
   return(list(
     sample = dbout_sample,

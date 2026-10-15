@@ -17,7 +17,7 @@ test_that("the cluster summary has one cluster size, one DEFF and one effective 
     e_marg = 0.05,
     pror = 0.5,
     buf = 0.05,
-    samp_type = "Cluster sampling",
+    samp_type = "Two-stage PPS cluster sampling with replacement",
     stratified = "Stratified",
     strata = "region",
     col_psu = "psu_name",
@@ -29,7 +29,7 @@ test_that("the cluster summary has one cluster size, one DEFF and one effective 
   summary <- run_with_seed(1, make_sample(frame, input))$summary_sample
 
   expect_true(all(
-    c("Cluster size", "DEFF", "Effective sample size (SRS-equivalent)") %in%
+    c("Cluster size", "DEFF", "Effective sample size") %in%
       names(summary)
   ))
   expect_false(any(grepl("realized|planned", names(summary))))
@@ -37,9 +37,9 @@ test_that("the cluster summary has one cluster size, one DEFF and one effective 
   expect_equal(summary$`Cluster size`, rep(5, 2))
   expect_equal(summary$DEFF, rep(1 + (5 - 1) * 0.1, 2))
   expect_equal(
-    summary$`Effective sample size (SRS-equivalent)`,
-    round(summary$`# surveys` / summary$DEFF)
+    summary$`Effective sample size`,
+    round(summary$`Surveys` / summary$DEFF)
   )
   # some PSUs are drawn several times: the design effect does not depend on it
-  expect_true(all(summary$`# PSUs to assess` > summary$`# Unique PSUs`))
+  expect_true(all(summary$`Clusters drawn` > summary$`Distinct PSUs`))
 })
