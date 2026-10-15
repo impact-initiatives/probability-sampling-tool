@@ -899,15 +899,14 @@ make_sample <- function(sampling_frame, input) {
       NB_Population = max(PST_pop_size_stratum, na.rm = TRUE)
     ) |>
     dplyr::mutate(
-      # planned: what was set at design stage, used to compute the target
-      # sample size in create_targets()
-      Cluster_size_planned = input$cls,
-      # realized: measured from the actual draw
-      Cluster_size_realized = round(Surveys / PSUs, 2),
+      # every draw is an independent cluster of `cls` surveys, also when the
+      # same PSU is drawn several times: the cluster size, and so the design
+      # effect, are set by the design, not measured on the draw. DEFF uses the
+      # ICC entered by the user.
+      Cluster_size = input$cls,
       ICC = input$ICC,
-      DEFF_planned = 1 + (Cluster_size_planned - 1) * ICC,
-      DEFF_realized = 1 + (Cluster_size_realized - 1) * ICC,
-      Effective_sample = round(Surveys / DEFF_realized, 0),
+      DEFF = 1 + (Cluster_size - 1) * ICC,
+      Effective_sample = round(Surveys / DEFF, 0),
       Surveys_buffer = input$buf,
       Confidence_level = input$conf_level,
       Error_margin = input$e_marg,
@@ -925,11 +924,9 @@ make_sample <- function(sampling_frame, input) {
     # when a draw yields more than one survey, i.e. cluster sampling.
     summary_sample[c(
       "PSUs",
-      "Cluster_size_realized",
-      "Cluster_size_planned",
+      "Cluster_size",
       "ICC",
-      "DEFF_planned",
-      "DEFF_realized",
+      "DEFF",
       "Effective_sample"
     )] <- NA
     # plain SRS: no replacement and no PSU concept, so the distinct count
@@ -940,8 +937,7 @@ make_sample <- function(sampling_frame, input) {
   if (input$topup == "Enter sample size") {
     summary_sample[c(
       "ICC",
-      "DEFF_planned",
-      "DEFF_realized",
+      "DEFF",
       "Effective_sample",
       "Error_margin",
       "Confidence_level",
@@ -959,11 +955,9 @@ make_sample <- function(sampling_frame, input) {
       "# Unique PSUs" = "Unique_PSUs",
       "Population" = "NB_Population",
       "Requested Target (with buffer)" = "target.with.buffer",
-      "Cluster size set (planned)" = "Cluster_size_planned",
-      "Mean Cluster size (realized)" = "Cluster_size_realized",
+      "Cluster size" = "Cluster_size",
       "ICC" = "ICC",
-      "DEFF (planned)" = "DEFF_planned",
-      "DEFF (realized)" = "DEFF_realized",
+      "DEFF" = "DEFF",
       "Effective sample size (SRS-equivalent)" = "Effective_sample",
       "% buffer" = "Surveys_buffer",
       "Confidence level" = "Confidence_level",
