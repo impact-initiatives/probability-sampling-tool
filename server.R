@@ -156,6 +156,12 @@ function(input, output, session) {
   applied <- reactiveVal(FALSE)
   draw_failed <- reactiveVal(FALSE)
 
+  # The sample on screen is the one drawn after the last Apply: a new Apply
+  # hides it and its downloads until Sample is clicked again. Changing a
+  # parameter without Apply leaves it, like the frame and target tables.
+  sample_current <- reactiveVal(FALSE)
+  observeEvent(input$f_apply, sample_current(FALSE), priority = 10)
+
   observeEvent(input$f_apply, {
     applied(FALSE)
     draw_failed(FALSE)
@@ -211,7 +217,9 @@ function(input, output, session) {
   )
 
   observeEvent(input$desButton, {
-    if (!succeeds(out())) draw_failed(TRUE)
+    drawn <- succeeds(out())
+    sample_current(drawn)
+    if (!drawn) draw_failed(TRUE)
   })
   observeEvent(input$seed_value, draw_failed(FALSE), ignoreInit = TRUE)
 
@@ -305,7 +313,10 @@ function(input, output, session) {
   # long or numerous column names readable.
   render_sample <- function() {
     DT::renderDataTable(
-      quiet(out())[[1]],
+      {
+        req(sample_current())
+        quiet(out())[[1]]
+      },
       rownames = FALSE,
       style = dt_style,
       class = dt_class_wide,
@@ -322,7 +333,10 @@ function(input, output, session) {
 
   render_summary <- function() {
     DT::renderDataTable(
-      quiet(out())[[2]],
+      {
+        req(sample_current())
+        quiet(out())[[2]]
+      },
       rownames = FALSE,
       style = dt_style,
       class = dt_class,
@@ -343,7 +357,7 @@ function(input, output, session) {
   # (or after a failed draw) inert placeholders are shown. shinyjs::enable()
   # would leave aria-disabled and tabindex=-1 on the links.
   output$export_buttons <- renderUI({
-    ready <- succeeds(out())
+    ready <- sample_current()
     export_button <- function(id, label, style) {
       if (ready) {
         downloadButton(
@@ -378,6 +392,7 @@ function(input, output, session) {
       paste("sample_", humanTime(), '.csv', sep = '')
     },
     content = function(file) {
+      req(sample_current())
       write.csv(out()[[1]], file)
     }
   )
@@ -387,6 +402,7 @@ function(input, output, session) {
       paste("sampling_summary", humanTime(), '.csv', sep = '')
     },
     content = function(file) {
+      req(sample_current())
       write.csv(out()[[2]], file)
     }
   )
