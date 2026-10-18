@@ -45,7 +45,9 @@ read_frame <- function() {
 test_that("the tables and the CSV files have the same column order in every configuration", {
   for (frame_class in c("data.table", "data.frame")) {
     data <- read_frame()
-    if (frame_class == "data.frame") data <- as.data.frame(data)
+    if (frame_class == "data.frame") {
+      data <- as.data.frame(data)
+    }
     user_columns <- names(data)
 
     for (topup in modes) {
@@ -100,7 +102,10 @@ test_that("the tables and the CSV files have the same column order in every conf
 
 test_that("order_columns keeps the columns it does not know and ignores the missing ones", {
   data <- data.frame(b = 1, a = 2, z = 3, c = 4)
-  expect_named(order_columns(data, c("c", "missing", "a")), c("c", "a", "b", "z"))
+  expect_named(
+    order_columns(data, c("c", "missing", "a")),
+    c("c", "a", "b", "z")
+  )
   expect_named(order_columns(data, character()), names(data))
   expect_identical(nrow(order_columns(data, "z")), 1L)
 })

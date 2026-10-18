@@ -76,7 +76,9 @@ test_that("a frame column named like an old internal column is kept as it is", {
             NULL
           }
         )
-        if (is.null(out)) next
+        if (is.null(out)) {
+          next
+        }
         sample <- out$sample
         expect_true(name %in% names(sample), label = label)
         expect_identical(
@@ -93,14 +95,51 @@ test_that("the frame attached to issue #32 can be sampled", {
   frame <- data.frame(
     region = c(rep("North", 4), rep("South", 12)),
     psu_name = paste0("PSU_", LETTERS[1:16]),
-    pop_numbers = c(40, 30, 20, 10, 120, 95, 80, 75, 60, 55, 50, 45, 40, 35, 30, 25),
-    population = c(40, 30, 20, 10, 120, 95, 80, 75, 60, 55, 50, 45, 40, 35, 30, 25),
+    pop_numbers = c(
+      40,
+      30,
+      20,
+      10,
+      120,
+      95,
+      80,
+      75,
+      60,
+      55,
+      50,
+      45,
+      40,
+      35,
+      30,
+      25
+    ),
+    population = c(
+      40,
+      30,
+      20,
+      10,
+      120,
+      95,
+      80,
+      75,
+      60,
+      55,
+      50,
+      45,
+      40,
+      35,
+      30,
+      25
+    ),
     Survey = c(NA, 2, 0, 3, 2, 1, 1, 1, 1, 1, 1, 1, 2, 4, 13, 6),
     psu_id = paste0("PSU_", LETTERS[1:16]),
     id_sampl = c("A", "B", rep(NA, 14)),
     SumDist = c("AA", "AA", rep("BB", 14))
   )
-  for (samp_type in c("Two-stage PPS cluster sampling with replacement", "PPS sampling with replacement")) {
+  for (samp_type in c(
+    "Two-stage PPS cluster sampling with replacement",
+    "PPS sampling with replacement"
+  )) {
     input <- sampling_input(samp_type, "Stratified")
     input$target <- 30
     input$cls <- 2
@@ -109,7 +148,11 @@ test_that("the frame attached to issue #32 can be sampled", {
 })
 
 test_that("the sample carries the columns the tool adds, all with the PST_ prefix", {
-  out <- draw(frame_24(), "Two-stage PPS cluster sampling with replacement", "Stratified")
+  out <- draw(
+    frame_24(),
+    "Two-stage PPS cluster sampling with replacement",
+    "Stratified"
+  )
   added <- setdiff(names(out$sample), names(frame_24()))
   expect_setequal(added, tool_columns)
   expect_true(all(startsWith(tool_columns, reserved_prefix)))
@@ -140,7 +183,11 @@ test_that("a reloaded sample is blocked at Apply with the reserved columns liste
   withr::local_dir(app_root)
   server <- source("server.R")$value
 
-  previous <- draw(frame_24(), "Simple random sampling", "Not stratified")$sample
+  previous <- draw(
+    frame_24(),
+    "Simple random sampling",
+    "Not stratified"
+  )$sample
   path <- withr::local_tempfile(fileext = ".csv")
   write.csv(previous, path, row.names = FALSE)
 

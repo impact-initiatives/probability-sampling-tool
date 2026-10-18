@@ -67,8 +67,12 @@ test_that("the result tables have filters and aligned short numbers", {
       selector
     ))
   }
-  head_right <- edge("#sampling_output .dataTables_scrollHead thead tr:first-child th:nth-child(2)")
-  value_right <- edge("#sampling_output .dataTables_scrollBody tbody tr:first-child td:nth-child(2)")
+  head_right <- edge(
+    "#sampling_output .dataTables_scrollHead thead tr:first-child th:nth-child(2)"
+  )
+  value_right <- edge(
+    "#sampling_output .dataTables_scrollBody tbody tr:first-child td:nth-child(2)"
+  )
   expect_lte(abs(head_right - value_right), 2)
 
   # PST_prob is shown with 4 significant digits at most

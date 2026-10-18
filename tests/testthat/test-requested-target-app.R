@@ -26,7 +26,9 @@ test_that("the capped sample warning is shown after Apply and after Sample", {
     )
   }
   close_modal <- function() {
-    app$run_js("var b = document.querySelector('.modal.show .modal-footer button'); if (b) b.click();")
+    app$run_js(
+      "var b = document.querySelector('.modal.show .modal-footer button'); if (b) b.click();"
+    )
     Sys.sleep(1)
   }
   headers <- function(id) {
@@ -50,7 +52,9 @@ test_that("the capped sample warning is shown after Apply and after Sample", {
   expect_match(modal_text(), "will be capped")
   close_modal()
   expect_true("Requested Target" %in% unlist(headers("target_frame")))
-  expect_true("Requested Target (with buffer)" %in% unlist(headers("target_frame")))
+  expect_true(
+    "Requested Target (with buffer)" %in% unlist(headers("target_frame"))
+  )
 
   go_tab("Sampling")
   app$click("desButton")

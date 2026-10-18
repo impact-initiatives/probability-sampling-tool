@@ -12,7 +12,9 @@ test_that("the population field keeps its place whether the sample is stratified
   )
   withr::defer(app$stop())
 
-  app$run_js("Array.from(document.querySelectorAll('.navbar .nav-link')).find(function(a) { return a.textContent.trim() === 'Sampling frame'; }).click();")
+  app$run_js(
+    "Array.from(document.querySelectorAll('.navbar .nav-link')).find(function(a) { return a.textContent.trim() === 'Sampling frame'; }).click();"
+  )
   Sys.sleep(1.5)
   app$wait_for_idle()
 
