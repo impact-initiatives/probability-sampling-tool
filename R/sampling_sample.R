@@ -86,7 +86,7 @@ make_sample <- function(sampling_frame, input) {
       dplyr::across(-PST_survey, dplyr::first),
       .groups = "drop"
     ) |>
-    order_columns(sample_column_order)
+    order_columns(SAMPLE_COLUMN_ORDER)
 
   # create the summary table
   summary_sample <- dbout |>
@@ -169,7 +169,7 @@ make_sample <- function(sampling_frame, input) {
       "Seed" = "Seed"
     ) |>
     dplyr::select(dplyr::where(~ !all(is.na(.x)))) |>
-    order_columns(summary_column_order)
+    order_columns(SUMMARY_COLUMN_ORDER)
 
   return(list(
     sample = dbout_sample,

@@ -19,7 +19,7 @@ validate_strata_selection <- function(input) {
 # sample reloaded as a sampling frame.
 # Returns an error message string if one is present, or NULL if valid.
 validate_reserved_columns <- function(sframe) {
-  found <- names(sframe)[startsWith(names(sframe), reserved_prefix)]
+  found <- names(sframe)[startsWith(names(sframe), RESERVED_PREFIX)]
   if (length(found) == 0) {
     return(NULL)
   }
@@ -27,7 +27,7 @@ validate_reserved_columns <- function(sframe) {
     "The sampling frame has column(s) with protected names: ",
     paste(found, collapse = ", "),
     ".\n\nNames starting with ",
-    reserved_prefix,
+    RESERVED_PREFIX,
     " are reserved: the tool creates columns with these names during the sampling and in the sample file, so yours would be overwritten or cause an error. Rename or remove them in the CSV."
   )
 }

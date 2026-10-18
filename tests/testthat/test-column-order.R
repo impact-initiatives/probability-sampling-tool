@@ -60,22 +60,22 @@ test_that("the tables and the CSV files have the same column order in every conf
 
           # the tool's columns first, then the frame's, in their own order
           expect_identical(
-            names(frame)[seq_along(frame_column_order)],
-            frame_column_order,
+            names(frame)[seq_along(FRAME_COLUMN_ORDER)],
+            FRAME_COLUMN_ORDER,
             label = paste(label, "frame")
           )
           expect_identical(
-            names(frame)[-seq_along(frame_column_order)],
+            names(frame)[-seq_along(FRAME_COLUMN_ORDER)],
             user_columns,
             label = paste(label, "frame user columns")
           )
           expect_identical(
-            names(sample)[seq_along(sample_column_order)],
-            sample_column_order,
+            names(sample)[seq_along(SAMPLE_COLUMN_ORDER)],
+            SAMPLE_COLUMN_ORDER,
             label = paste(label, "sample")
           )
           expect_identical(
-            names(sample)[-seq_along(sample_column_order)],
+            names(sample)[-seq_along(SAMPLE_COLUMN_ORDER)],
             user_columns,
             label = paste(label, "sample user columns")
           )
@@ -83,7 +83,7 @@ test_that("the tables and the CSV files have the same column order in every conf
           # nothing is lost or duplicated, the known columns keep their order
           expect_false(anyDuplicated(names(summary)) > 0, label = label)
           expect_true(
-            in_reference_order(names(summary), summary_column_order),
+            in_reference_order(names(summary), SUMMARY_COLUMN_ORDER),
             label = paste(label, "summary order")
           )
           expect_identical(

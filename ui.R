@@ -45,7 +45,7 @@ page_navbar(
 				Shiny.setInputValue('popdata_too_large', big ? big.name : null, {priority: 'event'});
 				if (big) { e.stopImmediatePropagation(); }
 			}, true);",
-      as.integer(max_upload_mb * 1024^2)
+      as.integer(MAX_UPLOAD_MB * 1024^2)
     ))),
     # Cache-bust: without a version query string, browsers keep serving a
     # previously-cached app.css after it changes on disk.
@@ -244,7 +244,7 @@ page_navbar(
                   'conf_level',
                   "Confidence level",
                   tip = "How often the interval around your estimate would contain the true value if the survey were repeated (0.95 = 95% of the time). Higher confidence needs a larger sample.",
-                  source = cochran_1977,
+                  source = COCHRAN_1977,
                   value = 0.95,
                   min = 0.005,
                   max = 0.995,
@@ -260,7 +260,7 @@ page_navbar(
                   'e_marg',
                   "Error Margin",
                   tip = "Largest gap you accept between the estimate and the true value, at the chosen confidence level (0.05 = \u00b15 percentage points). A smaller margin needs a larger sample.",
-                  source = cochran_1977,
+                  source = COCHRAN_1977,
                   value = 0.05,
                   min = 0.005,
                   max = 0.995,
@@ -272,13 +272,13 @@ page_navbar(
               condition = "input.topup != 'Enter sample size'",
               column(
                 4,
-                # fixed in the computation (fixed_proportion): shown, not editable
+                # fixed in the computation (FIXED_PROPORTION): shown, not editable
                 htmltools::tagQuery(
                   numeric_input_with_tip(
                     'pror',
                     "Proportion",
                     tip = "Fixed at 0.5, the most cautious value: it gives the largest sample size. See the Guide for details.",
-                    value = fixed_proportion
+                    value = FIXED_PROPORTION
                   )
                 )$find("input")$addAttrs(disabled = NA)$allTags()
               )
@@ -337,7 +337,7 @@ page_navbar(
                     ),
                     placeholder = paste0(
                       "CSV, max ",
-                      max_upload_mb,
+                      MAX_UPLOAD_MB,
                       " MB"
                     )
                   )
@@ -415,7 +415,7 @@ page_navbar(
                   'cls',
                   "Cluster size",
                   tip = "Number of interviews planned in each selected cluster (at least 2). Larger clusters lower the fieldwork cost but raise the design effect.",
-                  source = kish_1965,
+                  source = KISH_1965,
                   value = 5,
                   min = 2,
                   step = 1
@@ -427,7 +427,7 @@ page_navbar(
                   'ICC',
                   "ICC",
                   tip = "Intracluster correlation: how alike the units of a cluster are (0 = not at all, 1 = identical). It inflates the sample through the design effect, 1 + (cluster size \u2212 1) \u00d7 ICC. Use a value from a similar past survey.",
-                  source = kish_1965,
+                  source = KISH_1965,
                   value = 0.06,
                   min = 0,
                   max = 1,

@@ -44,7 +44,7 @@ function(input, output, session) {
             "'",
             input$popdata_too_large,
             "' is larger than the ",
-            max_upload_mb,
+            MAX_UPLOAD_MB,
             " MB limit."
           )
       ))

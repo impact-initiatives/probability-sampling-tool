@@ -1,9 +1,9 @@
 # The guide: its Markdown texts, and the cards and steps that show them.
 
 # Text of the guide: Markdown files in guide/ (and NEWS.md), so that it can be
-# reviewed and corrected without touching the code. {{max_upload_mb}} is filled in.
+# reviewed and corrected without touching the code. {{MAX_UPLOAD_MB}} is filled in.
 guide_markdown <- function(text) {
-  text <- gsub("{{max_upload_mb}}", max_upload_mb, text, fixed = TRUE)
+  text <- gsub("{{MAX_UPLOAD_MB}}", MAX_UPLOAD_MB, text, fixed = TRUE)
   # markdown::mark() turns $...$ into \(...\) for MathJax, unlike shiny::markdown()
   div(
     class = "guide-text",

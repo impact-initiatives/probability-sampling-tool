@@ -10,10 +10,10 @@ test_that("the results page documents every column the tool adds and every summa
     guide_file("guide/results-columns.md"),
     guide_file("guide/results-summary.md")
   )
-  for (column in unique(c(frame_column_order, sample_column_order))) {
+  for (column in unique(c(FRAME_COLUMN_ORDER, SAMPLE_COLUMN_ORDER))) {
     expect_match(results, column, fixed = TRUE, info = column)
   }
-  for (column in summary_column_order) {
+  for (column in SUMMARY_COLUMN_ORDER) {
     expect_match(results, column, fixed = TRUE, info = column)
   }
 })

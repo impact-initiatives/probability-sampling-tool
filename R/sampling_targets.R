@@ -64,7 +64,7 @@ create_targets <- function(sframe, input) {
         Ssize(
           population_size = Population,
           conf_level = input$conf_level,
-          prop = fixed_proportion,
+          prop = FIXED_PROPORTION,
           margin_error = input$e_marg,
           DEFF = DEFF
         )

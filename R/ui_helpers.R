@@ -1,9 +1,9 @@
 # Building blocks of the interface: help icons, inputs and the references they cite.
 
 # Kish, L. (1965). Survey Sampling. New York: Wiley.
-kish_1965 <- tagList("Kish, ", tags$em("Survey Sampling"), " (1965)")
+KISH_1965 <- tagList("Kish, ", tags$em("Survey Sampling"), " (1965)")
 # Cochran, W. G. (1977). Sampling Techniques, 3rd ed. New York: Wiley.
-cochran_1977 <- tagList("Cochran, ", tags$em("Sampling Techniques"), " (1977)")
+COCHRAN_1977 <- tagList("Cochran, ", tags$em("Sampling Techniques"), " (1977)")
 
 # Header of a sidebar section, identical to the card headers of the main area
 sidebar_header <- function(text) {

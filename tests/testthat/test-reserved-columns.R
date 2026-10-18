@@ -152,7 +152,7 @@ test_that("the sample carries the columns the tool adds, all with the PST_ prefi
   )
   added <- setdiff(names(out$sample), names(frame_24()))
   expect_setequal(added, tool_columns)
-  expect_true(all(startsWith(tool_columns, reserved_prefix)))
+  expect_true(all(startsWith(tool_columns, RESERVED_PREFIX)))
 })
 
 test_that("a frame with a PST_ column is blocked, naming the columns", {

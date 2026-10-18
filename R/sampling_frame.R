@@ -50,5 +50,5 @@ format_sampling_frame <- function(sframe, input) {
   if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
     sframe$PST_psu_id <- as.factor(sframe$PST_psu_id)
   }
-  return(order_columns(sframe, frame_column_order))
+  return(order_columns(sframe, FRAME_COLUMN_ORDER))
 }
