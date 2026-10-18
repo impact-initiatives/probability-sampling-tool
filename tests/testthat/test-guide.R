@@ -1,9 +1,6 @@
 # The guide (issue #18): it documents every column of the tables, and its links
 # open the right section.
 
-app_root <- normalizePath(testthat::test_path("..", ".."))
-source(file.path(app_root, "global.R"), chdir = TRUE)
-
 guide_file <- function(name) {
   paste(readLines(file.path(app_root, name), warn = FALSE), collapse = "\n")
 }

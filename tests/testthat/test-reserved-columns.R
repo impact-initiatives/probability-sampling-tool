@@ -1,9 +1,6 @@
 # The columns the tool adds are prefixed with PST_ (issue #32): a sampling frame
 # can use any other name, and a frame that already has a PST_ column is blocked.
 
-app_root <- normalizePath(testthat::test_path("..", ".."))
-source(file.path(app_root, "global.R"), chdir = TRUE)
-
 # the columns the tool adds to a sample
 tool_columns <- c(
   "PST_id_sample",

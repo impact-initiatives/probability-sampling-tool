@@ -1,9 +1,6 @@
 # The cluster size and the design effect of the summary are set by the design:
 # a PSU drawn several times is several independent clusters (issue #21).
 
-app_root <- normalizePath(testthat::test_path("..", ".."))
-source(file.path(app_root, "global.R"), chdir = TRUE)
-
 test_that("the cluster summary has one cluster size, one DEFF and one effective sample size", {
   frame <- data.frame(
     region = rep(c("N", "S"), each = 30),

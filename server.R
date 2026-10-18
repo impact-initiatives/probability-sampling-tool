@@ -61,7 +61,7 @@ function(input, output, session) {
   # get the data
   db <- reactive({
     if (input$data_source == "test") {
-      fread("data_example.csv")
+      fread("data/data_example.csv")
     } else {
       upload()$data
     }
@@ -98,7 +98,7 @@ function(input, output, session) {
 
   output$download_example <- downloadHandler(
     filename = "data_example.csv",
-    content = function(file) file.copy("data_example.csv", file)
+    content = function(file) file.copy("data/data_example.csv", file)
   )
 
   # update the check ox based on the data headings

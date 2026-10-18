@@ -4,8 +4,6 @@
 # To record the reference again after a change of behaviour that is wanted:
 #   UPDATE_GOLDEN=true Rscript -e 'testthat::test_file("tests/testthat/test-golden-master.R")'
 
-app_root <- normalizePath(testthat::test_path("..", ".."))
-source(file.path(app_root, "global.R"), chdir = TRUE)
 reference_file <- file.path(
   app_root,
   "tests",
@@ -17,7 +15,7 @@ reference_file <- file.path(
 test_that("the app gives the same results as the recorded reference", {
   withr::local_dir(app_root)
   server <- source("server.R")$value
-  data_path <- file.path(app_root, "data_example.csv")
+  data_path <- file.path(app_root, "data", "data_example.csv")
 
   scenarios <- golden_scenarios()
   records <- lapply(

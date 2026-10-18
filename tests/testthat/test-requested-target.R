@@ -1,9 +1,6 @@
 # What is requested is labelled as requested (issue #27): the draw is capped to
 # the population of the stratum, so the target can be larger than what is drawn.
 
-app_root <- normalizePath(testthat::test_path("..", ".."))
-source(file.path(app_root, "global.R"), chdir = TRUE)
-
 frame_24 <- function() {
   data.frame(
     region = rep(c("N", "S", "E", "W"), each = 6),

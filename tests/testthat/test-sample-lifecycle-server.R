@@ -1,11 +1,8 @@
 # The sample on screen is the one drawn after the last Apply (issue #33).
 # Logic only, no browser: see test-sample-lifecycle-app.R for the real page.
 
-app_root <- normalizePath(testthat::test_path("..", ".."))
-
 test_that("a new Apply hides the previous sample and its downloads", {
   withr::local_dir(app_root)
-  source("global.R")
   server <- source("server.R")$value
 
   hidden <- function(expr) expect_error(expr, class = "shiny.silent.error")

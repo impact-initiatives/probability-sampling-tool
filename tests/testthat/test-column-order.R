@@ -2,9 +2,6 @@
 # sampling type and mode (issue #43): the columns the tool adds first, by order
 # of importance, then the columns of the sampling frame.
 
-app_root <- normalizePath(testthat::test_path("..", ".."))
-source(file.path(app_root, "global.R"), chdir = TRUE)
-
 modes <- c("Sample size based on population", "Enter sample size")
 types <- c(
   "Simple random sampling",
@@ -39,7 +36,7 @@ in_reference_order <- function(x, reference) {
 
 # the frame as the app reads it: fread() gives a data.table
 read_frame <- function() {
-  data.table::fread(file.path(app_root, "data_example.csv"))
+  data.table::fread(file.path(app_root, "data", "data_example.csv"))
 }
 
 test_that("the tables and the CSV files have the same column order in every configuration", {
