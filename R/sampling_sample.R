@@ -17,11 +17,7 @@ make_sample <- function(sampling_frame, input) {
   # create the target sample.
   target <- create_targets(sampl_f, input)
 
-  output <- c()
-
   cls <- input$cls
-  buf <- input$buf
-  ICC <- input$ICC
 
   if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
     output <- apply(
@@ -43,7 +39,6 @@ make_sample <- function(sampling_frame, input) {
       1,
       pps_sampling,
       sframe = sampl_f,
-      buf = buf,
       simplify = FALSE
     ) %>%
       unlist
@@ -53,7 +48,6 @@ make_sample <- function(sampling_frame, input) {
       1,
       simple_random_sampling,
       sframe = sampl_f,
-      buf = buf,
       simplify = FALSE
     ) %>%
       unlist

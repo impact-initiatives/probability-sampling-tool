@@ -29,10 +29,8 @@ pps_cluster_sampling <- function(sframe, sampling_target, cls) {
 #' sframe The sampling frame, as returned by format_sampling_frame().
 #' sampling_target One row of create_targets(): the stratum, its population and
 #'   its target with buffer.
-#' buf Not used: the buffer is already in the target with buffer. Kept so that
-#'   all the draw functions are called the same way.
 #' returns A vector of the sampled ids (PST_id_sample), each one once.
-simple_random_sampling <- function(sframe, sampling_target, buf) {
+simple_random_sampling <- function(sframe, sampling_target) {
   dist <- as.character(sampling_target[["PST_stratum_id"]])
   dbr <- sframe[as.character(sframe$PST_stratum_id) == dist, ]
   tosample <- as.numeric(sampling_target[["target.with.buffer"]])
@@ -47,7 +45,6 @@ simple_random_sampling <- function(sframe, sampling_target, buf) {
     size = target,
     replace = FALSE
   )
-  # incProgress(round(1/nrow(sampling_target),2), detail = paste("Sampling", dist))
   return(out)
 }
 
@@ -64,11 +61,9 @@ simple_random_sampling <- function(sframe, sampling_target, buf) {
 #' sframe The sampling frame, as returned by format_sampling_frame().
 #' sampling_target One row of create_targets(): the stratum, its population and
 #'   its target with buffer.
-#' buf Not used: the buffer is already in the target with buffer. Kept so that
-#'   all the draw functions are called the same way.
 #' returns A vector of the sampled ids (PST_id_sample), one entry per draw, so
 #'   an id can appear several times.
-pps_sampling <- function(sframe, sampling_target, buf) {
+pps_sampling <- function(sframe, sampling_target) {
   dist <- as.character(sampling_target[["PST_stratum_id"]])
   dbr <- sframe[as.character(sframe$PST_stratum_id) == dist, ]
   tosample <- as.numeric(sampling_target[["target.with.buffer"]])
@@ -84,7 +79,6 @@ pps_sampling <- function(sframe, sampling_target, buf) {
     prob = dbr$PST_prob,
     replace = TRUE
   )
-  # incProgress(round(1/nrow(sampling_target),2), detail = paste("Sampling", dist))
   return(out)
 }
 
