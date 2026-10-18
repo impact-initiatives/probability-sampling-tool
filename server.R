@@ -18,7 +18,10 @@ function(input, output, session) {
     guide_open_cluster = "cluster"
   )
   lapply(names(guide_sections), function(id) {
-    observeEvent(input[[id]], bslib::nav_select("guide_nav", guide_sections[[id]]))
+    observeEvent(
+      input[[id]],
+      bslib::nav_select("guide_nav", guide_sections[[id]])
+    )
   })
   lapply(names(guide_types), function(id) {
     observeEvent(input[[id]], {
@@ -26,7 +29,10 @@ function(input, output, session) {
       bslib::accordion_panel_set("types_accordion", guide_types[[id]])
     })
   })
-  observeEvent(input$guide_to_app, bslib::nav_select("main_nav", "Sampling frame"))
+  observeEvent(
+    input$guide_to_app,
+    bslib::nav_select("main_nav", "Sampling frame")
+  )
 
   # an uploaded file is either a usable CSV or an error message, never a crash
   upload <- reactive({
@@ -216,7 +222,9 @@ function(input, output, session) {
 
     # cluster sampling never caps the draw: cible() already blocks a target
     # above the room of a stratum
-    affected <- if (input$samp_type != "Two-stage PPS cluster sampling with replacement") {
+    affected <- if (
+      input$samp_type != "Two-stage PPS cluster sampling with replacement"
+    ) {
       check_target_vs_population(cible())
     }
     if (!is.null(affected)) showModal(exceeds_population_modal(affected))
@@ -254,7 +262,8 @@ function(input, output, session) {
     }
     # same warning as at Apply: the draw has just been capped
     affected <- if (
-      input$samp_type != "Two-stage PPS cluster sampling with replacement" && succeeds(cible())
+      input$samp_type != "Two-stage PPS cluster sampling with replacement" &&
+        succeeds(cible())
     ) {
       check_target_vs_population(cible())
     }
