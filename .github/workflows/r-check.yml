@@ -38,6 +38,7 @@ jobs:
             any::shinyjs
             any::markdown
             any::DT
+            any::yaml
             any::testthat
             any::shinytest2
             any::withr
