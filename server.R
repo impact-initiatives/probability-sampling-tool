@@ -3,7 +3,7 @@
 
 function(input, output, session) {
   # give each session a random default seed, visible and editable by the user
-  updateNumericInput(session, "seed_value", value = sample.int(1e6, 1))
+  updateNumericInput(session, "seed", value = sample.int(1e6, 1))
 
   guide_server("guide", session)
 
@@ -12,20 +12,20 @@ function(input, output, session) {
 
   # an uploaded file is either a usable CSV or an error message, never a crash
   upload <- reactive({
-    if (!is.null(input$popdata_too_large)) {
+    if (!is.null(input$rejected_file_name)) {
       return(list(
         data = NULL,
-        error = csv_format_error(input$popdata_too_large) %||%
+        error = csv_format_error(input$rejected_file_name) %||%
           paste0(
             "'",
-            input$popdata_too_large,
+            input$rejected_file_name,
             "' is larger than the ",
             MAX_UPLOAD_MB,
             " MB limit."
           )
       ))
     }
-    f <- input$popdata
+    f <- input$frame_file
     if (is.null(f)) {
       return(NULL)
     }
@@ -58,7 +58,7 @@ function(input, output, session) {
     src <- if (input$data_source == DATA_SOURCE_TEST) {
       "data_example.csv"
     } else {
-      input$popdata$name
+      input$frame_file$name
     }
     div(
       class = "data-status",
@@ -83,19 +83,19 @@ function(input, output, session) {
   observe({
     updateSelectInput(
       session,
-      "col_psu",
+      "psu_column",
       choices = c(NO_COLUMN, colnames(db())),
       selected = NO_COLUMN
     )
     updateSelectInput(
       session,
-      "strata",
+      "strata_column",
       choices = c(NO_COLUMN, colnames(db())),
       selected = NO_COLUMN
     )
     updateSelectInput(
       session,
-      "colpop",
+      "population_column",
       choices = c(NO_COLUMN, colnames(db())),
       selected = NO_COLUMN
     )
@@ -104,7 +104,7 @@ function(input, output, session) {
   # a new upload hides the frame and target tables until the next Apply
   tables_stale <- reactiveVal(FALSE)
   observeEvent(
-    list(input$popdata, input$popdata_too_large),
+    list(input$frame_file, input$rejected_file_name),
     tables_stale(TRUE),
     ignoreInit = TRUE
   )
@@ -113,7 +113,7 @@ function(input, output, session) {
   # same for a draw blocked because a PSU is assigned too many surveys
   draw_issues <- reactiveVal(NULL)
   observeEvent(
-    input$f_apply,
+    input$apply_button,
     {
       tables_stale(FALSE)
       issue_list(NULL)
@@ -123,7 +123,7 @@ function(input, output, session) {
   )
 
   # create the sampling frame
-  frame <- eventReactive(input$f_apply, {
+  frame <- eventReactive(input$apply_button, {
     require_valid(validate_strata_selection(params()))
     require_valid(file_error())
     sframe <- db()
@@ -136,19 +136,19 @@ function(input, output, session) {
     require_valid(validate_population_column(sframe, params()))
     pop_issues <- population_issues(sframe, params())
     issue_list(pop_issues)
-    require_valid(population_message(pop_issues, params()$colpop))
+    require_valid(population_message(pop_issues, params()$population_column))
     require_valid(validate_parameters(params()))
     # not needed for the frame, but reported here rather than at the draw
-    require_valid(validate_seed(input$seed_value))
+    require_valid(validate_seed(input$seed))
     format_sampling_frame(sframe, params())
   })
 
   # create the target sampling size by strata
-  cible <- eventReactive(input$f_apply, {
+  cible <- eventReactive(input$apply_button, {
     targets <- create_targets(frame(), params())
     issues <- cluster_size_issues(frame(), targets, params())
     issue_list(issues)
-    require_valid(cluster_size_message(issues, params()$cls))
+    require_valid(cluster_size_message(issues, params()$cluster_size))
     targets
   })
 
@@ -161,9 +161,9 @@ function(input, output, session) {
   # hides it and its downloads until Sample is clicked again. Changing a
   # parameter without Apply leaves it, like the frame and target tables.
   sample_current <- reactiveVal(FALSE)
-  observeEvent(input$f_apply, sample_current(FALSE), priority = 10)
+  observeEvent(input$apply_button, sample_current(FALSE), priority = 10)
 
-  observeEvent(input$f_apply, {
+  observeEvent(input$apply_button, {
     applied(FALSE)
     draw_failed(FALSE)
     # the errors are shown by the outputs; here they must not end the session
@@ -174,7 +174,7 @@ function(input, output, session) {
 
     # cluster sampling never caps the draw: cible() already blocks a target
     # above the room of a stratum
-    affected <- if (params()$samp_type != SAMPLING_TYPE_CLUSTER) {
+    affected <- if (params()$sampling_type != SAMPLING_TYPE_CLUSTER) {
       check_target_vs_population(cible())
     }
     if (!is.null(affected)) showModal(exceeds_population_modal(affected))
@@ -183,27 +183,27 @@ function(input, output, session) {
   # any change to a frame- or target-defining input invalidates the previous Apply
   observeEvent(
     list(
-      input$popdata,
-      input$popdata_too_large,
+      input$frame_file,
+      input$rejected_file_name,
       input$data_source,
-      input$samp_type,
+      input$sampling_type,
       input$stratified,
-      input$col_psu,
-      input$strata,
-      input$colpop,
-      input$topup,
-      input$target,
-      input$conf_level,
-      input$e_marg,
-      input$buf,
-      input$cls,
-      input$ICC
+      input$psu_column,
+      input$strata_column,
+      input$population_column,
+      input$sampling_mode,
+      input$target_size,
+      input$confidence_level,
+      input$error_margin,
+      input$buffer,
+      input$cluster_size,
+      input$icc
     ),
     applied(FALSE),
     ignoreInit = TRUE
   )
 
-  observeEvent(input$desButton, {
+  observeEvent(input$draw_button, {
     drawn <- succeeds(out())
     sample_current(drawn)
     if (!drawn) {
@@ -212,7 +212,7 @@ function(input, output, session) {
     }
     # same warning as at Apply: the draw has just been capped
     affected <- if (
-      params()$samp_type != SAMPLING_TYPE_CLUSTER &&
+      params()$sampling_type != SAMPLING_TYPE_CLUSTER &&
         succeeds(cible())
     ) {
       check_target_vs_population(cible())
@@ -221,12 +221,12 @@ function(input, output, session) {
       showModal(exceeds_population_modal(affected, drawn = TRUE))
     }
   })
-  observeEvent(input$seed_value, draw_failed(FALSE), ignoreInit = TRUE)
+  observeEvent(input$seed, draw_failed(FALSE), ignoreInit = TRUE)
 
   observe({
     shinyjs::toggleState(
-      "desButton",
-      applied() && !draw_failed() && is.null(validate_seed(input$seed_value))
+      "draw_button",
+      applied() && !draw_failed() && is.null(validate_seed(input$seed))
     )
   })
 
@@ -285,14 +285,14 @@ function(input, output, session) {
   })
 
   # create the sample based on the sampling frame and the input parameters
-  out <- eventReactive(input$desButton, {
+  out <- eventReactive(input$draw_button, {
     # frame() already validated the strata, cluster and population selections
     # and cible() the cluster size; the seed is checked again because it can
     # change after Apply
     frame()
-    require_valid(validate_seed(input$seed_value))
+    require_valid(validate_seed(input$seed))
     sample_out <- run_with_seed(
-      as.integer(params()$seed_value),
+      as.integer(params()$seed),
       make_sample(db(), params())
     )
     issues <- psu_overflow_issues(sample_out$sample, params())

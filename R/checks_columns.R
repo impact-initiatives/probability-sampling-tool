@@ -5,7 +5,7 @@
 validate_strata_selection <- function(params) {
   if (
     params$stratified == STRATIFIED &&
-      (is.null(params$strata) || params$strata == NO_COLUMN)
+      (is.null(params$strata_column) || params$strata_column == NO_COLUMN)
   ) {
     return(
       "Please select a stratification variable, or set 'Stratified ?' to 'Not stratified'."
@@ -36,18 +36,20 @@ validate_reserved_columns <- function(sframe) {
 # stratification column, and contains unique values (no duplicate PSU IDs).
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_psu_column <- function(sframe, params) {
-  if (params$samp_type != SAMPLING_TYPE_CLUSTER) {
+  if (params$sampling_type != SAMPLING_TYPE_CLUSTER) {
     return(NULL)
   }
-  if (is.null(params$col_psu) || params$col_psu == NO_COLUMN) {
+  if (is.null(params$psu_column) || params$psu_column == NO_COLUMN) {
     return("Please select a cluster (PSU) column.")
   }
-  if (params$stratified == STRATIFIED && params$col_psu == params$strata) {
+  if (
+    params$stratified == STRATIFIED && params$psu_column == params$strata_column
+  ) {
     return(
       "Cluster and stratification variables must be different columns."
     )
   }
-  psu_col <- as.character(params$col_psu)
+  psu_col <- as.character(params$psu_column)
   if (is.null(sframe) || !psu_col %in% names(sframe)) {
     return(paste0(
       "Input cluster '",
@@ -58,7 +60,7 @@ validate_psu_column <- function(sframe, params) {
   if (anyDuplicated(sframe[[psu_col]]) > 0) {
     return(paste0(
       "Input cluster '",
-      params$col_psu,
+      params$psu_column,
       "' contains duplicate values: the sampling frame must have one row per cluster (PSU), so this column must uniquely identify each cluster."
     ))
   }
@@ -69,7 +71,7 @@ validate_psu_column <- function(sframe, params) {
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_population_column <- function(sframe, params) {
   if (
-    !(params$samp_type %in%
+    !(params$sampling_type %in%
       c(
         SAMPLING_TYPE_CLUSTER,
         SAMPLING_TYPE_PPS
@@ -77,10 +79,12 @@ validate_population_column <- function(sframe, params) {
   ) {
     return(NULL)
   }
-  if (is.null(params$colpop) || params$colpop == NO_COLUMN) {
+  if (
+    is.null(params$population_column) || params$population_column == NO_COLUMN
+  ) {
     return("Please select a population column for this sampling type.")
   }
-  col <- as.character(params$colpop)
+  col <- as.character(params$population_column)
   if (!(col %in% names(sframe))) {
     return(paste0(
       "Population column '",
@@ -96,14 +100,14 @@ validate_population_column <- function(sframe, params) {
     ))
   }
   if (
-    params$samp_type == SAMPLING_TYPE_CLUSTER &&
-      identical(col, as.character(params$col_psu))
+    params$sampling_type == SAMPLING_TYPE_CLUSTER &&
+      identical(col, as.character(params$psu_column))
   ) {
     return("Cluster and population variables must be different columns.")
   }
   if (
     params$stratified == STRATIFIED &&
-      identical(col, as.character(params$strata))
+      identical(col, as.character(params$strata_column))
   ) {
     return("Stratification and population variables must be different columns.")
   }
@@ -115,7 +119,7 @@ validate_population_column <- function(sframe, params) {
 # Returns one row per problem (`data_row` ignores the header), or NULL.
 population_issues <- function(sframe, params) {
   if (
-    !(params$samp_type %in%
+    !(params$sampling_type %in%
       c(
         SAMPLING_TYPE_CLUSTER,
         SAMPLING_TYPE_PPS
@@ -123,7 +127,7 @@ population_issues <- function(sframe, params) {
   ) {
     return(NULL)
   }
-  values <- sframe[[as.character(params$colpop)]]
+  values <- sframe[[as.character(params$population_column)]]
   bad <- which(is.na(values) | values < 0)
   if (length(bad) == 0) {
     return(NULL)
@@ -135,8 +139,8 @@ population_issues <- function(sframe, params) {
       "Negative population"
     ),
     data_row = bad,
-    psu = if (params$samp_type == SAMPLING_TYPE_CLUSTER) {
-      as.character(sframe[[as.character(params$col_psu)]][bad])
+    psu = if (params$sampling_type == SAMPLING_TYPE_CLUSTER) {
+      as.character(sframe[[as.character(params$psu_column)]][bad])
     } else {
       NA_character_
     },

@@ -9,22 +9,22 @@ types <- c(
   "Two-stage PPS cluster sampling with replacement"
 )
 
-sampling_input <- function(topup, samp_type, stratified) {
+sampling_input <- function(sampling_mode, sampling_type, stratified) {
   list(
-    topup = topup,
-    target = 300,
-    conf_level = 0.95,
-    e_marg = 0.05,
-    pror = 0.5,
-    buf = 0.05,
-    samp_type = samp_type,
+    sampling_mode = sampling_mode,
+    target_size = 300,
+    confidence_level = 0.95,
+    error_margin = 0.05,
+    proportion = 0.5,
+    buffer = 0.05,
+    sampling_type = sampling_type,
     stratified = stratified,
-    strata = "Region",
-    col_psu = "VDC_code",
-    colpop = "HH_total",
-    cls = 5,
-    ICC = 0.06,
-    seed_value = 7
+    strata_column = "Region",
+    psu_column = "VDC_code",
+    population_column = "HH_total",
+    cluster_size = 5,
+    icc = 0.06,
+    seed = 7
   )
 }
 
@@ -47,11 +47,17 @@ test_that("the tables and the CSV files have the same column order in every conf
     }
     user_columns <- names(data)
 
-    for (topup in modes) {
-      for (samp_type in types) {
+    for (sampling_mode in modes) {
+      for (sampling_type in types) {
         for (stratified in c("Not stratified", "Stratified")) {
-          label <- paste(frame_class, topup, samp_type, stratified, sep = " / ")
-          input <- sampling_input(topup, samp_type, stratified)
+          label <- paste(
+            frame_class,
+            sampling_mode,
+            sampling_type,
+            stratified,
+            sep = " / "
+          )
+          input <- sampling_input(sampling_mode, sampling_type, stratified)
 
           frame <- format_sampling_frame(data, input)
           out <- run_with_seed(7, make_sample(data, input))

@@ -8,21 +8,27 @@
 #   n  = n0 / (1 + (n0 - 1) / N)         finite population correction
 #      = z^2 * N * p * (1 - p) / (e^2 * (N - 1) + z^2 * p * (1 - p))
 # where z is the two-sided normal quantile of the confidence level: z^2 is also
-# qchisq(conf_level, df = 1). The result is then multiplied by the design effect.
+# qchisq(confidence_level, df = 1). The result is then multiplied by the design effect.
 #
 # Parameters:
 #   population_size: The population size (N)
-#   conf_level: The desired level of confidence (between 0 and 1)
-#   prop: The estimated population proportion (p, between 0 and 1)
-#   margin_error: The desired margin of error (e)
-#   DEFF: Design effect to inflate the sample size for (default 1, i.e. no inflation)
+#   confidence_level: The desired level of confidence (between 0 and 1)
+#   proportion: The estimated population proportion (p, between 0 and 1)
+#   error_margin: The desired margin of error (e)
+#   deff: Design effect to inflate the sample size for (default 1, i.e. no inflation)
 # Returns:
 #   The sample size required to achieve the desired level of confidence and margin of error
-Ssize <- function(population_size, conf_level, prop, margin_error, DEFF = 1) {
-  z <- qnorm(1 - (1 - conf_level) / 2) # two-sided z-score for confidence level
-  n0 <- (z^2 * prop * (1 - prop)) / margin_error^2 # infinite population approximation
+Ssize <- function(
+  population_size,
+  confidence_level,
+  proportion,
+  error_margin,
+  deff = 1
+) {
+  z <- qnorm(1 - (1 - confidence_level) / 2) # two-sided z-score for confidence level
+  n0 <- (z^2 * proportion * (1 - proportion)) / error_margin^2 # infinite population approximation
   n <- n0 / (1 + (n0 - 1) / population_size) # finite population correction
-  ceiling(n * DEFF)
+  ceiling(n * deff)
 }
 
 # The target sample size of each stratum: one row per stratum with
@@ -40,8 +46,8 @@ create_targets <- function(sframe, params) {
   # only (it is 1 for the other types), and only when the sample size is computed
   # from the population: in the mode "Enter sample size" the typed target is used
   # as it is, without design effect, and the ICC is not used.
-  DEFF <- if (params$samp_type == SAMPLING_TYPE_CLUSTER) {
-    1 + (params$cls - 1) * params$ICC
+  deff <- if (params$sampling_type == SAMPLING_TYPE_CLUSTER) {
+    1 + (params$cluster_size - 1) * params$icc
   } else {
     1
   }
@@ -52,22 +58,24 @@ create_targets <- function(sframe, params) {
       Population = sum(PST_pop_size, na.rm = T)
     ) |>
     dplyr::mutate(
-      target = (if (params$topup == SAMPLING_MODE_ENTER_SIZE) {
-        params$target
+      target = (if (params$sampling_mode == SAMPLING_MODE_ENTER_SIZE) {
+        params$target_size
       } else {
         Ssize(
           population_size = Population,
-          conf_level = params$conf_level,
-          prop = FIXED_PROPORTION,
-          margin_error = params$e_marg,
-          DEFF = DEFF
+          confidence_level = params$confidence_level,
+          proportion = FIXED_PROPORTION,
+          error_margin = params$error_margin,
+          deff = deff
         )
       }) |>
         as.numeric(),
-      target.with.buffer = if (params$topup == SAMPLING_MODE_ENTER_SIZE) {
+      target.with.buffer = if (
+        params$sampling_mode == SAMPLING_MODE_ENTER_SIZE
+      ) {
         target
       } else {
-        as.numeric(ceiling(target * (1 + params$buf)))
+        as.numeric(ceiling(target * (1 + params$buffer)))
       }
     )
 }

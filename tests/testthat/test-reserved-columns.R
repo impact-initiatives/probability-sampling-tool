@@ -26,27 +26,30 @@ frame_24 <- function() {
   )
 }
 
-sampling_input <- function(samp_type, stratified) {
+sampling_input <- function(sampling_type, stratified) {
   list(
-    topup = "Enter sample size",
-    target = 20,
-    conf_level = 0.95,
-    e_marg = 0.05,
-    pror = 0.5,
-    buf = 0.05,
-    samp_type = samp_type,
+    sampling_mode = "Enter sample size",
+    target_size = 20,
+    confidence_level = 0.95,
+    error_margin = 0.05,
+    proportion = 0.5,
+    buffer = 0.05,
+    sampling_type = sampling_type,
     stratified = stratified,
-    strata = "region",
-    col_psu = "psu_name",
-    colpop = "population",
-    cls = 5,
-    ICC = 0.06,
-    seed_value = 1
+    strata_column = "region",
+    psu_column = "psu_name",
+    population_column = "population",
+    cluster_size = 5,
+    icc = 0.06,
+    seed = 1
   )
 }
 
-draw <- function(frame, samp_type, stratified) {
-  run_with_seed(1, make_sample(frame, sampling_input(samp_type, stratified)))
+draw <- function(frame, sampling_type, stratified) {
+  run_with_seed(
+    1,
+    make_sample(frame, sampling_input(sampling_type, stratified))
+  )
 }
 
 test_that("a frame column named like an old internal column is kept as it is", {
@@ -63,11 +66,11 @@ test_that("a frame column named like an old internal column is kept as it is", {
   for (name in old_names) {
     frame <- frame_24()
     frame[[name]] <- paste0("USER_", name, "_", seq_len(nrow(frame)))
-    for (samp_type in sampling_types) {
+    for (sampling_type in sampling_types) {
       for (stratified in c("Not stratified", "Stratified")) {
-        label <- paste(name, samp_type, stratified, sep = " / ")
+        label <- paste(name, sampling_type, stratified, sep = " / ")
         out <- tryCatch(
-          draw(frame, samp_type, stratified),
+          draw(frame, sampling_type, stratified),
           error = function(e) {
             fail(paste(label, "->", conditionMessage(e)))
             NULL
@@ -133,13 +136,13 @@ test_that("the frame attached to issue #32 can be sampled", {
     id_sampl = c("A", "B", rep(NA, 14)),
     SumDist = c("AA", "AA", rep("BB", 14))
   )
-  for (samp_type in c(
+  for (sampling_type in c(
     "Two-stage PPS cluster sampling with replacement",
     "PPS sampling with replacement"
   )) {
-    input <- sampling_input(samp_type, "Stratified")
-    input$target <- 30
-    input$cls <- 2
+    input <- sampling_input(sampling_type, "Stratified")
+    input$target_size <- 30
+    input$cluster_size <- 2
     expect_no_error(run_with_seed(1, make_sample(frame, input)))
   }
 })
@@ -191,23 +194,23 @@ test_that("a reloaded sample is blocked at Apply with the reserved columns liste
   shiny::testServer(server, {
     session$setInputs(
       data_source = "upload",
-      popdata = list(name = "previous_sample.csv", datapath = path),
-      topup = "Enter sample size",
-      samp_type = "Simple random sampling",
+      frame_file = list(name = "previous_sample.csv", datapath = path),
+      sampling_mode = "Enter sample size",
+      sampling_type = "Simple random sampling",
       stratified = "Not stratified",
-      col_psu = "None",
-      strata = "None",
-      colpop = "None",
-      conf_level = 0.95,
-      e_marg = 0.05,
-      pror = 0.5,
-      buf = 0.05,
-      target = 10,
-      cls = 5,
-      ICC = 0.06,
-      seed_value = 1
+      psu_column = "None",
+      strata_column = "None",
+      population_column = "None",
+      confidence_level = 0.95,
+      error_margin = 0.05,
+      proportion = 0.5,
+      buffer = 0.05,
+      target_size = 10,
+      cluster_size = 5,
+      icc = 0.06,
+      seed = 1
     )
-    session$setInputs(f_apply = 1)
+    session$setInputs(apply_button = 1)
     expect_false(applied())
     expect_match(output$apply_error$html, "PST_prob", fixed = TRUE)
     expect_match(output$apply_error$html, "PST_id_sample", fixed = TRUE)
@@ -221,23 +224,23 @@ test_that("the downloads have no unnamed row-number column", {
   shiny::testServer(server, {
     session$setInputs(
       data_source = "test",
-      topup = "Sample size based on population",
-      samp_type = "Simple random sampling",
+      sampling_mode = "Sample size based on population",
+      sampling_type = "Simple random sampling",
       stratified = "Not stratified",
-      col_psu = "None",
-      strata = "None",
-      colpop = "None",
-      conf_level = 0.95,
-      e_marg = 0.05,
-      pror = 0.5,
-      buf = 0.05,
-      target = NA,
-      cls = 5,
-      ICC = 0.06,
-      seed_value = 42
+      psu_column = "None",
+      strata_column = "None",
+      population_column = "None",
+      confidence_level = 0.95,
+      error_margin = 0.05,
+      proportion = 0.5,
+      buffer = 0.05,
+      target_size = NA,
+      cluster_size = 5,
+      icc = 0.06,
+      seed = 42
     )
-    session$setInputs(f_apply = 1)
-    session$setInputs(desButton = 1)
+    session$setInputs(apply_button = 1)
+    session$setInputs(draw_button = 1)
 
     sample_file <- readLines(output$downloadBtn, n = 1)
     summary_file <- readLines(output$downloadBtn2, n = 1)

@@ -36,17 +36,17 @@ test_that("a new Apply empties the Sampling tab until Sample is clicked again", 
   }
   sample_enabled <- function() {
     app$get_js(
-      "var b = document.getElementById('desButton'); !b.disabled && !b.classList.contains('disabled')"
+      "var b = document.getElementById('draw_button'); !b.disabled && !b.classList.contains('disabled')"
     )
   }
   draw <- function() {
-    app$click("desButton")
+    app$click("draw_button")
     app$wait_for_idle()
     Sys.sleep(1)
   }
 
   app$set_inputs(data_source = "test")
-  app$click("f_apply")
+  app$click("apply_button")
   app$wait_for_idle()
   go_tab("Sampling")
   expect_true(sample_enabled())
@@ -60,7 +60,7 @@ test_that("a new Apply empties the Sampling tab until Sample is clicked again", 
   expect_true(has_link("downloadBtn2"))
 
   go_tab("Sampling frame")
-  app$click("f_apply")
+  app$click("apply_button")
   app$wait_for_idle()
   go_tab("Sampling")
   expect_false(has_rows("sampling_output"))

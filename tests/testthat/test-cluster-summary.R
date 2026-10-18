@@ -8,20 +8,20 @@ test_that("the cluster summary has one cluster size, one DEFF and one effective 
     population = rep(c(40, 60, 80, 120, 200, 400), 10)
   )
   input <- list(
-    topup = "Sample size based on population",
-    target = NA,
-    conf_level = 0.95,
-    e_marg = 0.05,
-    pror = 0.5,
-    buf = 0.05,
-    samp_type = "Two-stage PPS cluster sampling with replacement",
+    sampling_mode = "Sample size based on population",
+    target_size = NA,
+    confidence_level = 0.95,
+    error_margin = 0.05,
+    proportion = 0.5,
+    buffer = 0.05,
+    sampling_type = "Two-stage PPS cluster sampling with replacement",
     stratified = "Stratified",
-    strata = "region",
-    col_psu = "psu_name",
-    colpop = "population",
-    cls = 5,
-    ICC = 0.1,
-    seed_value = 1
+    strata_column = "region",
+    psu_column = "psu_name",
+    population_column = "population",
+    cluster_size = 5,
+    icc = 0.1,
+    seed = 1
   )
   summary <- run_with_seed(1, make_sample(frame, input))$summary_sample
 

@@ -17,9 +17,9 @@ make_sample <- function(sampling_frame, params) {
   # create the target sample.
   target <- create_targets(sampl_f, params)
 
-  cls <- params$cls
+  cls <- params$cluster_size
 
-  if (params$samp_type == SAMPLING_TYPE_CLUSTER) {
+  if (params$sampling_type == SAMPLING_TYPE_CLUSTER) {
     output <- apply(
       target,
       1,
@@ -29,7 +29,7 @@ make_sample <- function(sampling_frame, params) {
       simplify = FALSE
     ) %>%
       unlist
-  } else if (params$samp_type == SAMPLING_TYPE_PPS) {
+  } else if (params$sampling_type == SAMPLING_TYPE_PPS) {
     # simplify = FALSE: when every stratum draws the same number of units
     # (e.g. "Enter sample size" + stratified), apply() would otherwise return
     # a matrix instead of a list, which unlist() keeps 2-D and breaks the
@@ -42,7 +42,7 @@ make_sample <- function(sampling_frame, params) {
       simplify = FALSE
     ) %>%
       unlist
-  } else if (params$samp_type == SAMPLING_TYPE_SIMPLE) {
+  } else if (params$sampling_type == SAMPLING_TYPE_SIMPLE) {
     output <- apply(
       target,
       1,
@@ -63,7 +63,7 @@ make_sample <- function(sampling_frame, params) {
     all.y = F
   )
 
-  if (params$samp_type == SAMPLING_TYPE_CLUSTER) {
+  if (params$sampling_type == SAMPLING_TYPE_CLUSTER) {
     dbout$PST_survey <- cls
   } else {
     dbout$PST_survey <- 1
@@ -98,15 +98,15 @@ make_sample <- function(sampling_frame, params) {
       # same PSU is drawn several times: the cluster size, and so the design
       # effect, are set by the design, not measured on the draw. DEFF uses the
       # ICC entered by the user.
-      Cluster_size = params$cls,
-      ICC = params$ICC,
+      Cluster_size = params$cluster_size,
+      ICC = params$icc,
       DEFF = 1 + (Cluster_size - 1) * ICC,
       Effective_sample = round(Surveys / DEFF, 0),
-      Surveys_buffer = params$buf,
-      Confidence_level = params$conf_level,
-      Error_margin = params$e_marg,
-      Sampling_type = params$samp_type,
-      Seed = as.integer(params$seed_value)
+      Surveys_buffer = params$buffer,
+      Confidence_level = params$confidence_level,
+      Error_margin = params$error_margin,
+      Sampling_type = params$sampling_type,
+      Seed = as.integer(params$seed)
     ) |>
     dplyr::left_join(
       target[, c("PST_stratum_id", "target.with.buffer")],
@@ -114,7 +114,7 @@ make_sample <- function(sampling_frame, params) {
     ) |>
     dplyr::relocate(target.with.buffer, .after = NB_Population)
 
-  if (params$samp_type != SAMPLING_TYPE_CLUSTER) {
+  if (params$sampling_type != SAMPLING_TYPE_CLUSTER) {
     # "Clusters drawn" is the draw count; it only differs from "Surveys"
     # when a draw yields more than one survey, i.e. cluster sampling.
     summary_sample[c(
@@ -126,12 +126,12 @@ make_sample <- function(sampling_frame, params) {
     )] <- NA
     # plain SRS: no replacement and no PSU concept, so the distinct count
     # is just "Surveys" again.
-    if (params$samp_type == SAMPLING_TYPE_SIMPLE) {
+    if (params$sampling_type == SAMPLING_TYPE_SIMPLE) {
       summary_sample["Unique_PSUs"] <- NA
     }
   }
 
-  if (params$topup == SAMPLING_MODE_ENTER_SIZE) {
+  if (params$sampling_mode == SAMPLING_MODE_ENTER_SIZE) {
     summary_sample[c(
       "ICC",
       "DEFF",

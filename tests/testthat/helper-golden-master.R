@@ -11,20 +11,20 @@
 
 golden_base <- list(
   data_source = "test",
-  topup = "Sample size based on population",
-  samp_type = "Simple random sampling",
+  sampling_mode = "Sample size based on population",
+  sampling_type = "Simple random sampling",
   stratified = "Not stratified",
-  col_psu = "None",
-  strata = "None",
-  colpop = "None",
-  conf_level = 0.95,
-  e_marg = 0.05,
-  pror = 0.5,
-  buf = 0.05,
-  target = NA,
-  cls = 5,
-  ICC = 0.06,
-  seed_value = 42
+  psu_column = "None",
+  strata_column = "None",
+  population_column = "None",
+  confidence_level = 0.95,
+  error_margin = 0.05,
+  proportion = 0.5,
+  buffer = 0.05,
+  target_size = NA,
+  cluster_size = 5,
+  icc = 0.06,
+  seed = 42
 )
 
 golden_types <- c(
@@ -58,15 +58,15 @@ scenario <- function(
 }
 
 # the inputs a sampling type needs
-type_inputs <- function(type, stratified = FALSE, strata = "Region") {
+type_inputs <- function(type, stratified = FALSE, strata_column = "Region") {
   c(
     list(
-      samp_type = golden_types[[type]],
-      col_psu = if (type == "cluster") "VDC_code" else "None",
-      colpop = if (type == "simple") "None" else "HH_total"
+      sampling_type = golden_types[[type]],
+      psu_column = if (type == "cluster") "VDC_code" else "None",
+      population_column = if (type == "simple") "None" else "HH_total"
     ),
     if (stratified) {
-      list(stratified = "Stratified", strata = strata)
+      list(stratified = "Stratified", strata_column = strata_column)
     }
   )
 }
@@ -82,15 +82,15 @@ golden_scenarios <- function() {
       for (strat in c("unstratified", "stratified")) {
         for (size in c("within", "exceeds")) {
           sizes <- if (mode == "population") {
-            list(buf = if (size == "within") 0.05 else 5)
+            list(buffer = if (size == "within") 0.05 else 5)
           } else {
-            list(target = if (size == "within") 100 else 3000)
+            list(target_size = if (size == "within") 100 else 3000)
           }
           add(do.call(
             scenario,
             c(
               list(id = paste(mode, type, strat, size, sep = "|")),
-              list(topup = golden_modes[[mode]]),
+              list(sampling_mode = golden_modes[[mode]]),
               type_inputs(type, strat == "stratified"),
               sizes
             )
@@ -101,67 +101,82 @@ golden_scenarios <- function() {
   }
 
   # 2. other valid parameters
-  p <- function(id, type, ..., stratified = FALSE, strata = "Region") {
+  p <- function(id, type, ..., stratified = FALSE, strata_column = "Region") {
     add(do.call(
       scenario,
       c(
         list(id = paste0("param|", id)),
-        type_inputs(type, stratified, strata),
+        type_inputs(type, stratified, strata_column),
         list(...)
       )
     ))
   }
-  p("cluster-size-2", "cluster", cls = 2, stratified = TRUE)
-  p("cluster-size-12", "cluster", cls = 12, stratified = TRUE)
-  p("icc-0", "cluster", ICC = 0, stratified = TRUE)
-  p("icc-1", "cluster", ICC = 1, stratified = TRUE)
-  p("icc-half", "cluster", ICC = 0.5)
-  p("cluster-zone", "cluster", stratified = TRUE, strata = "Zone_name")
-  p("cluster-district", "cluster", stratified = TRUE, strata = "District_name")
+  p("cluster-size-2", "cluster", cluster_size = 2, stratified = TRUE)
+  p("cluster-size-12", "cluster", cluster_size = 12, stratified = TRUE)
+  p("icc-0", "cluster", icc = 0, stratified = TRUE)
+  p("icc-1", "cluster", icc = 1, stratified = TRUE)
+  p("icc-half", "cluster", icc = 0.5)
+  p("cluster-zone", "cluster", stratified = TRUE, strata_column = "Zone_name")
+  p(
+    "cluster-district",
+    "cluster",
+    stratified = TRUE,
+    strata_column = "District_name"
+  )
   p(
     "cluster-entered",
     "cluster",
-    topup = golden_modes[["entered"]],
-    target = 60,
-    cls = 3,
+    sampling_mode = golden_modes[["entered"]],
+    target_size = 60,
+    cluster_size = 3,
     stratified = TRUE
   )
   p(
     "cluster-pop-other-column",
     "cluster",
-    colpop = "Ind_total",
+    population_column = "Ind_total",
     stratified = TRUE
   )
-  p("pps-other-column", "pps", colpop = "Ind_total", stratified = TRUE)
-  p("pps-district", "pps", stratified = TRUE, strata = "District_name")
+  p(
+    "pps-other-column",
+    "pps",
+    population_column = "Ind_total",
+    stratified = TRUE
+  )
+  p("pps-district", "pps", stratified = TRUE, strata_column = "District_name")
   p(
     "pps-entered",
     "pps",
-    topup = golden_modes[["entered"]],
-    target = 50,
+    sampling_mode = golden_modes[["entered"]],
+    target_size = 50,
     stratified = TRUE
   )
-  p("simple-district", "simple", stratified = TRUE, strata = "District_name")
+  p(
+    "simple-district",
+    "simple",
+    stratified = TRUE,
+    strata_column = "District_name"
+  )
   p(
     "simple-zone-90",
     "simple",
-    conf_level = 0.9,
-    e_marg = 0.1,
+    confidence_level = 0.9,
+    error_margin = 0.1,
     stratified = TRUE,
-    strata = "Zone_name"
+    strata_column = "Zone_name"
   )
-  p("simple-99", "simple", conf_level = 0.99, e_marg = 0.02)
-  p("simple-no-buffer", "simple", buf = 0)
+  p("simple-99", "simple", confidence_level = 0.99, error_margin = 0.02)
+  p("simple-no-buffer", "simple", buffer = 0)
   p(
     "simple-entered",
     "simple",
-    topup = golden_modes[["entered"]],
-    target = 50,
+    sampling_mode = golden_modes[["entered"]],
+    target_size = 50,
     stratified = TRUE
   )
-  p("simple-seed-1", "simple", seed_value = 1, stratified = TRUE)
-  p("simple-seed-negative", "simple", seed_value = -2147483647)
-  p("pps-seed-2024", "pps", seed_value = 2024)
+  p("simple-seed-1", "simple", seed = 1, stratified = TRUE)
+  p("simple-seed-negative", "simple", seed = -2147483647)
+  p("pps-seed-2024", "pps", seed = 2024)
 
   # 3. the file
   add(scenario("file|no-file", no_file = TRUE))
@@ -189,58 +204,70 @@ golden_scenarios <- function() {
   e <- function(id, ..., frame = NULL) {
     add(scenario(paste0("columns|", id), ..., frame = frame))
   }
-  e("strata-missing", stratified = "Stratified", strata = "None")
+  e("strata-missing", stratified = "Stratified", strata_column = "None")
   e("reserved", frame = function(d) {
     d$PST_prob <- 1
     d$PST_notes <- "x"
     d
   })
-  e("psu-missing", samp_type = golden_types[["cluster"]], colpop = "HH_total")
+  e(
+    "psu-missing",
+    sampling_type = golden_types[["cluster"]],
+    population_column = "HH_total"
+  )
   e(
     "psu-not-found",
-    samp_type = golden_types[["cluster"]],
-    col_psu = "nope",
-    colpop = "HH_total"
+    sampling_type = golden_types[["cluster"]],
+    psu_column = "nope",
+    population_column = "HH_total"
   )
   e(
     "psu-duplicates",
-    samp_type = golden_types[["cluster"]],
-    col_psu = "Zone_name",
-    colpop = "HH_total"
+    sampling_type = golden_types[["cluster"]],
+    psu_column = "Zone_name",
+    population_column = "HH_total"
   )
-  e("pop-missing", samp_type = golden_types[["pps"]])
+  e("pop-missing", sampling_type = golden_types[["pps"]])
   e(
     "pop-missing-cluster",
-    samp_type = golden_types[["cluster"]],
-    col_psu = "VDC_code"
+    sampling_type = golden_types[["cluster"]],
+    psu_column = "VDC_code"
   )
-  e("pop-not-found", samp_type = golden_types[["pps"]], colpop = "nope")
-  e("pop-not-numeric", samp_type = golden_types[["pps"]], colpop = "P_CODE")
+  e(
+    "pop-not-found",
+    sampling_type = golden_types[["pps"]],
+    population_column = "nope"
+  )
+  e(
+    "pop-not-numeric",
+    sampling_type = golden_types[["pps"]],
+    population_column = "P_CODE"
+  )
   e(
     "cluster-is-pop",
-    samp_type = golden_types[["cluster"]],
-    col_psu = "VDC_code",
-    colpop = "VDC_code"
+    sampling_type = golden_types[["cluster"]],
+    psu_column = "VDC_code",
+    population_column = "VDC_code"
   )
   e(
     "cluster-is-strata",
-    samp_type = golden_types[["cluster"]],
-    col_psu = "VDC_code",
-    colpop = "HH_total",
+    sampling_type = golden_types[["cluster"]],
+    psu_column = "VDC_code",
+    population_column = "HH_total",
     stratified = "Stratified",
-    strata = "VDC_code"
+    strata_column = "VDC_code"
   )
   e(
     "strata-is-pop",
-    samp_type = golden_types[["pps"]],
-    colpop = "HH_total",
+    sampling_type = golden_types[["pps"]],
+    population_column = "HH_total",
     stratified = "Stratified",
-    strata = "HH_total"
+    strata_column = "HH_total"
   )
   e(
     "pop-na",
-    samp_type = golden_types[["pps"]],
-    colpop = "HH_total",
+    sampling_type = golden_types[["pps"]],
+    population_column = "HH_total",
     frame = function(d) {
       d$HH_total[c(3, 10)] <- NA
       d
@@ -248,8 +275,8 @@ golden_scenarios <- function() {
   )
   e(
     "pop-negative",
-    samp_type = golden_types[["pps"]],
-    colpop = "HH_total",
+    sampling_type = golden_types[["pps"]],
+    population_column = "HH_total",
     frame = function(d) {
       d$HH_total[c(5, 6, 7)] <- -1
       d
@@ -257,9 +284,9 @@ golden_scenarios <- function() {
   )
   e(
     "pop-na-and-negative-cluster",
-    samp_type = golden_types[["cluster"]],
-    col_psu = "VDC_code",
-    colpop = "HH_total",
+    sampling_type = golden_types[["cluster"]],
+    psu_column = "VDC_code",
+    population_column = "HH_total",
     frame = function(d) {
       d$HH_total[2] <- NA
       d$HH_total[4] <- -5
@@ -268,9 +295,9 @@ golden_scenarios <- function() {
   )
   e(
     "pop-zero-psu",
-    samp_type = golden_types[["cluster"]],
-    col_psu = "VDC_code",
-    colpop = "HH_total",
+    sampling_type = golden_types[["cluster"]],
+    psu_column = "VDC_code",
+    population_column = "HH_total",
     frame = function(d) {
       d$HH_total[1] <- 0
       d
@@ -278,8 +305,8 @@ golden_scenarios <- function() {
   )
   e(
     "many-pop-problems",
-    samp_type = golden_types[["pps"]],
-    colpop = "HH_total",
+    sampling_type = golden_types[["pps"]],
+    population_column = "HH_total",
     frame = function(d) {
       d$HH_total[1:9] <- NA
       d
@@ -288,52 +315,52 @@ golden_scenarios <- function() {
 
   # 5. the parameters
   q <- function(id, ...) add(scenario(paste0("parameters|", id), ...))
-  entered <- list(topup = golden_modes[["entered"]])
-  for (target in list(NA, 0, 1.5, -3, Inf)) {
+  entered <- list(sampling_mode = golden_modes[["entered"]])
+  for (target_size in list(NA, 0, 1.5, -3, Inf)) {
     do.call(
       q,
       c(
-        list(id = paste0("target-", format(target))),
+        list(id = paste0("target-", format(target_size))),
         entered,
-        list(target = target)
+        list(target_size = target_size)
       )
     )
   }
   for (v in list(NA, 0, 1, 1.5, -1)) {
-    q(paste0("conf-", format(v)), conf_level = v)
-    q(paste0("margin-", format(v)), e_marg = v)
+    q(paste0("conf-", format(v)), confidence_level = v)
+    q(paste0("margin-", format(v)), error_margin = v)
   }
   for (v in list(NA, -1)) {
-    q(paste0("buffer-", format(v)), buf = v)
+    q(paste0("buffer-", format(v)), buffer = v)
   }
   for (v in list(NA, 1, 2.5, 0, -2)) {
     q(
       paste0("cls-", format(v)),
-      samp_type = golden_types[["cluster"]],
-      col_psu = "VDC_code",
-      colpop = "HH_total",
-      cls = v
+      sampling_type = golden_types[["cluster"]],
+      psu_column = "VDC_code",
+      population_column = "HH_total",
+      cluster_size = v
     )
   }
   for (v in list(NA, -0.1, 1.5)) {
     q(
       paste0("icc-", format(v)),
-      samp_type = golden_types[["cluster"]],
-      col_psu = "VDC_code",
-      colpop = "HH_total",
-      ICC = v
+      sampling_type = golden_types[["cluster"]],
+      psu_column = "VDC_code",
+      population_column = "HH_total",
+      icc = v
     )
   }
   # the parameters of the mode that is not selected are not checked
   q(
     "conf-ignored-when-entered",
-    topup = golden_modes[["entered"]],
-    target = 20,
-    conf_level = NA
+    sampling_mode = golden_modes[["entered"]],
+    target_size = 20,
+    confidence_level = NA
   )
-  q("icc-ignored-when-not-cluster", ICC = NA)
+  q("icc-ignored-when-not-cluster", icc = NA)
   for (v in list(NA, 1.5, 3e9, -3e9)) {
-    q(paste0("seed-", format(v)), seed_value = v)
+    q(paste0("seed-", format(v)), seed = v)
   }
 
   # 6. the cluster guards at Apply
@@ -341,44 +368,44 @@ golden_scenarios <- function() {
   cl <- type_inputs("cluster", TRUE)
   g(
     "psu-too-small",
-    samp_type = cl$samp_type,
-    col_psu = "VDC_code",
-    colpop = "HH_total",
-    cls = 400
+    sampling_type = cl$sampling_type,
+    psu_column = "VDC_code",
+    population_column = "HH_total",
+    cluster_size = 400
   )
   g(
     "stratum-capacity",
-    samp_type = cl$samp_type,
-    col_psu = "VDC_code",
-    colpop = "HH_total",
+    sampling_type = cl$sampling_type,
+    psu_column = "VDC_code",
+    population_column = "HH_total",
     stratified = "Stratified",
-    strata = "Region",
-    topup = golden_modes[["entered"]],
-    target = 400000
+    strata_column = "Region",
+    sampling_mode = golden_modes[["entered"]],
+    target_size = 400000
   )
   g(
     "both-problems",
-    samp_type = cl$samp_type,
-    col_psu = "VDC_code",
-    colpop = "HH_total",
+    sampling_type = cl$sampling_type,
+    psu_column = "VDC_code",
+    population_column = "HH_total",
     stratified = "Stratified",
-    strata = "District_name",
-    cls = 150
+    strata_column = "District_name",
+    cluster_size = 150
   )
   g(
     "many-small-psus",
-    samp_type = cl$samp_type,
-    col_psu = "VDC_code",
-    colpop = "HH_total",
-    cls = 130
+    sampling_type = cl$sampling_type,
+    psu_column = "VDC_code",
+    population_column = "HH_total",
+    cluster_size = 130
   )
   g(
     "one-stratum-capacity-entered",
-    samp_type = cl$samp_type,
-    col_psu = "VDC_code",
-    colpop = "HH_total",
-    topup = golden_modes[["entered"]],
-    target = 100000
+    sampling_type = cl$sampling_type,
+    psu_column = "VDC_code",
+    population_column = "HH_total",
+    sampling_mode = golden_modes[["entered"]],
+    target_size = 100000
   )
 
   # 7. the draw: six PSUs of 10 households host 2 clusters of 5 each, so a PSU
@@ -391,12 +418,12 @@ golden_scenarios <- function() {
   for (seed in c(1, 2, 3, 42)) {
     add(scenario(
       paste0("draw|overflow-seed-", seed),
-      samp_type = golden_types[["cluster"]],
-      col_psu = "VDC_code",
-      colpop = "HH_total",
-      topup = golden_modes[["entered"]],
-      target = 40,
-      seed_value = seed,
+      sampling_type = golden_types[["cluster"]],
+      psu_column = "VDC_code",
+      population_column = "HH_total",
+      sampling_mode = golden_modes[["entered"]],
+      target_size = 40,
+      seed = seed,
       frame = few_psus
     ))
   }
@@ -406,18 +433,18 @@ golden_scenarios <- function() {
   m <- function(id, ..., frame = NULL) {
     add(scenario(paste0("order|", id), ..., frame = frame))
   }
-  cluster <- list(samp_type = golden_types[["cluster"]])
+  cluster <- list(sampling_type = golden_types[["cluster"]])
   m(
     "strata-then-file",
     stratified = "Stratified",
-    strata = "None",
+    strata_column = "None",
     no_file = TRUE
   )
   m("file-then-reserved", file = list(name = "frame.csv", content = ""))
   m(
     "reserved-then-psu",
-    samp_type = cluster$samp_type,
-    colpop = "HH_total",
+    sampling_type = cluster$sampling_type,
+    population_column = "HH_total",
     frame = function(d) {
       d$PST_a <- 1
       d
@@ -425,15 +452,18 @@ golden_scenarios <- function() {
   )
   m(
     "psu-then-population",
-    samp_type = cluster$samp_type,
-    col_psu = "Zone_name",
-    colpop = "P_CODE"
+    sampling_type = cluster$sampling_type,
+    psu_column = "Zone_name",
+    population_column = "P_CODE"
   )
-  m("psu-missing-then-population-missing", samp_type = cluster$samp_type)
+  m(
+    "psu-missing-then-population-missing",
+    sampling_type = cluster$sampling_type
+  )
   m(
     "population-then-issues",
-    samp_type = golden_types[["pps"]],
-    colpop = "P_CODE",
+    sampling_type = golden_types[["pps"]],
+    population_column = "P_CODE",
     frame = function(d) {
       d$HH_total[2] <- NA
       d
@@ -441,54 +471,59 @@ golden_scenarios <- function() {
   )
   m(
     "issues-then-parameters",
-    samp_type = golden_types[["pps"]],
-    colpop = "HH_total",
-    conf_level = 5,
+    sampling_type = golden_types[["pps"]],
+    population_column = "HH_total",
+    confidence_level = 5,
     frame = function(d) {
       d$HH_total[2] <- NA
       d
     }
   )
-  m("parameters-then-seed", conf_level = 5, seed_value = NA)
-  m("conf-then-margin-then-buffer", conf_level = 5, e_marg = 5, buf = -1)
-  m("margin-then-buffer", e_marg = 5, buf = -1)
+  m("parameters-then-seed", confidence_level = 5, seed = NA)
+  m(
+    "conf-then-margin-then-buffer",
+    confidence_level = 5,
+    error_margin = 5,
+    buffer = -1
+  )
+  m("margin-then-buffer", error_margin = 5, buffer = -1)
   m(
     "buffer-then-cluster-size",
-    samp_type = cluster$samp_type,
-    col_psu = "VDC_code",
-    colpop = "HH_total",
-    buf = -1,
-    cls = 1
+    sampling_type = cluster$sampling_type,
+    psu_column = "VDC_code",
+    population_column = "HH_total",
+    buffer = -1,
+    cluster_size = 1
   )
   m(
     "cluster-size-then-icc",
-    samp_type = cluster$samp_type,
-    col_psu = "VDC_code",
-    colpop = "HH_total",
-    cls = 1,
-    ICC = 5
+    sampling_type = cluster$sampling_type,
+    psu_column = "VDC_code",
+    population_column = "HH_total",
+    cluster_size = 1,
+    icc = 5
   )
   m(
     "target-then-cluster-size",
-    topup = golden_modes[["entered"]],
-    samp_type = cluster$samp_type,
-    col_psu = "VDC_code",
-    colpop = "HH_total",
-    cls = 1
+    sampling_mode = golden_modes[["entered"]],
+    sampling_type = cluster$sampling_type,
+    psu_column = "VDC_code",
+    population_column = "HH_total",
+    cluster_size = 1
   )
   m(
     "seed-then-guard",
-    samp_type = cluster$samp_type,
-    col_psu = "VDC_code",
-    colpop = "HH_total",
-    cls = 400,
-    seed_value = NA
+    sampling_type = cluster$sampling_type,
+    psu_column = "VDC_code",
+    population_column = "HH_total",
+    cluster_size = 400,
+    seed = NA
   )
   m(
     "strata-then-psu-then-population",
     stratified = "Stratified",
-    strata = "None",
-    samp_type = cluster$samp_type
+    strata_column = "None",
+    sampling_type = cluster$sampling_type
   )
 
   out
@@ -547,14 +582,14 @@ run_golden_scenario <- function(spec, server, data_path) {
   if (!is.null(spec$file)) {
     writeBin(charToRaw(spec$file$content), upload_path)
     inputs$data_source <- "upload"
-    inputs$popdata <- list(name = spec$file$name, datapath = upload_path)
+    inputs$frame_file <- list(name = spec$file$name, datapath = upload_path)
   } else if (!is.null(spec$frame)) {
     data.table::fwrite(spec$frame(data.table::fread(data_path)), upload_path)
     inputs$data_source <- "upload"
-    inputs$popdata <- list(name = "frame.csv", datapath = upload_path)
+    inputs$frame_file <- list(name = "frame.csv", datapath = upload_path)
   } else if (!is.null(spec$too_large)) {
     inputs$data_source <- "upload"
-    inputs$popdata_too_large <- spec$too_large
+    inputs$rejected_file_name <- spec$too_large
   } else if (isTRUE(spec$no_file)) {
     inputs$data_source <- "upload"
   }
@@ -562,7 +597,7 @@ run_golden_scenario <- function(spec, server, data_path) {
   rec <- new.env()
   shiny::testServer(server, {
     do.call(session$setInputs, inputs)
-    session$setInputs(f_apply = 1)
+    session$setInputs(apply_button = 1)
 
     rec$file_error <- html_of(output$file_error)
     rec$data_status <- html_of(output$data_status)
@@ -574,13 +609,13 @@ run_golden_scenario <- function(spec, server, data_path) {
     rec$target_table <- rlang::hash(settle(output$target_frame))
     rec$frame_table <- rlang::hash(settle(output$sampling_frame))
     rec$exceeds <- if (
-      isTRUE(applied()) && inputs$samp_type != golden_types[["cluster"]]
+      isTRUE(applied()) && inputs$sampling_type != golden_types[["cluster"]]
     ) {
       check_target_vs_population(cible())
     }
 
     if (isTRUE(applied())) {
-      session$setInputs(desButton = 1)
+      session$setInputs(draw_button = 1)
       rec$sample_current <- sample_current()
       rec$draw_failed <- draw_failed()
       rec$sample_error <- html_of(output$sample_error)

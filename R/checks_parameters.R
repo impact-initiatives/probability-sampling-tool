@@ -9,29 +9,29 @@
 validate_parameters <- function(params) {
   strictly_between_0_and_1 <- function(x) is_number(x) && x > 0 && x < 1
 
-  if (params$topup == SAMPLING_MODE_ENTER_SIZE) {
-    target <- params$target
+  if (params$sampling_mode == SAMPLING_MODE_ENTER_SIZE) {
+    target <- params$target_size
     if (!is_number(target) || target <= 0 || target != floor(target)) {
       return("Enter a target sample size: a whole number greater than 0.")
     }
   } else {
-    if (!strictly_between_0_and_1(params$conf_level)) {
+    if (!strictly_between_0_and_1(params$confidence_level)) {
       return("Confidence level must be a number strictly between 0 and 1.")
     }
-    if (!strictly_between_0_and_1(params$e_marg)) {
+    if (!strictly_between_0_and_1(params$error_margin)) {
       return("Error margin must be a number strictly between 0 and 1.")
     }
-    if (!is_number(params$buf) || params$buf < 0) {
+    if (!is_number(params$buffer) || params$buffer < 0) {
       return("Buffer must be a number greater than or equal to 0.")
     }
   }
 
-  if (params$samp_type == SAMPLING_TYPE_CLUSTER) {
-    cls <- params$cls
+  if (params$sampling_type == SAMPLING_TYPE_CLUSTER) {
+    cls <- params$cluster_size
     if (!is_number(cls) || cls < 2 || cls != floor(cls)) {
       return("Cluster size must be a whole number of at least 2.")
     }
-    if (!is_number(params$ICC) || params$ICC < 0 || params$ICC > 1) {
+    if (!is_number(params$icc) || params$icc < 0 || params$icc > 1) {
       return("ICC must be a number between 0 and 1.")
     }
   }

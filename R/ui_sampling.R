@@ -15,7 +15,7 @@ sampling_tab <- function() {
           class = "p-3",
           shinyjs::disabled(
             actionButton(
-              "desButton",
+              "draw_button",
               "Sample",
               class = "btn-primary",
               width = "100%"

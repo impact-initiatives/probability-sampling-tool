@@ -10,10 +10,10 @@
 # Returns one row per problem (a PSU row has a `psu`, a stratum row has none),
 # or NULL when there is no problem.
 cluster_size_issues <- function(sampl_f, target, params) {
-  if (params$samp_type != SAMPLING_TYPE_CLUSTER) {
+  if (params$sampling_type != SAMPLING_TYPE_CLUSTER) {
     return(NULL)
   }
-  cls <- params$cls
+  cls <- params$cluster_size
   strata <- as.character(sampl_f$PST_stratum_id)
   pop <- sampl_f$PST_pop_size
   psu_rows <- NULL
@@ -139,7 +139,7 @@ cluster_size_message <- function(issues, cls) {
 # sample (the output of make_sample()$sample).
 # Returns one row per PSU concerned, or NULL when there is none.
 psu_overflow_issues <- function(sample, params) {
-  if (params$samp_type != SAMPLING_TYPE_CLUSTER) {
+  if (params$sampling_type != SAMPLING_TYPE_CLUSTER) {
     return(NULL)
   }
   over <- which(sample$PST_survey > sample$PST_pop_size)
@@ -151,8 +151,8 @@ psu_overflow_issues <- function(sample, params) {
     issue = "PSU drawn more often than its population allows",
     stratum = as.character(s$PST_stratum_id),
     psu = as.character(s$PST_psu_id),
-    times_drawn = s$PST_survey / params$cls,
-    cluster_size = params$cls,
+    times_drawn = s$PST_survey / params$cluster_size,
+    cluster_size = params$cluster_size,
     surveys_assigned = s$PST_survey,
     population = s$PST_pop_size,
     excess = s$PST_survey - s$PST_pop_size

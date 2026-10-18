@@ -39,12 +39,12 @@ app_header <- function() {
     # Spinner on the outputs being recalculated and a pulse while the app is busy
     useBusyIndicators(),
     # Shiny drops a file above the size limit silently: report its name to the
-    # server (input$popdata_too_large) and do not upload it
+    # server (input$rejected_file_name) and do not upload it
     tags$script(HTML(sprintf(
       "document.addEventListener('change', function(e) {
-				if (e.target.id !== 'popdata') return;
+				if (e.target.id !== 'frame_file') return;
 				var big = Array.from(e.target.files).find(function(f) { return f.size > %d; });
-				Shiny.setInputValue('popdata_too_large', big ? big.name : null, {priority: 'event'});
+				Shiny.setInputValue('rejected_file_name', big ? big.name : null, {priority: 'event'});
 				if (big) { e.stopImmediatePropagation(); }
 			}, true);",
       as.integer(MAX_UPLOAD_MB * 1024^2)

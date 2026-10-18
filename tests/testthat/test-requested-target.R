@@ -9,22 +9,27 @@ frame_24 <- function() {
   )
 }
 
-sampling_input <- function(samp_type, stratified, topup, target = 100) {
+sampling_input <- function(
+  sampling_type,
+  stratified,
+  sampling_mode,
+  target_size = 100
+) {
   list(
-    topup = topup,
-    target = target,
-    conf_level = 0.95,
-    e_marg = 0.05,
-    pror = 0.5,
-    buf = 0.05,
-    samp_type = samp_type,
+    sampling_mode = sampling_mode,
+    target_size = target_size,
+    confidence_level = 0.95,
+    error_margin = 0.05,
+    proportion = 0.5,
+    buffer = 0.05,
+    sampling_type = sampling_type,
     stratified = stratified,
-    strata = "region",
-    col_psu = "psu_name",
-    colpop = "population",
-    cls = 5,
-    ICC = 0.06,
-    seed_value = 1
+    strata_column = "region",
+    psu_column = "psu_name",
+    population_column = "population",
+    cluster_size = 5,
+    icc = 0.06,
+    seed = 1
   )
 }
 
@@ -35,11 +40,11 @@ test_that("the target table and the sample summary say requested", {
     "PPS sampling with replacement",
     "Two-stage PPS cluster sampling with replacement"
   )
-  for (topup in modes) {
-    for (samp_type in types) {
+  for (sampling_mode in modes) {
+    for (sampling_type in types) {
       for (stratified in c("Not stratified", "Stratified")) {
-        input <- sampling_input(samp_type, stratified, topup)
-        label <- paste(topup, samp_type, stratified, sep = " / ")
+        input <- sampling_input(sampling_type, stratified, sampling_mode)
+        label <- paste(sampling_mode, sampling_type, stratified, sep = " / ")
 
         targets <- create_targets(
           format_sampling_frame(frame_24(), input),
@@ -110,8 +115,13 @@ test_that("the warning modal says will be before the draw and was after it", {
 
 test_that("a target above the population warns in the random types and blocks cluster", {
   # frame_24(): the population column sums to 450 per stratum, 1800 in total
-  exceeds <- function(samp_type, stratified) {
-    input <- sampling_input(samp_type, stratified, "Enter sample size", 5000)
+  exceeds <- function(sampling_type, stratified) {
+    input <- sampling_input(
+      sampling_type,
+      stratified,
+      "Enter sample size",
+      5000
+    )
     frame <- format_sampling_frame(frame_24(), input)
     targets <- create_targets(frame, input)
     list(
@@ -120,12 +130,12 @@ test_that("a target above the population warns in the random types and blocks cl
     )
   }
   for (stratified in c("Not stratified", "Stratified")) {
-    for (samp_type in c(
+    for (sampling_type in c(
       "Simple random sampling",
       "PPS sampling with replacement"
     )) {
-      r <- exceeds(samp_type, stratified)
-      expect_false(is.null(r$warning), label = paste(samp_type, stratified))
+      r <- exceeds(sampling_type, stratified)
+      expect_false(is.null(r$warning), label = paste(sampling_type, stratified))
       expect_null(r$guard)
     }
     # cluster sampling never caps the draw: the target is refused at Apply

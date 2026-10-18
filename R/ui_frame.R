@@ -39,7 +39,7 @@ setup_sidebar <- function() {
       div(
         class = "text-center mt-2",
         input_task_button(
-          "f_apply",
+          "apply_button",
           "Apply",
           label_busy = "Applying...",
           style = "width: 200px;"
@@ -56,7 +56,7 @@ setup_sampling_choice <- function() {
       column(
         12,
         select_input_overlay(
-          "topup",
+          "sampling_mode",
           "Mode of sampling",
           c(
             SAMPLING_MODE_ENTER_SIZE,
@@ -68,7 +68,7 @@ setup_sampling_choice <- function() {
       column(
         12,
         select_input_overlay(
-          "samp_type",
+          "sampling_type",
           "Type of sampling",
           c(
             SAMPLING_TYPE_SIMPLE,
@@ -89,11 +89,11 @@ setup_sampling_choice <- function() {
       ),
       conditionalPanel(
         # the buffer only applies to a sample size computed from the population
-        condition = js_differs("topup", SAMPLING_MODE_ENTER_SIZE),
+        condition = js_differs("sampling_mode", SAMPLING_MODE_ENTER_SIZE),
         column(
           4,
           numeric_input_with_tip(
-            'buf',
+            'buffer',
             "Buffer",
             tip = "Extra share added to the target to cover non-response or unusable interviews: target \u00d7 (1 + buffer). Base it on the non-response rate you expect.",
             value = 0.05,
@@ -105,7 +105,7 @@ setup_sampling_choice <- function() {
       column(
         4,
         numeric_input_with_tip(
-          'seed_value',
+          'seed',
           "Seed",
           tip = "Starting point of the random draw. The same seed with the same settings gives the same sample, so a draw can be reproduced. Change it to get a different sample.",
           value = 1,
@@ -124,11 +124,11 @@ setup_sample_size <- function() {
   # so the closest value on the step grid is used.
   fluidRow(
     conditionalPanel(
-      condition = js_differs("topup", SAMPLING_MODE_ENTER_SIZE),
+      condition = js_differs("sampling_mode", SAMPLING_MODE_ENTER_SIZE),
       column(
         4,
         numeric_input_with_tip(
-          'conf_level',
+          'confidence_level',
           "Confidence level",
           tip = "How often the interval around your estimate would contain the true value if the survey were repeated (0.95 = 95% of the time). Higher confidence needs a larger sample.",
           source = COCHRAN_1977,
@@ -140,11 +140,11 @@ setup_sample_size <- function() {
       )
     ),
     conditionalPanel(
-      condition = js_differs("topup", SAMPLING_MODE_ENTER_SIZE),
+      condition = js_differs("sampling_mode", SAMPLING_MODE_ENTER_SIZE),
       column(
         4,
         numeric_input_with_tip(
-          'e_marg',
+          'error_margin',
           "Error Margin",
           tip = "Largest gap you accept between the estimate and the true value, at the chosen confidence level (0.05 = \u00b15 percentage points). A smaller margin needs a larger sample.",
           source = COCHRAN_1977,
@@ -156,13 +156,13 @@ setup_sample_size <- function() {
       )
     ),
     conditionalPanel(
-      condition = js_differs("topup", SAMPLING_MODE_ENTER_SIZE),
+      condition = js_differs("sampling_mode", SAMPLING_MODE_ENTER_SIZE),
       column(
         4,
         # fixed in the computation (FIXED_PROPORTION): shown, not editable
         htmltools::tagQuery(
           numeric_input_with_tip(
-            'pror',
+            'proportion',
             "Proportion",
             tip = "Fixed at 0.5, the most cautious value: it gives the largest sample size. See the Guide for details.",
             value = FIXED_PROPORTION
@@ -171,11 +171,11 @@ setup_sample_size <- function() {
       )
     ),
     conditionalPanel(
-      condition = js_equals("topup", SAMPLING_MODE_ENTER_SIZE),
+      condition = js_equals("sampling_mode", SAMPLING_MODE_ENTER_SIZE),
       column(
         4,
         numericInput(
-          'target',
+          'target_size',
           'Enter target sample size',
           NULL,
           min = 1,
@@ -221,7 +221,7 @@ setup_data_source <- function() {
           # aria-label on the inputs: a hidden label would still take up space
           htmltools::tagQuery(
             fileInput(
-              'popdata',
+              'frame_file',
               NULL,
               accept = c(
                 'text/csv',
@@ -262,18 +262,18 @@ setup_column_mapping <- function() {
   # Simple random sampling without stratification needs no column from the data
   conditionalPanel(
     condition = paste(
-      js_differs("samp_type", SAMPLING_TYPE_SIMPLE),
+      js_differs("sampling_type", SAMPLING_TYPE_SIMPLE),
       "||",
       js_equals("stratified", STRATIFIED)
     ),
     div(class = "param-subhead", "Column mapping"),
     fluidRow(
       conditionalPanel(
-        condition = js_equals("samp_type", SAMPLING_TYPE_CLUSTER),
+        condition = js_equals("sampling_type", SAMPLING_TYPE_CLUSTER),
         column(
           4,
           select_input_overlay(
-            'col_psu',
+            'psu_column',
             'Input cluster',
             choices = NULL
           )
@@ -281,14 +281,14 @@ setup_column_mapping <- function() {
       ),
       conditionalPanel(
         condition = paste(
-          js_equals("samp_type", SAMPLING_TYPE_CLUSTER),
+          js_equals("sampling_type", SAMPLING_TYPE_CLUSTER),
           "||",
-          js_equals("samp_type", SAMPLING_TYPE_PPS)
+          js_equals("sampling_type", SAMPLING_TYPE_PPS)
         ),
         column(
           4,
           select_input_overlay(
-            'colpop',
+            'population_column',
             'Input population',
             choices = NULL
           )
@@ -301,7 +301,7 @@ setup_column_mapping <- function() {
         column(
           4,
           select_input_overlay(
-            'strata',
+            'strata_column',
             'Input strata',
             choices = NULL,
             multiple = F
@@ -315,13 +315,13 @@ setup_column_mapping <- function() {
 # Cluster size and ICC
 setup_cluster_design <- function() {
   conditionalPanel(
-    condition = js_equals("samp_type", SAMPLING_TYPE_CLUSTER),
+    condition = js_equals("sampling_type", SAMPLING_TYPE_CLUSTER),
     div(class = "param-subhead", "Cluster design"),
     fluidRow(
       column(
         6,
         numeric_input_with_tip(
-          'cls',
+          'cluster_size',
           "Cluster size",
           tip = "Number of interviews planned in each selected cluster (at least 2). Larger clusters lower the fieldwork cost but raise the design effect.",
           source = KISH_1965,
@@ -333,7 +333,7 @@ setup_cluster_design <- function() {
       column(
         6,
         numeric_input_with_tip(
-          'ICC',
+          'icc',
           "ICC",
           tip = "Intracluster correlation: how alike the units of a cluster are (0 = not at all, 1 = identical). It inflates the sample through the design effect, 1 + (cluster size \u2212 1) \u00d7 ICC. Use a value from a similar past survey.",
           source = KISH_1965,

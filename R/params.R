@@ -2,19 +2,19 @@
 
 # The fields of the list, named like the inputs of the interface they come from
 PARAM_FIELDS <- c(
-  "topup",
-  "samp_type",
+  "sampling_mode",
+  "sampling_type",
   "stratified",
-  "strata",
-  "col_psu",
-  "colpop",
-  "conf_level",
-  "e_marg",
-  "buf",
-  "target",
-  "cls",
-  "ICC",
-  "seed_value"
+  "strata_column",
+  "psu_column",
+  "population_column",
+  "confidence_level",
+  "error_margin",
+  "buffer",
+  "target_size",
+  "cluster_size",
+  "icc",
+  "seed"
 )
 
 # Reads the settings of the sampling from the inputs of the interface. The
