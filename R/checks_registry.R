@@ -28,6 +28,15 @@ check_message <- function(id, ...) {
   fill_template(check$message, list(...))
 }
 
+# The title of a check (its `title` in the file), for the warnings that have one
+check_title <- function(id) {
+  title <- CHECKS$checks[[id]]$title
+  if (is.null(title)) {
+    stop("No title for the check: ", id, call. = FALSE)
+  }
+  title
+}
+
 # A sentence that the code adds to a message (the `texts` of the file)
 check_text <- function(id) {
   text <- CHECKS$texts[[id]]

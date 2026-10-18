@@ -4,9 +4,7 @@
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_strata_selection <- function(params) {
   if (params$stratified && is.null(params$strata_column)) {
-    return(
-      "Please select a stratification variable, or set 'Stratified ?' to 'Not stratified'."
-    )
+    return(check_message("strata_missing"))
   }
   return(NULL)
 }
@@ -20,12 +18,10 @@ validate_reserved_columns <- function(sframe) {
   if (length(found) == 0) {
     return(NULL)
   }
-  paste0(
-    "The sampling frame has column(s) with protected names: ",
-    paste(found, collapse = ", "),
-    ".\n\nNames starting with ",
-    RESERVED_PREFIX,
-    " are reserved: the tool creates columns with these names during the sampling and in the sample file, so yours would be overwritten or cause an error. Rename or remove them in the CSV."
+  check_message(
+    "reserved_columns",
+    columns = paste(found, collapse = ", "),
+    prefix = RESERVED_PREFIX
   )
 }
 
@@ -37,27 +33,17 @@ validate_psu_column <- function(sframe, params) {
     return(NULL)
   }
   if (is.null(params$psu_column)) {
-    return("Please select a cluster (PSU) column.")
+    return(check_message("psu_missing"))
   }
   if (params$stratified && identical(params$psu_column, params$strata_column)) {
-    return(
-      "Cluster and stratification variables must be different columns."
-    )
+    return(check_message("cluster_strata_same"))
   }
   psu_col <- as.character(params$psu_column)
   if (is.null(sframe) || !psu_col %in% names(sframe)) {
-    return(paste0(
-      "Input cluster '",
-      psu_col,
-      "' was not found in the uploaded data. Please re-select the column."
-    ))
+    return(check_message("psu_not_found", column = psu_col))
   }
   if (anyDuplicated(sframe[[psu_col]]) > 0) {
-    return(paste0(
-      "Input cluster '",
-      params$psu_column,
-      "' contains duplicate values: the sampling frame must have one row per cluster (PSU), so this column must uniquely identify each cluster."
-    ))
+    return(check_message("psu_duplicates", column = params$psu_column))
   }
   return(NULL)
 }
@@ -75,31 +61,23 @@ validate_population_column <- function(sframe, params) {
     return(NULL)
   }
   if (is.null(params$population_column)) {
-    return("Please select a population column for this sampling type.")
+    return(check_message("population_missing"))
   }
   col <- as.character(params$population_column)
   if (!(col %in% names(sframe))) {
-    return(paste0(
-      "Population column '",
-      col,
-      "' was not found in the uploaded dataset."
-    ))
+    return(check_message("population_not_found", column = col))
   }
   if (!is.numeric(sframe[[col]])) {
-    return(paste0(
-      "'",
-      col,
-      "' is not a numeric column. Select a numeric population column."
-    ))
+    return(check_message("population_not_numeric", column = col))
   }
   if (
     params$sampling_type == SAMPLING_TYPE_CLUSTER &&
       identical(col, as.character(params$psu_column))
   ) {
-    return("Cluster and population variables must be different columns.")
+    return(check_message("cluster_population_same"))
   }
   if (params$stratified && identical(col, as.character(params$strata_column))) {
-    return("Stratification and population variables must be different columns.")
+    return(check_message("strata_population_same"))
   }
   return(NULL)
 }
@@ -144,30 +122,26 @@ population_message <- function(issues, col) {
   if (is.null(issues)) {
     return(NULL)
   }
-  describe <- function(label, what) {
+  describe <- function(label, id) {
     rows <- issues$data_row[issues$issue == label]
     if (length(rows) > 0) {
-      paste0(
-        "Population column '",
-        col,
-        "' ",
-        what,
-        " in ",
-        length(rows),
-        " row(s): ",
-        preview_ids(rows),
-        " (header excluded)."
+      check_message(
+        id,
+        column = col,
+        n = length(rows),
+        rows = preview_ids(rows)
       )
     }
   }
   paste0(
     paste(
       c(
-        describe("Missing population", "has missing values"),
-        describe("Negative population", "has negative values")
+        describe("Missing population", "population_missing_values"),
+        describe("Negative population", "population_negative_values")
       ),
       collapse = "\n"
     ),
-    "\n\nThe population must be a number greater than or equal to 0: fix these values or remove the rows from the sampling frame."
+    "\n\n",
+    check_text("population_values_advice")
   )
 }

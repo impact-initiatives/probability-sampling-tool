@@ -82,13 +82,11 @@ cluster_size_message <- function(issues, cls) {
   if (nrow(psus) > 0) {
     blocks <- c(
       blocks,
-      paste0(
-        "PSUs smaller than the cluster size (",
-        cls,
-        "): ",
-        nrow(psus),
-        " PSU(s) cannot host a cluster - ",
-        preview_ids(
+      check_message(
+        "cluster_psu_too_small",
+        cluster_size = cls,
+        n = nrow(psus),
+        examples = preview_ids(
           paste0(
             psus$psu,
             " in '",
@@ -98,8 +96,7 @@ cluster_size_message <- function(issues, cls) {
             ")"
           ),
           n = 3
-        ),
-        ".\nReduce the cluster size or filter these PSUs out of the sampling frame."
+        )
       )
     )
   }
@@ -108,13 +105,11 @@ cluster_size_message <- function(issues, cls) {
   if (nrow(strata) > 0) {
     blocks <- c(
       blocks,
-      paste0(
-        "Insufficient stratum capacity: ",
-        nrow(strata),
-        " stratum(s) cannot reach their target with clusters of ",
-        cls,
-        " surveys. Largest shortfalls - ",
-        preview_ids(
+      check_message(
+        "cluster_stratum_capacity",
+        n = nrow(strata),
+        cluster_size = cls,
+        examples = preview_ids(
           paste0(
             "'",
             strata$stratum,
@@ -125,8 +120,7 @@ cluster_size_message <- function(issues, cls) {
             ")"
           ),
           n = 3
-        ),
-        ".\nReduce the cluster size or the target sample size, or merge PSUs."
+        )
       )
     )
   }
@@ -167,11 +161,10 @@ psu_overflow_message <- function(issues) {
     return(NULL)
   }
   fmt <- function(x) format(x, big.mark = ",", scientific = FALSE, trim = TRUE)
-  paste0(
-    "Draw blocked: ",
-    nrow(issues),
-    " PSU(s) were selected several times and would need more surveys than their population - ",
-    preview_ids(
+  check_message(
+    "draw_overflow",
+    n = nrow(issues),
+    examples = preview_ids(
       paste0(
         "'",
         issues$psu,
@@ -186,7 +179,6 @@ psu_overflow_message <- function(issues) {
         ")"
       ),
       n = 3
-    ),
-    ".\nReduce the cluster size or the target sample size, or merge PSUs."
+    )
   )
 }

@@ -12,27 +12,27 @@ validate_parameters <- function(params) {
   if (params$sampling_mode == SAMPLING_MODE_ENTER_SIZE) {
     target <- params$target_size
     if (!is_number(target) || target <= 0 || target != floor(target)) {
-      return("Enter a target sample size: a whole number greater than 0.")
+      return(check_message("target_size"))
     }
   } else {
     if (!strictly_between_0_and_1(params$confidence_level)) {
-      return("Confidence level must be a number strictly between 0 and 1.")
+      return(check_message("confidence_level"))
     }
     if (!strictly_between_0_and_1(params$error_margin)) {
-      return("Error margin must be a number strictly between 0 and 1.")
+      return(check_message("error_margin"))
     }
     if (!is_number(params$buffer) || params$buffer < 0) {
-      return("Buffer must be a number greater than or equal to 0.")
+      return(check_message("buffer"))
     }
   }
 
   if (params$sampling_type == SAMPLING_TYPE_CLUSTER) {
     cls <- params$cluster_size
     if (!is_number(cls) || cls < 2 || cls != floor(cls)) {
-      return("Cluster size must be a whole number of at least 2.")
+      return(check_message("cluster_size"))
     }
     if (!is_number(params$icc) || params$icc < 0 || params$icc > 1) {
-      return("ICC must be a number between 0 and 1.")
+      return(check_message("icc"))
     }
   }
   return(NULL)
@@ -50,9 +50,7 @@ validate_seed <- function(seed) {
       seed != floor(seed) ||
       abs(seed) > .Machine$integer.max
   ) {
-    return(
-      "Seed must be a whole number between -2147483647 and 2147483647."
-    )
+    return(check_message("seed"))
   }
   return(NULL)
 }

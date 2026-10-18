@@ -16,12 +16,10 @@ function(input, output, session) {
       return(list(
         data = NULL,
         error = csv_format_error(input$rejected_file_name) %||%
-          paste0(
-            "'",
-            input$rejected_file_name,
-            "' is larger than the ",
-            MAX_UPLOAD_MB,
-            " MB limit."
+          check_message(
+            "file_too_large",
+            name = input$rejected_file_name,
+            limit = MAX_UPLOAD_MB
           )
       ))
     }
@@ -127,10 +125,7 @@ function(input, output, session) {
     require_valid(validate_strata_selection(params()))
     require_valid(file_error())
     sframe <- frame_data()
-    validate(need(
-      !is.null(sframe),
-      "Please upload a CSV file before applying."
-    ))
+    validate(need(!is.null(sframe), check_message("no_file")))
     require_valid(validate_reserved_columns(sframe))
     require_valid(validate_psu_column(sframe, params()))
     require_valid(validate_population_column(sframe, params()))

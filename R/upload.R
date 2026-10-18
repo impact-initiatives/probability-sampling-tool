@@ -3,12 +3,7 @@
 # Message when `name` is not a .csv file, NULL otherwise.
 csv_format_error <- function(name) {
   if (tolower(tools::file_ext(name)) != "csv") {
-    paste0(
-      "'",
-      name,
-      "' is not a CSV file. Only .csv files are accepted: for an ",
-      "Excel workbook, save the sheet you need as CSV first."
-    )
+    check_message("csv_format", name = name)
   }
 }
 
@@ -37,11 +32,7 @@ read_uploaded_csv <- function(name, path) {
     error = function(e) NULL
   )
   if (parse_warned || is.null(data) || nrow(data) == 0 || ncol(data) == 0) {
-    return(fail(paste0(
-      "'",
-      name,
-      "' could not be read as a CSV table (empty or damaged file)."
-    )))
+    return(fail(check_message("csv_unreadable", name = name)))
   }
   list(data = data, error = NULL)
 }
