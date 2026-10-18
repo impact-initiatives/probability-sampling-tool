@@ -1,6 +1,12 @@
 # The guide: its Markdown texts, and the cards and steps that show them.
 
-# The label of a column of the tables, from the name the code gives it
+#' Get the label of a column of the tables
+#'
+#' The code names its columns in snake_case; the tables show the labels.
+#'
+#' @param key The name the code gives the column.
+#' @returns The label, as a string. A column without a label is an error.
+#' @noRd
 column_label <- function(key) {
   label <- names(COLUMN_LABELS)[match(key, COLUMN_LABELS)]
   if (is.na(label)) {
@@ -9,9 +15,15 @@ column_label <- function(key) {
   label
 }
 
-# What a {{...}} of a guide text stands for: the value of a constant
-# ({{MAX_UPLOAD_MB}}), the label of a column ({{label:clusters_drawn}}) or the
-# title of a check ({{check_title:exceeds_population}}).
+#' Get what a placeholder of a guide text stands for
+#'
+#' A placeholder is the value of a constant (`{{MAX_UPLOAD_MB}}`), the label of a
+#' column (`{{label:clusters_drawn}}`) or the title of a check
+#' (`{{check_title:exceeds_population}}`).
+#'
+#' @param name What is between the braces.
+#' @returns The value, as a string. An unknown name is an error.
+#' @noRd
 guide_value <- function(name) {
   if (startsWith(name, "label:")) {
     return(column_label(sub("^label:", "", name)))
@@ -25,8 +37,14 @@ guide_value <- function(name) {
   as.character(get(name))
 }
 
-# Replaces every {{...}} of `text` by its value, so that a name or a limit that
-# the guide mentions is the one of the code, not a copy of it
+#' Replace the placeholders of a guide text
+#'
+#' Every `{{...}}` is replaced by its value, so that a name or a limit that the
+#' guide mentions is the one of the code, not a copy of it.
+#'
+#' @param text The Markdown text.
+#' @returns The text with its placeholders filled in.
+#' @noRd
 fill_guide_placeholders <- function(text) {
   found <- unique(unlist(regmatches(
     text,
@@ -39,9 +57,16 @@ fill_guide_placeholders <- function(text) {
   text
 }
 
-# Text of the guide: Markdown files in guide/ (and NEWS.md). The {{...}} of a
-# text are filled in by fill_guide_placeholders(); NEWS.md has none, as the
-# release notes tell what the names were at the time.
+#' Show a Markdown text of the guide
+#'
+#' The texts are files in `guide/`, and `NEWS.md`. Their placeholders are filled in
+#' by `fill_guide_placeholders()`; `NEWS.md` has none, as the release notes tell
+#' what the names were at the time. `markdown::mark()` turns `$...$` into `\(...\)`
+#' for MathJax, unlike `shiny::markdown()`.
+#'
+#' @param text The Markdown text.
+#' @returns A `div` with the HTML of the text.
+#' @noRd
 guide_markdown <- function(text) {
   text <- fill_guide_placeholders(text)
   # markdown::mark() turns $...$ into \(...\) for MathJax, unlike shiny::markdown()
@@ -51,12 +76,26 @@ guide_markdown <- function(text) {
   )
 }
 
+#' Show a Markdown file of the guide
+#'
+#'
+#'
+#' @param file The path of the file.
+#' @returns A `div` with the HTML of the file.
+#' @noRd
 guide_text <- function(file) {
   guide_markdown(paste(readLines(file, warn = FALSE), collapse = "\n"))
 }
 
-# A Markdown file shown as one card per second level heading, in a grid. What
-# comes before the first heading is shown above the cards.
+#' Show a Markdown file as one card per section
+#'
+#' One card per second level heading, in a grid. What comes before the first
+#' heading is shown above the cards.
+#'
+#' @param file The path of the file.
+#' @param width The minimum width of a card, a CSS length.
+#' @returns The introduction and the grid of cards.
+#' @noRd
 guide_sections <- function(file, width = "30rem") {
   lines <- readLines(file, warn = FALSE)
   starts <- grep("^## ", lines)
@@ -85,7 +124,14 @@ guide_sections <- function(file, width = "30rem") {
   )
 }
 
-# A titled block of the guide, around a Markdown file
+#' Show a Markdown file in a titled card
+#'
+#'
+#'
+#' @param title The title of the card.
+#' @param file The path of the file.
+#' @returns A card.
+#' @noRd
 guide_card <- function(title, file) {
   card(
     class = "guide-card h-100",
@@ -95,7 +141,13 @@ guide_card <- function(title, file) {
   )
 }
 
-# The checks of the app, by group, closed until opened
+#' Show the checks of the app
+#'
+#' One closed panel per group of checks of `guide/checks.yml`.
+#'
+#' @param ns The namespace function of the guide module.
+#' @returns A card.
+#' @noRd
 guide_checks <- function(ns) {
   panels <- lapply(names(CHECKS$groups), function(id) {
     accordion_panel(
@@ -121,9 +173,15 @@ guide_checks <- function(ns) {
   )
 }
 
-# The Markdown of a group of checks: when it is checked, the table of its
-# messages and what to do, then its note. A check that only warns is not in the
-# table: the note of the group tells about it.
+#' Build the Markdown of a group of checks
+#'
+#' When the group is checked, the table of its messages and what to do, then its
+#' note. A check that only warns is not in the table: the note of the group tells
+#' about it.
+#'
+#' @param group_id The identifier of the group, a key of `groups` in the file.
+#' @returns The Markdown, as a string.
+#' @noRd
 guide_checks_markdown <- function(group_id) {
   group <- CHECKS$groups[[group_id]]
   blocks <- Filter(
@@ -164,7 +222,16 @@ guide_checks_markdown <- function(group_id) {
   )
 }
 
-# A step of the "How it works" row of the guide; the link sits at the bottom
+#' Show a step of the How it works row
+#'
+#' The link, when there is one, sits at the bottom of the card.
+#'
+#' @param number The number of the step.
+#' @param title The title of the step.
+#' @param text The text of the step.
+#' @param link A link to the part of the guide that tells more, or `NULL`.
+#' @returns A card.
+#' @noRd
 guide_step <- function(number, title, text, link = NULL) {
   card(
     class = "guide-step",
@@ -181,7 +248,17 @@ guide_step <- function(number, title, text, link = NULL) {
   )
 }
 
-# A card of the "Three sampling types" row of the guide; the link sits at the bottom
+#' Show a sampling type of the Three sampling types row
+#'
+#' The link sits at the bottom of the card.
+#'
+#' @param name The name of the type.
+#' @param before The name it had before this version.
+#' @param one_row What one row of the frame is.
+#' @param needs What the type needs in the frame.
+#' @param button_id The id of the link to the details.
+#' @returns A card.
+#' @noRd
 guide_type_card <- function(name, before, one_row, needs, button_id) {
   card(
     class = "guide-type",
@@ -203,7 +280,14 @@ guide_type_card <- function(name, before, one_row, needs, button_id) {
   )
 }
 
-# The landing of the guide
+#' Build the landing of the guide
+#'
+#' The title, the four steps, the three types and the note for the users of the
+#' previous version.
+#'
+#' @param ns The namespace function of the guide module.
+#' @returns The content of the Start pill.
+#' @noRd
 guide_start <- function(ns) {
   tagList(
     div(
@@ -285,8 +369,14 @@ guide_start <- function(ns) {
   )
 }
 
-# The guide, a module: the "Guide" tab with one pill per section. Its links, to
-# its own sections and to the app, are handled by guide_server().
+#' Build the Guide tab, the UI of the guide module
+#'
+#' One pill per section. Its links, to its own sections and to the app, are
+#' handled by `guide_server()`.
+#'
+#' @param id The id of the module.
+#' @returns A `nav_panel`.
+#' @noRd
 guide_ui <- function(id) {
   ns <- NS(id)
   nav_panel(
@@ -348,7 +438,13 @@ guide_ui <- function(id) {
   )
 }
 
-# The three sampling types, one panel each, closed until opened
+#' Show the three sampling types
+#'
+#' One panel each, closed until opened.
+#'
+#' @param ns The namespace function of the guide module.
+#' @returns An accordion.
+#' @noRd
 guide_types <- function(ns) {
   accordion(
     id = ns("types_accordion"),
@@ -375,7 +471,16 @@ guide_types <- function(ns) {
   )
 }
 
-# A sampling type of the guide: its name, the name it had before, its text
+#' Show a sampling type of the guide
+#'
+#' Its name, the name it had before, and its text.
+#'
+#' @param type The name of the type.
+#' @param before The name it had before this version.
+#' @param value The value of the panel, used to open it.
+#' @param file The path of the file with its text.
+#' @returns An accordion panel.
+#' @noRd
 guide_type_panel <- function(type, before, value, file) {
   accordion_panel(
     tagList(
@@ -390,8 +495,14 @@ guide_type_panel <- function(type, before, value, file) {
   )
 }
 
-# The links of the guide: to its own sections, to the types and to the app.
-# `parent` is the session of the app, whose main tabs the guide can switch.
+#' Handle the links of the guide, the server of the guide module
+#'
+#' The links lead to the sections of the guide, to the types and to the app.
+#'
+#' @param id The id of the module.
+#' @param parent The session of the app, whose main tabs the guide can switch.
+#' @returns Nothing, it is called for its observers.
+#' @noRd
 guide_server <- function(id, parent) {
   moduleServer(id, function(input, output, session) {
     section_links <- c(

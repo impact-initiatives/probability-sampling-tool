@@ -6,7 +6,14 @@
 # at once instead of the first time a message is needed.
 CHECKS <- yaml::read_yaml("guide/checks.yml")
 
-# Replaces each {name} of `template` by the matching value of the list `values`
+#' Fill the names of a message template
+#'
+#' Each `{name}` of the template is replaced by the matching value.
+#'
+#' @param template A text with `{name}` parts.
+#' @param values A named list: the value of each name.
+#' @returns The text with the names filled in; a name without a value is left as it is.
+#' @noRd
 fill_template <- function(template, values) {
   for (name in names(values)) {
     template <- gsub(
@@ -19,7 +26,14 @@ fill_template <- function(template, values) {
   template
 }
 
-# The message of the check `id`, with its {name} parts filled in by `...`
+#' Get the message of a check
+#'
+#' The message is written in `guide/checks.yml`; the code only fills in its parts.
+#'
+#' @param id The identifier of the check, a key of `checks` in the file.
+#' @param ... The values of the `{name}` parts of the message.
+#' @returns The message, as a string. An unknown `id` is an error.
+#' @noRd
 check_message <- function(id, ...) {
   check <- CHECKS$checks[[id]]
   if (is.null(check)) {
@@ -28,7 +42,13 @@ check_message <- function(id, ...) {
   fill_template(check$message, list(...))
 }
 
-# The title of a check (its `title` in the file), for the warnings that have one
+#' Get the title of a check
+#'
+#' Only the checks that warn have a title: it is the title of their window.
+#'
+#' @param id The identifier of the check.
+#' @returns The title, as a string. A check without a title is an error.
+#' @noRd
 check_title <- function(id) {
   title <- CHECKS$checks[[id]]$title
   if (is.null(title)) {
@@ -37,7 +57,14 @@ check_title <- function(id) {
   title
 }
 
-# A sentence that the code adds to a message (the `texts` of the file)
+#' Get a sentence that the code adds to a message
+#'
+#' These sentences are the `texts` of `guide/checks.yml`; the guide does not show
+#' them.
+#'
+#' @param id The identifier of the text.
+#' @returns The sentence, as a string. An unknown `id` is an error.
+#' @noRd
 check_text <- function(id) {
   text <- CHECKS$texts[[id]]
   if (is.null(text)) {

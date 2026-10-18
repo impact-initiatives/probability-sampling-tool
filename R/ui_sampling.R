@@ -1,5 +1,12 @@
 # The "Sampling" tab: the draw, the exports and the two tables of the result.
 
+#' Build the Sampling tab
+#'
+#' The draw and the exports in a sidebar, and the two tables of the result: the
+#' summary and the sample.
+#'
+#' @returns A `nav_panel`.
+#' @noRd
 sampling_tab <- function() {
   nav_panel(
     "Sampling",

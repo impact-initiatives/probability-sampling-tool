@@ -1,6 +1,11 @@
 # The page around the tabs: its theme and its header.
 
-# Bootstrap theme of the app
+#' Build the Bootstrap theme of the app
+#'
+#'
+#'
+#' @returns A `bs_theme`.
+#' @noRd
 app_theme <- function() {
   theme = bs_theme(
     version = 5,
@@ -32,7 +37,13 @@ app_theme <- function() {
   )
 }
 
-# Scripts and styles loaded with the page
+#' Build the header of the page
+#'
+#' The scripts and styles loaded with the page: the busy indicators, the check
+#' of the size of an uploaded file and the style sheet.
+#'
+#' @returns A tag list.
+#' @noRd
 app_header <- function() {
   header = tagList(
     shinyjs::useShinyjs(),

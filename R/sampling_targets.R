@@ -1,23 +1,26 @@
 # The target sample size of each stratum.
 
-# Calculate the sample size required to estimate a proportion
-#
-# Cochran's formula for a proportion (Cochran, 1977, Sampling Techniques, 3rd ed.)
-# with the finite population correction:
-#   n0 = z^2 * p * (1 - p) / e^2         sample size for an infinite population
-#   n  = n0 / (1 + (n0 - 1) / N)         finite population correction
-#      = z^2 * N * p * (1 - p) / (e^2 * (N - 1) + z^2 * p * (1 - p))
-# where z is the two-sided normal quantile of the confidence level: z^2 is also
-# qchisq(confidence_level, df = 1). The result is then multiplied by the design effect.
-#
-# Parameters:
-#   population_size: The population size (N)
-#   confidence_level: The desired level of confidence (between 0 and 1)
-#   proportion: The estimated population proportion (p, between 0 and 1)
-#   error_margin: The desired margin of error (e)
-#   deff: Design effect to inflate the sample size for (default 1, i.e. no inflation)
-# Returns:
-#   The sample size required to achieve the desired level of confidence and margin of error
+#' Compute the sample size for a proportion
+#'
+#' Cochran's formula for a proportion (Cochran, 1977, Sampling Techniques, 3rd
+#' ed.) with the finite population correction:
+#'
+#'     n0 = z^2 * p * (1 - p) / e^2         sample size for an infinite population
+#'     n  = n0 / (1 + (n0 - 1) / N)         finite population correction
+#'        = z^2 * N * p * (1 - p) / (e^2 * (N - 1) + z^2 * p * (1 - p))
+#'
+#' z is the two-sided normal quantile of the confidence level: z^2 is also
+#' `qchisq(confidence_level, df = 1)`. The result is then multiplied by the design
+#' effect.
+#'
+#' @param population_size The population size (N).
+#' @param confidence_level The level of confidence, between 0 and 1.
+#' @param proportion The estimated proportion of the population (p), between 0 and 1.
+#' @param error_margin The margin of error (e).
+#' @param deff The design effect that inflates the sample size; 1 for none.
+#' @returns The sample size that gives the confidence level and the margin of error,
+#'   rounded up.
+#' @noRd
 Ssize <- function(
   population_size,
   confidence_level,
@@ -31,16 +34,21 @@ Ssize <- function(
   ceiling(n * deff)
 }
 
-# The target sample size of each stratum: one row per stratum with
-# - population: the total of PST_pop_size;
-# - target: in the mode "Enter sample size", the number typed by the user (the
-#   same for every stratum); in the mode based on the population, the sample
-#   size computed by Ssize(), multiplied by the design effect for cluster
-#   sampling;
-# - target_with_buffer: the target again in the mode "Enter sample size";
-#   otherwise target * (1 + buffer), rounded up.
-# `sframe` is the output of format_sampling_frame(); `params` holds the settings
-# of the sampling, see read_params().
+#' Compute the target sample size of each stratum
+#'
+#' One row per stratum:
+#' - `population`: the total of `PST_pop_size`;
+#' - `target`: in the mode "Enter sample size", the number typed by the user (the
+#'   same for every stratum); in the mode based on the population, the size
+#'   computed by `Ssize()`, multiplied by the design effect for cluster sampling;
+#' - `target_with_buffer`: the target again in the mode "Enter sample size",
+#'   otherwise `target * (1 + buffer)`, rounded up.
+#'
+#' @param sframe The sampling frame, as returned by `format_sampling_frame()`.
+#' @param params The settings of the sampling, see `read_params()`.
+#' @returns A table with the columns `PST_stratum_id`, `population`, `target` and
+#'   `target_with_buffer`.
+#' @noRd
 create_targets <- function(sframe, params) {
   # The design effect, 1 + (cluster size - 1) * ICC, applies to cluster sampling
   # only (it is 1 for the other types), and only when the sample size is computed
@@ -80,8 +88,13 @@ create_targets <- function(sframe, params) {
     )
 }
 
-# Check whether the requested target exceeds the available population in any stratum.
-# Returns a character vector of affected stratum names, or NULL if none.
+#' Find the strata where the target exceeds the population
+#'
+#'
+#'
+#' @param targets The targets, as returned by `create_targets()`.
+#' @returns The names of the strata concerned, `NULL` when there is none.
+#' @noRd
 check_target_vs_population <- function(targets) {
   affected <- targets$PST_stratum_id[
     targets$target_with_buffer > targets$population
@@ -92,9 +105,15 @@ check_target_vs_population <- function(targets) {
   return(NULL)
 }
 
-# Labels of the "Target sampling" table. The values are what was requested: in
-# a random sampling type the draw is capped to the population of the stratum, so
-# they can be larger than the population next to them.
+#' Give the Target sampling table its labels
+#'
+#' The values are what was requested: in a random sampling type the draw is capped
+#' to the population of the stratum, so they can be larger than the population next
+#' to them.
+#'
+#' @param targets The targets, as returned by `create_targets()`.
+#' @returns The table with the labels of `TARGET_LABELS` as column names.
+#' @noRd
 label_target_table <- function(targets) {
   dplyr::rename(targets, dplyr::all_of(TARGET_LABELS))
 }

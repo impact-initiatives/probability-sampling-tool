@@ -1,18 +1,26 @@
 # The sampling frame: the columns the tool adds to the uploaded file.
 
-# Adds the columns of the tool to the uploaded sampling frame:
-# - PST_id_sample: "id_" followed by the row number;
-# - PST_stratum_id: the stratification column, or "all" when not stratified;
-# - PST_psu_id: the PSU column for cluster sampling, the row itself otherwise
-#   (a factor for cluster sampling);
-# - PST_pop_size: the population column for PPS and cluster sampling, 1 for
-#   simple random sampling;
-# - PST_pop_size_stratum: the total of PST_pop_size in the stratum;
-# - PST_prob: PST_pop_size / PST_pop_size_stratum, the probability of drawing
-#   the row in its stratum.
-# A PSU of population 0 alone in its stratum gives 0 / 0: cluster sampling keeps
-# it with a probability of 0, so that the cluster size check reports it; the
-# other types drop the row. `params` holds the settings of the sampling, see read_params().
+#' Add the columns of the tool to the sampling frame
+#'
+#' - `PST_id_sample`: "id_" followed by the row number;
+#' - `PST_stratum_id`: the stratification column, or "all" when not stratified;
+#' - `PST_psu_id`: the PSU column for cluster sampling (a factor), the row itself
+#'   otherwise;
+#' - `PST_pop_size`: the population column for PPS and cluster sampling, 1 for
+#'   simple random sampling;
+#' - `PST_pop_size_stratum`: the total of `PST_pop_size` in the stratum;
+#' - `PST_prob`: `PST_pop_size / PST_pop_size_stratum`, the probability of drawing
+#'   the row in its stratum.
+#'
+#' A PSU of population 0 alone in its stratum gives 0 / 0: cluster sampling keeps
+#' it with a probability of 0, so that the cluster size check reports it; the
+#' other types drop the row.
+#'
+#' @param sframe The sampling frame, as read from the uploaded file.
+#' @param params The settings of the sampling, see `read_params()`.
+#' @returns The frame with the columns of the tool added and put first, see
+#'   `FRAME_COLUMN_ORDER`.
+#' @noRd
 format_sampling_frame <- function(sframe, params) {
   sframe$PST_id_sample <- paste0("id_", rownames(sframe))
   if (params$stratified) {

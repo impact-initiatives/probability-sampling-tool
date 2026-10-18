@@ -1,5 +1,12 @@
 # The "Sampling frame" tab: the setup of the sampling and the two tables it fills.
 
+#' Build the Sampling frame tab
+#'
+#' The setup of the sampling in a sidebar, and the two tables it fills: the
+#' targets and the sampling frame.
+#'
+#' @returns A `nav_panel`.
+#' @noRd
 frame_tab <- function() {
   nav_panel(
     "Sampling frame",
@@ -23,7 +30,12 @@ frame_tab <- function() {
   )
 }
 
-# The setup form, in the order of the steps of the user
+#' Build the setup form
+#'
+#' Its sections follow the steps of the user.
+#'
+#' @returns A sidebar.
+#' @noRd
 setup_sidebar <- function() {
   tab_sidebar(
     id = "setup_sidebar",
@@ -49,7 +61,12 @@ setup_sidebar <- function() {
   )
 }
 
-# Mode and type of sampling, stratification, buffer and seed
+#' Build the choices of the sampling
+#'
+#' Mode and type of sampling, stratification, buffer and seed.
+#'
+#' @returns The fields, as HTML.
+#' @noRd
 setup_sampling_choice <- function() {
   tagList(
     fluidRow(
@@ -118,7 +135,14 @@ setup_sampling_choice <- function() {
   )
 }
 
-# Parameters of the sample size, or the target typed by the user
+#' Build the parameters of the sample size
+#'
+#' Confidence level, error margin and proportion, or the target typed by the user.
+#' The minimum and maximum of the fields mirror `validate_parameters()`; HTML
+#' cannot express a strict bound, so the closest value on the step grid is used.
+#'
+#' @returns The fields, as HTML.
+#' @noRd
 setup_sample_size <- function() {
   # min/max mirror validate_parameters(); HTML cannot express a strict bound,
   # so the closest value on the step grid is used.
@@ -186,7 +210,12 @@ setup_sample_size <- function() {
   )
 }
 
-# Where the sampling frame comes from, and the feedback on the file
+#' Build the choice of the data source
+#'
+#' Where the sampling frame comes from, and the feedback on the file.
+#'
+#' @returns The fields, as HTML.
+#' @noRd
 setup_data_source <- function() {
   tagList(
     htmltools::tagQuery(
@@ -257,7 +286,13 @@ setup_data_source <- function() {
   )
 }
 
-# The columns of the frame the type of sampling needs
+#' Build the choice of the columns of the frame
+#'
+#' Only the columns that the type of sampling needs are shown: simple random
+#' sampling without stratification needs none.
+#'
+#' @returns The fields, as HTML.
+#' @noRd
 setup_column_mapping <- function() {
   # Simple random sampling without stratification needs no column from the data
   conditionalPanel(
@@ -312,7 +347,12 @@ setup_column_mapping <- function() {
   )
 }
 
-# Cluster size and ICC
+#' Build the cluster design fields
+#'
+#' Cluster size and ICC, for the cluster type.
+#'
+#' @returns The fields, as HTML.
+#' @noRd
 setup_cluster_design <- function() {
   conditionalPanel(
     condition = js_equals("sampling_type", SAMPLING_TYPE_CLUSTER),

@@ -1,15 +1,27 @@
 # Reading of the uploaded file.
 
-# Message when `name` is not a .csv file, NULL otherwise.
+#' Check that a file name ends in .csv
+#'
+#'
+#'
+#' @param name The name of the uploaded file.
+#' @returns An error message when the name is not a .csv file, `NULL` otherwise.
+#' @noRd
 csv_format_error <- function(name) {
   if (tolower(tools::file_ext(name)) != "csv") {
     check_message("csv_format", name = name)
   }
 }
 
-# Reads an uploaded file as a CSV table.
-# Returns list(data, error): `data` is NULL and `error` holds a message when the
-# file is not a .csv or cannot be read as a table.
+#' Read an uploaded file as a CSV table
+#'
+#' The file is refused if it is not a .csv, if it cannot be read as a table or if
+#' reading it gave a warning, which means rows were dropped.
+#'
+#' @param name The name of the uploaded file.
+#' @param path The path of the uploaded file on the server.
+#' @returns A list with `data` (the table, or `NULL`) and `error` (a message, or `NULL`).
+#' @noRd
 read_uploaded_csv <- function(name, path) {
   fail <- function(msg) list(data = NULL, error = msg)
 

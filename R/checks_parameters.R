@@ -1,11 +1,15 @@
 # Checks of the sampling parameters, run at Apply.
 
-# Check the sampling parameters that make the sample size computation or the
-# draw fail when they are mathematically invalid. The min/max of the numeric
-# inputs mirror these rules, but Shiny does not enforce them: it sends whatever
-# is typed. Only the parameters
-# used by the selected mode and sampling type are checked.
-# Returns an error message string if one is invalid, or NULL if all are valid.
+#' Check the numeric settings of the sampling
+#'
+#' Looks for values that make the sample size computation or the draw fail. The
+#' `min` and `max` of the numeric inputs mirror these rules, but Shiny does not
+#' enforce them: it sends whatever is typed. Only the settings used by the
+#' selected mode and sampling type are checked.
+#'
+#' @param params The settings of the sampling, see `read_params()`.
+#' @returns An error message for the first invalid setting, `NULL` when all are valid.
+#' @noRd
 validate_parameters <- function(params) {
   strictly_between_0_and_1 <- function(x) is_number(x) && x > 0 && x < 1
 
@@ -38,10 +42,15 @@ validate_parameters <- function(params) {
   return(NULL)
 }
 
-# Check that the seed is a single finite whole number within set.seed()'s range.
-# Guards against a cleared field (NA) or a decimal/out-of-range value that would
-# make set.seed() throw and break the sampling reactive.
-# Returns an error message string if the input is invalid, or NULL if valid.
+#' Check the seed
+#'
+#' The seed must be a single finite whole number within the range of
+#' `set.seed()`. This guards against a cleared field (`NA`) or a decimal or
+#' out-of-range value that would make `set.seed()` fail and break the sampling.
+#'
+#' @param seed The value of the seed input.
+#' @returns An error message when the seed is invalid, `NULL` otherwise.
+#' @noRd
 validate_seed <- function(seed) {
   if (
     length(seed) != 1 ||

@@ -1,14 +1,19 @@
 # Checks of the cluster design: at Apply, and on the drawn sample.
 
-# Cluster sampling guard, run before any draw: it depends on the data and the
-# parameters only, never on the seed. It looks for
-# - PSUs smaller than the cluster size: they cannot host a cluster;
-# - strata that cannot host the clusters their target requires: they need
-#   ceiling(target / cls) clusters but their PSUs have room for
-#   sum(floor(population / cls)).
-# `target` is the output of create_targets().
-# Returns one row per problem (a PSU row has a `psu`, a stratum row has none),
-# or NULL when there is no problem.
+#' Find the problems of cluster size, before any draw
+#'
+#' Depends on the data and the settings only, never on the seed. It looks for
+#' - PSUs smaller than the cluster size, which cannot host a cluster;
+#' - strata that cannot host the clusters their target requires: they need
+#'   `ceiling(target / cls)` clusters but their PSUs have room for
+#'   `sum(floor(population / cls))`.
+#'
+#' @param sampl_f The sampling frame, as returned by `format_sampling_frame()`.
+#' @param target The targets, as returned by `create_targets()`.
+#' @param params The settings of the sampling, see `read_params()`.
+#' @returns A data frame with one row per problem (a PSU row has a `psu`, a stratum row
+#'   has none), `NULL` when there is none.
+#' @noRd
 cluster_size_issues <- function(sampl_f, target, params) {
   if (params$sampling_type != SAMPLING_TYPE_CLUSTER) {
     return(NULL)
@@ -68,9 +73,15 @@ cluster_size_issues <- function(sampl_f, target, params) {
 }
 
 
-# Error message for the output of cluster_size_issues(), NULL when there is none.
-# Each problem has its own paragraph and only a few examples: the full list is
-# downloadable.
+#' Build the error message for the problems of cluster size
+#'
+#' Each kind of problem has its own paragraph and only a few examples: the full
+#' list can be downloaded.
+#'
+#' @param issues The output of `cluster_size_issues()`.
+#' @param cls The cluster size.
+#' @returns An error message, `NULL` when `issues` is `NULL`.
+#' @noRd
 cluster_size_message <- function(issues, cls) {
   if (is.null(issues)) {
     return(NULL)
@@ -127,11 +138,17 @@ cluster_size_message <- function(issues, cls) {
   paste(blocks, collapse = "\n\n")
 }
 
-# Cluster sampling draws PSUs with replacement: a PSU drawn several times is
-# assigned cluster size x draws surveys, which can exceed its population. Unlike
-# the guard at Apply this depends on the seed, so it is checked on the drawn
-# sample (the output of make_sample()$sample).
-# Returns one row per PSU concerned, or NULL when there is none.
+#' Find the PSUs drawn more often than their population allows
+#'
+#' Cluster sampling draws PSUs with replacement: a PSU drawn several times is
+#' assigned cluster size x draws surveys, which can exceed its population. Unlike
+#' the check at Apply this depends on the seed, so it is made on the drawn
+#' sample.
+#'
+#' @param sample The drawn sample, the `sample` of `make_sample()`.
+#' @param params The settings of the sampling, see `read_params()`.
+#' @returns A data frame with one row per PSU concerned, `NULL` when there is none.
+#' @noRd
 psu_overflow_issues <- function(sample, params) {
   if (params$sampling_type != SAMPLING_TYPE_CLUSTER) {
     return(NULL)
@@ -155,7 +172,13 @@ psu_overflow_issues <- function(sample, params) {
 }
 
 
-# Error message for the output of psu_overflow_issues(), NULL when there is none.
+#' Build the error message for the PSUs drawn too often
+#'
+#' Lists a few of the PSUs, then what to do.
+#'
+#' @param issues The output of `psu_overflow_issues()`.
+#' @returns An error message, `NULL` when `issues` is `NULL`.
+#' @noRd
 psu_overflow_message <- function(issues) {
   if (is.null(issues)) {
     return(NULL)

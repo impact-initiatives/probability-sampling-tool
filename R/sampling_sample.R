@@ -1,15 +1,17 @@
 # The sample and its summary.
 
-# Function to create a sample based on different sampling methods
-#
-# This function takes a sampling frame and input parameters as input and creates a sample based on the specified sampling method.
-# The sampling types supported are two-stage PPS cluster sampling with replacement, PPS sampling with replacement and simple random sampling.
-# The function formats the sampling frame, creates the target sample, and applies the specified sampling method to generate the output.
-# It also calculates various summary statistics related to the sample.
-#
-# sampling_frame The sampling frame data.
-# params The settings of the sampling, as returned by read_params().
-# return A list containing the sample, summary statistics, and any additional information.
+#' Draw the sample and build its summary
+#'
+#' Formats the sampling frame, computes the targets, applies the draw of the
+#' sampling type and builds the summary of the sample. The three types are
+#' two-stage PPS cluster sampling with replacement, PPS sampling with replacement
+#' and simple random sampling.
+#'
+#' @param sampling_frame The sampling frame, as read from the uploaded file.
+#' @param params The settings of the sampling, see `read_params()`.
+#' @returns A list with `sample` (one row per selected unit, with the number of surveys to
+#'   run there) and `summary_sample` (one row per stratum).
+#' @noRd
 make_sample <- function(sampling_frame, params) {
   # format the sample frame
   sampl_f <- format_sampling_frame(sampling_frame, params)
