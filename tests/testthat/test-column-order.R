@@ -10,7 +10,7 @@ types <- c(
 )
 
 sampling_input <- function(sampling_mode, sampling_type, stratified) {
-  list(
+  normalize_params(list(
     sampling_mode = sampling_mode,
     target_size = 300,
     confidence_level = 0.95,
@@ -25,7 +25,7 @@ sampling_input <- function(sampling_mode, sampling_type, stratified) {
     cluster_size = 5,
     icc = 0.06,
     seed = 7
-  )
+  ))
 }
 
 # in the order of `reference`, ignoring the names of `reference` not in `x`

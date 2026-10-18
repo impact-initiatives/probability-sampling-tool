@@ -7,7 +7,7 @@ test_that("the cluster summary has one cluster size, one DEFF and one effective 
     psu_name = sprintf("P%02d", 1:60),
     population = rep(c(40, 60, 80, 120, 200, 400), 10)
   )
-  input <- list(
+  input <- normalize_params(list(
     sampling_mode = "Sample size based on population",
     target_size = NA,
     confidence_level = 0.95,
@@ -22,7 +22,7 @@ test_that("the cluster summary has one cluster size, one DEFF and one effective 
     cluster_size = 5,
     icc = 0.1,
     seed = 1
-  )
+  ))
   summary <- run_with_seed(1, make_sample(frame, input))$summary_sample
 
   expect_true(all(

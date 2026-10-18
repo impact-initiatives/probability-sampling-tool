@@ -3,10 +3,7 @@
 # Check that a stratification column has been selected when Stratified mode is active.
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_strata_selection <- function(params) {
-  if (
-    params$stratified == STRATIFIED &&
-      (is.null(params$strata_column) || params$strata_column == NO_COLUMN)
-  ) {
+  if (params$stratified && is.null(params$strata_column)) {
     return(
       "Please select a stratification variable, or set 'Stratified ?' to 'Not stratified'."
     )
@@ -39,12 +36,10 @@ validate_psu_column <- function(sframe, params) {
   if (params$sampling_type != SAMPLING_TYPE_CLUSTER) {
     return(NULL)
   }
-  if (is.null(params$psu_column) || params$psu_column == NO_COLUMN) {
+  if (is.null(params$psu_column)) {
     return("Please select a cluster (PSU) column.")
   }
-  if (
-    params$stratified == STRATIFIED && params$psu_column == params$strata_column
-  ) {
+  if (params$stratified && identical(params$psu_column, params$strata_column)) {
     return(
       "Cluster and stratification variables must be different columns."
     )
@@ -79,9 +74,7 @@ validate_population_column <- function(sframe, params) {
   ) {
     return(NULL)
   }
-  if (
-    is.null(params$population_column) || params$population_column == NO_COLUMN
-  ) {
+  if (is.null(params$population_column)) {
     return("Please select a population column for this sampling type.")
   }
   col <- as.character(params$population_column)
@@ -105,10 +98,7 @@ validate_population_column <- function(sframe, params) {
   ) {
     return("Cluster and population variables must be different columns.")
   }
-  if (
-    params$stratified == STRATIFIED &&
-      identical(col, as.character(params$strata_column))
-  ) {
+  if (params$stratified && identical(col, as.character(params$strata_column))) {
     return("Stratification and population variables must be different columns.")
   }
   return(NULL)

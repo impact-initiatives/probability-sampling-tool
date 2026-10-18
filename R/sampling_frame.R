@@ -15,7 +15,7 @@
 # other types drop the row. `params` holds the settings of the sampling, see read_params().
 format_sampling_frame <- function(sframe, params) {
   sframe$PST_id_sample <- paste0("id_", rownames(sframe))
-  if (params$stratified == STRATIFIED) {
+  if (params$stratified) {
     sframe$PST_stratum_id <- sframe[[as.character(params$strata_column)]]
   } else {
     sframe$PST_stratum_id <- rep("all", nrow(sframe))

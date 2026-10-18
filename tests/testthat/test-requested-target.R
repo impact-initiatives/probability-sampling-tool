@@ -15,7 +15,7 @@ sampling_input <- function(
   sampling_mode,
   target_size = 100
 ) {
-  list(
+  normalize_params(list(
     sampling_mode = sampling_mode,
     target_size = target_size,
     confidence_level = 0.95,
@@ -30,7 +30,7 @@ sampling_input <- function(
     cluster_size = 5,
     icc = 0.06,
     seed = 1
-  )
+  ))
 }
 
 test_that("the target table and the sample summary say requested", {

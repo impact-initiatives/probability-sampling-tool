@@ -27,7 +27,7 @@ frame_24 <- function() {
 }
 
 sampling_input <- function(sampling_type, stratified) {
-  list(
+  normalize_params(list(
     sampling_mode = "Enter sample size",
     target_size = 20,
     confidence_level = 0.95,
@@ -42,7 +42,7 @@ sampling_input <- function(sampling_type, stratified) {
     cluster_size = 5,
     icc = 0.06,
     seed = 1
-  )
+  ))
 }
 
 draw <- function(frame, sampling_type, stratified) {
