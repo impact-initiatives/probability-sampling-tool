@@ -44,9 +44,7 @@ create_targets <- function(sframe, input) {
   # that the target sample size (and the "Target sampling" tab shown to the
   # user) already reflects the design-effect-adjusted number for Cluster
   # sampling. DEFF=1 (no adjustment) for the other sampling methods.
-  DEFF <- if (
-    input$samp_type == "Two-stage PPS cluster sampling with replacement"
-  ) {
+  DEFF <- if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
     1 + (input$cls - 1) * input$ICC
   } else {
     1
@@ -58,7 +56,7 @@ create_targets <- function(sframe, input) {
       Population = sum(PST_pop_size, na.rm = T)
     ) |>
     dplyr::mutate(
-      target = (if (input$topup == "Enter sample size") {
+      target = (if (input$topup == SAMPLING_MODE_ENTER_SIZE) {
         input$target
       } else {
         Ssize(
@@ -70,7 +68,7 @@ create_targets <- function(sframe, input) {
         )
       }) |>
         as.numeric(),
-      target.with.buffer = if (input$topup == "Enter sample size") {
+      target.with.buffer = if (input$topup == SAMPLING_MODE_ENTER_SIZE) {
         target
       } else {
         as.numeric(ceiling(target * (1 + input$buf)))

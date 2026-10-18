@@ -23,7 +23,7 @@ make_sample <- function(sampling_frame, input) {
   buf <- input$buf
   ICC <- input$ICC
 
-  if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
+  if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
     output <- apply(
       target,
       1,
@@ -33,7 +33,7 @@ make_sample <- function(sampling_frame, input) {
       simplify = FALSE
     ) %>%
       unlist
-  } else if (input$samp_type == "PPS sampling with replacement") {
+  } else if (input$samp_type == SAMPLING_TYPE_PPS) {
     # simplify = FALSE: when every stratum draws the same number of units
     # (e.g. "Enter sample size" + stratified), apply() would otherwise return
     # a matrix instead of a list, which unlist() keeps 2-D and breaks the
@@ -47,7 +47,7 @@ make_sample <- function(sampling_frame, input) {
       simplify = FALSE
     ) %>%
       unlist
-  } else if (input$samp_type == "Simple random sampling") {
+  } else if (input$samp_type == SAMPLING_TYPE_SIMPLE) {
     output <- apply(
       target,
       1,
@@ -69,7 +69,7 @@ make_sample <- function(sampling_frame, input) {
     all.y = F
   )
 
-  if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
+  if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
     dbout$PST_survey <- cls
   } else {
     dbout$PST_survey <- 1
@@ -120,7 +120,7 @@ make_sample <- function(sampling_frame, input) {
     ) |>
     dplyr::relocate(target.with.buffer, .after = NB_Population)
 
-  if (input$samp_type != "Two-stage PPS cluster sampling with replacement") {
+  if (input$samp_type != SAMPLING_TYPE_CLUSTER) {
     # "Clusters drawn" is the draw count; it only differs from "Surveys"
     # when a draw yields more than one survey, i.e. cluster sampling.
     summary_sample[c(
@@ -132,12 +132,12 @@ make_sample <- function(sampling_frame, input) {
     )] <- NA
     # plain SRS: no replacement and no PSU concept, so the distinct count
     # is just "Surveys" again.
-    if (input$samp_type == "Simple random sampling") {
+    if (input$samp_type == SAMPLING_TYPE_SIMPLE) {
       summary_sample["Unique_PSUs"] <- NA
     }
   }
 
-  if (input$topup == "Enter sample size") {
+  if (input$topup == SAMPLING_MODE_ENTER_SIZE) {
     summary_sample[c(
       "ICC",
       "DEFF",

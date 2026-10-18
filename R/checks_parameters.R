@@ -9,7 +9,7 @@
 validate_parameters <- function(input) {
   strictly_between_0_and_1 <- function(x) is_number(x) && x > 0 && x < 1
 
-  if (input$topup == "Enter sample size") {
+  if (input$topup == SAMPLING_MODE_ENTER_SIZE) {
     target <- input$target
     if (!is_number(target) || target <= 0 || target != floor(target)) {
       return("Enter a target sample size: a whole number greater than 0.")
@@ -26,7 +26,7 @@ validate_parameters <- function(input) {
     }
   }
 
-  if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
+  if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
     cls <- input$cls
     if (!is_number(cls) || cls < 2 || cls != floor(cls)) {
       return("Cluster size must be a whole number of at least 2.")

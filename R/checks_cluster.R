@@ -10,7 +10,7 @@
 # Returns one row per problem (a PSU row has a `psu`, a stratum row has none),
 # or NULL when there is no problem.
 cluster_size_issues <- function(sampl_f, target, input) {
-  if (input$samp_type != "Two-stage PPS cluster sampling with replacement") {
+  if (input$samp_type != SAMPLING_TYPE_CLUSTER) {
     return(NULL)
   }
   cls <- input$cls
@@ -139,7 +139,7 @@ cluster_size_message <- function(issues, cls) {
 # sample (the output of make_sample()$sample).
 # Returns one row per PSU concerned, or NULL when there is none.
 psu_overflow_issues <- function(sample, input) {
-  if (input$samp_type != "Two-stage PPS cluster sampling with replacement") {
+  if (input$samp_type != SAMPLING_TYPE_CLUSTER) {
     return(NULL)
   }
   over <- which(sample$PST_survey > sample$PST_pop_size)

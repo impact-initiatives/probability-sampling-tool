@@ -55,3 +55,7 @@ select_input_overlay <- function(inputId, label, choices = NULL, ...) {
     options = list(dropdownParent = "body")
   )
 }
+
+# JavaScript condition of a conditionalPanel(): the input is, or is not, a value
+js_equals <- function(id, value) sprintf("input.%s == '%s'", id, value)
+js_differs <- function(id, value) sprintf("input.%s != '%s'", id, value)

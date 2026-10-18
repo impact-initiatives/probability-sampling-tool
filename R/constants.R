@@ -1,5 +1,26 @@
-# Values shared by the interface and the code: the proportion of the sample
-# size, the order of the columns of the tables and the reserved prefix.
+# Values shared by the interface and the code. Constants are written in upper
+# case. The choices of the interface are defined here once: the interface, the
+# checks and the draw all use these values, so a name is changed in one place.
+
+# the three sampling types
+SAMPLING_TYPE_SIMPLE <- "Simple random sampling"
+SAMPLING_TYPE_PPS <- "PPS sampling with replacement"
+SAMPLING_TYPE_CLUSTER <- "Two-stage PPS cluster sampling with replacement"
+
+# how the sample size is set
+SAMPLING_MODE_ENTER_SIZE <- "Enter sample size"
+SAMPLING_MODE_FROM_POPULATION <- "Sample size based on population"
+
+# stratified or not
+STRATIFIED <- "Stratified"
+NOT_STRATIFIED <- "Not stratified"
+
+# where the sampling frame comes from
+DATA_SOURCE_UPLOAD <- "upload"
+DATA_SOURCE_TEST <- "test"
+
+# the choice of a column select that stands for "no column"
+NO_COLUMN <- "None"
 
 # Proportion used by the sample size computation. It is fixed: 0.5 is the most
 # cautious value, since p * (1 - p) is largest there and so is the sample size.

@@ -185,21 +185,21 @@ guide_start <- function() {
       width = "17rem",
       fill = FALSE,
       guide_type_card(
-        "Simple random sampling",
+        SAMPLING_TYPE_SIMPLE,
         "Simple random",
         "a unit to survey (household, person).",
         "no population column.",
         "guide_open_simple_random"
       ),
       guide_type_card(
-        "PPS sampling with replacement",
+        SAMPLING_TYPE_PPS,
         "Simple random - allocation",
         "a PSU (an area) with its population.",
         "a population column.",
         "guide_open_pps"
       ),
       guide_type_card(
-        "Two-stage PPS cluster sampling with replacement",
+        SAMPLING_TYPE_CLUSTER,
         "Cluster sampling",
         "a PSU with its population.",
         "a cluster column and a population column.",

@@ -16,16 +16,16 @@
 # The resulting data frame is returned.
 format_sampling_frame <- function(sframe, input) {
   sframe$PST_id_sample <- paste0("id_", rownames(sframe))
-  if (input$stratified == "Stratified") {
+  if (input$stratified == STRATIFIED) {
     sframe$PST_stratum_id <- sframe[[as.character(input$strata)]]
   } else {
     sframe$PST_stratum_id <- rep("all", nrow(sframe))
   }
 
-  if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
+  if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
     sframe$PST_psu_id <- sframe[[as.character(input$col_psu)]]
     sframe$PST_pop_size <- sframe[[as.character(input$colpop)]]
-  } else if (input$samp_type == "PPS sampling with replacement") {
+  } else if (input$samp_type == SAMPLING_TYPE_PPS) {
     sframe$PST_psu_id <- sframe$PST_id_sample
     sframe$PST_pop_size <- sframe[[as.character(input$colpop)]]
   } else {
@@ -41,13 +41,13 @@ format_sampling_frame <- function(sframe, input) {
     as.numeric(sframe$PST_pop_size_stratum)
   # an empty PSU alone in its stratum gives 0/0: keep it so that the cluster
   # size guard reports it instead of the row vanishing from the frame
-  if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
+  if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
     PST_prob[is.nan(PST_prob)] <- 0
   }
   sframe <- cbind(sframe, PST_prob)
   sframe <- sframe[!is.na(sframe$PST_prob), ]
 
-  if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
+  if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
     sframe$PST_psu_id <- as.factor(sframe$PST_psu_id)
   }
   return(order_columns(sframe, FRAME_COLUMN_ORDER))

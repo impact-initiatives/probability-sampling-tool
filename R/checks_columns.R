@@ -4,8 +4,8 @@
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_strata_selection <- function(input) {
   if (
-    input$stratified == "Stratified" &&
-      (is.null(input$strata) || input$strata == "None")
+    input$stratified == STRATIFIED &&
+      (is.null(input$strata) || input$strata == NO_COLUMN)
   ) {
     return(
       "Please select a stratification variable, or set 'Stratified ?' to 'Not stratified'."
@@ -36,13 +36,13 @@ validate_reserved_columns <- function(sframe) {
 # stratification column, and contains unique values (no duplicate PSU IDs).
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_psu_column <- function(sframe, input) {
-  if (input$samp_type != "Two-stage PPS cluster sampling with replacement") {
+  if (input$samp_type != SAMPLING_TYPE_CLUSTER) {
     return(NULL)
   }
-  if (is.null(input$col_psu) || input$col_psu == "None") {
+  if (is.null(input$col_psu) || input$col_psu == NO_COLUMN) {
     return("Please select a cluster (PSU) column.")
   }
-  if (input$stratified == "Stratified" && input$col_psu == input$strata) {
+  if (input$stratified == STRATIFIED && input$col_psu == input$strata) {
     return(
       "Cluster and stratification variables must be different columns."
     )
@@ -71,13 +71,13 @@ validate_population_column <- function(sframe, input) {
   if (
     !(input$samp_type %in%
       c(
-        "Two-stage PPS cluster sampling with replacement",
-        "PPS sampling with replacement"
+        SAMPLING_TYPE_CLUSTER,
+        SAMPLING_TYPE_PPS
       ))
   ) {
     return(NULL)
   }
-  if (is.null(input$colpop) || input$colpop == "None") {
+  if (is.null(input$colpop) || input$colpop == NO_COLUMN) {
     return("Please select a population column for this sampling type.")
   }
   col <- as.character(input$colpop)
@@ -96,13 +96,13 @@ validate_population_column <- function(sframe, input) {
     ))
   }
   if (
-    input$samp_type == "Two-stage PPS cluster sampling with replacement" &&
+    input$samp_type == SAMPLING_TYPE_CLUSTER &&
       identical(col, as.character(input$col_psu))
   ) {
     return("Cluster and population variables must be different columns.")
   }
   if (
-    input$stratified == "Stratified" &&
+    input$stratified == STRATIFIED &&
       identical(col, as.character(input$strata))
   ) {
     return("Stratification and population variables must be different columns.")
@@ -117,8 +117,8 @@ population_issues <- function(sframe, input) {
   if (
     !(input$samp_type %in%
       c(
-        "Two-stage PPS cluster sampling with replacement",
-        "PPS sampling with replacement"
+        SAMPLING_TYPE_CLUSTER,
+        SAMPLING_TYPE_PPS
       ))
   ) {
     return(NULL)
@@ -135,9 +135,7 @@ population_issues <- function(sframe, input) {
       "Negative population"
     ),
     data_row = bad,
-    psu = if (
-      input$samp_type == "Two-stage PPS cluster sampling with replacement"
-    ) {
+    psu = if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
       as.character(sframe[[as.character(input$col_psu)]][bad])
     } else {
       NA_character_

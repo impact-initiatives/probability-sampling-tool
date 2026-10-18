@@ -56,11 +56,13 @@ function(input, output, session) {
     read_uploaded_csv(f$name, f$datapath)
   })
 
-  file_error <- reactive(if (input$data_source == "upload") upload()$error)
+  file_error <- reactive(
+    if (input$data_source == DATA_SOURCE_UPLOAD) upload()$error
+  )
 
   # get the data
   db <- reactive({
-    if (input$data_source == "test") {
+    if (input$data_source == DATA_SOURCE_TEST) {
       fread("data/data_example.csv")
     } else {
       upload()$data
@@ -77,7 +79,7 @@ function(input, output, session) {
   output$data_status <- renderUI({
     d <- db()
     req(d)
-    src <- if (input$data_source == "test") {
+    src <- if (input$data_source == DATA_SOURCE_TEST) {
       "data_example.csv"
     } else {
       input$popdata$name
@@ -106,20 +108,20 @@ function(input, output, session) {
     updateSelectInput(
       session,
       "col_psu",
-      choices = c("None", colnames(db())),
-      selected = "None"
+      choices = c(NO_COLUMN, colnames(db())),
+      selected = NO_COLUMN
     )
     updateSelectInput(
       session,
       "strata",
-      choices = c("None", colnames(db())),
-      selected = "None"
+      choices = c(NO_COLUMN, colnames(db())),
+      selected = NO_COLUMN
     )
     updateSelectInput(
       session,
       "colpop",
-      choices = c("None", colnames(db())),
-      selected = "None"
+      choices = c(NO_COLUMN, colnames(db())),
+      selected = NO_COLUMN
     )
   })
 
@@ -222,9 +224,7 @@ function(input, output, session) {
 
     # cluster sampling never caps the draw: cible() already blocks a target
     # above the room of a stratum
-    affected <- if (
-      input$samp_type != "Two-stage PPS cluster sampling with replacement"
-    ) {
+    affected <- if (input$samp_type != SAMPLING_TYPE_CLUSTER) {
       check_target_vs_population(cible())
     }
     if (!is.null(affected)) showModal(exceeds_population_modal(affected))
@@ -262,7 +262,7 @@ function(input, output, session) {
     }
     # same warning as at Apply: the draw has just been capped
     affected <- if (
-      input$samp_type != "Two-stage PPS cluster sampling with replacement" &&
+      input$samp_type != SAMPLING_TYPE_CLUSTER &&
         succeeds(cible())
     ) {
       check_target_vs_population(cible())

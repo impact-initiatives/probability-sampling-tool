@@ -72,7 +72,7 @@ page_navbar(
               multiple = FALSE,
               accordion_panel(
                 tagList(
-                  "Simple random sampling",
+                  SAMPLING_TYPE_SIMPLE,
                   span(
                     class = "badge text-bg-light fw-normal ms-2",
                     "before: Simple random"
@@ -83,7 +83,7 @@ page_navbar(
               ),
               accordion_panel(
                 tagList(
-                  "PPS sampling with replacement",
+                  SAMPLING_TYPE_PPS,
                   span(
                     class = "badge text-bg-light fw-normal ms-2",
                     "before: Simple random - allocation"
@@ -94,7 +94,7 @@ page_navbar(
               ),
               accordion_panel(
                 tagList(
-                  "Two-stage PPS cluster sampling with replacement",
+                  SAMPLING_TYPE_CLUSTER,
                   span(
                     class = "badge text-bg-light fw-normal ms-2",
                     "before: Cluster sampling"
@@ -177,10 +177,10 @@ page_navbar(
                 "topup",
                 "Mode of sampling",
                 c(
-                  "Enter sample size",
-                  "Sample size based on population"
+                  SAMPLING_MODE_ENTER_SIZE,
+                  SAMPLING_MODE_FROM_POPULATION
                 ),
-                "Sample size based on population"
+                SAMPLING_MODE_FROM_POPULATION
               )
             ),
             column(
@@ -189,9 +189,9 @@ page_navbar(
                 "samp_type",
                 "Type of sampling",
                 c(
-                  "Simple random sampling",
-                  "PPS sampling with replacement",
-                  "Two-stage PPS cluster sampling with replacement"
+                  SAMPLING_TYPE_SIMPLE,
+                  SAMPLING_TYPE_PPS,
+                  SAMPLING_TYPE_CLUSTER
                 )
               )
             )
@@ -202,12 +202,12 @@ page_navbar(
               select_input_overlay(
                 "stratified",
                 "Stratified ?",
-                c("Not stratified", "Stratified")
+                c(NOT_STRATIFIED, STRATIFIED)
               )
             ),
             conditionalPanel(
               # the buffer only applies to a sample size computed from the population
-              condition = "input.topup != 'Enter sample size'",
+              condition = js_differs("topup", SAMPLING_MODE_ENTER_SIZE),
               column(
                 4,
                 numeric_input_with_tip(
@@ -237,7 +237,7 @@ page_navbar(
           # so the closest value on the step grid is used.
           fluidRow(
             conditionalPanel(
-              condition = "input.topup != 'Enter sample size'",
+              condition = js_differs("topup", SAMPLING_MODE_ENTER_SIZE),
               column(
                 4,
                 numeric_input_with_tip(
@@ -253,7 +253,7 @@ page_navbar(
               )
             ),
             conditionalPanel(
-              condition = "input.topup != 'Enter sample size'",
+              condition = js_differs("topup", SAMPLING_MODE_ENTER_SIZE),
               column(
                 4,
                 numeric_input_with_tip(
@@ -269,7 +269,7 @@ page_navbar(
               )
             ),
             conditionalPanel(
-              condition = "input.topup != 'Enter sample size'",
+              condition = js_differs("topup", SAMPLING_MODE_ENTER_SIZE),
               column(
                 4,
                 # fixed in the computation (FIXED_PROPORTION): shown, not editable
@@ -284,7 +284,7 @@ page_navbar(
               )
             ),
             conditionalPanel(
-              condition = "input.topup == 'Enter sample size'",
+              condition = js_equals("topup", SAMPLING_MODE_ENTER_SIZE),
               column(
                 4,
                 numericInput(
@@ -312,8 +312,8 @@ page_navbar(
                 )
               ),
               choices = c(
-                "Upload CSV" = "upload",
-                "Use test data" = "test"
+                "Upload CSV" = DATA_SOURCE_UPLOAD,
+                "Use test data" = DATA_SOURCE_TEST
               ),
               inline = TRUE
             )
@@ -325,7 +325,7 @@ page_navbar(
             column(
               7,
               conditionalPanel(
-                condition = "input.data_source == 'upload'",
+                condition = js_equals("data_source", DATA_SOURCE_UPLOAD),
                 # aria-label on the inputs: a hidden label would still take up space
                 htmltools::tagQuery(
                   fileInput(
@@ -346,7 +346,7 @@ page_navbar(
                 )$allTags()
               ),
               conditionalPanel(
-                condition = "input.data_source == 'test'",
+                condition = js_equals("data_source", DATA_SOURCE_TEST),
                 div(
                   class = "example-link",
                   downloadLink(
@@ -364,11 +364,15 @@ page_navbar(
           uiOutput("file_error"),
           # Simple random sampling without stratification needs no column from the data
           conditionalPanel(
-            condition = "input.samp_type != 'Simple random sampling' || input.stratified == 'Stratified'",
+            condition = paste(
+              js_differs("samp_type", SAMPLING_TYPE_SIMPLE),
+              "||",
+              js_equals("stratified", STRATIFIED)
+            ),
             div(class = "param-subhead", "Column mapping"),
             fluidRow(
               conditionalPanel(
-                condition = "input.samp_type == 'Two-stage PPS cluster sampling with replacement'",
+                condition = js_equals("samp_type", SAMPLING_TYPE_CLUSTER),
                 column(
                   4,
                   select_input_overlay(
@@ -379,7 +383,11 @@ page_navbar(
                 )
               ),
               conditionalPanel(
-                condition = "input.samp_type == 'Two-stage PPS cluster sampling with replacement'|input.samp_type =='PPS sampling with replacement'",
+                condition = paste(
+                  js_equals("samp_type", SAMPLING_TYPE_CLUSTER),
+                  "||",
+                  js_equals("samp_type", SAMPLING_TYPE_PPS)
+                ),
                 column(
                   4,
                   select_input_overlay(
@@ -392,7 +400,7 @@ page_navbar(
               # last, so that the two other fields keep their place
               # whether the sample is stratified or not
               conditionalPanel(
-                condition = "input.stratified == 'Stratified'",
+                condition = js_equals("stratified", STRATIFIED),
                 column(
                   4,
                   select_input_overlay(
@@ -406,7 +414,7 @@ page_navbar(
             )
           ),
           conditionalPanel(
-            condition = "input.samp_type == 'Two-stage PPS cluster sampling with replacement'",
+            condition = js_equals("samp_type", SAMPLING_TYPE_CLUSTER),
             div(class = "param-subhead", "Cluster design"),
             fluidRow(
               column(
