@@ -8,18 +8,18 @@
 # It also calculates various summary statistics related to the sample.
 #
 # sampling_frame The sampling frame data.
-# input The input parameters for the sampling method.
+# params The settings of the sampling, as returned by read_params().
 # return A list containing the sample, summary statistics, and any additional information.
-make_sample <- function(sampling_frame, input) {
+make_sample <- function(sampling_frame, params) {
   # format the sample frame
-  sampl_f <- format_sampling_frame(sampling_frame, input)
+  sampl_f <- format_sampling_frame(sampling_frame, params)
 
   # create the target sample.
-  target <- create_targets(sampl_f, input)
+  target <- create_targets(sampl_f, params)
 
-  cls <- input$cls
+  cls <- params$cls
 
-  if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
+  if (params$samp_type == SAMPLING_TYPE_CLUSTER) {
     output <- apply(
       target,
       1,
@@ -29,7 +29,7 @@ make_sample <- function(sampling_frame, input) {
       simplify = FALSE
     ) %>%
       unlist
-  } else if (input$samp_type == SAMPLING_TYPE_PPS) {
+  } else if (params$samp_type == SAMPLING_TYPE_PPS) {
     # simplify = FALSE: when every stratum draws the same number of units
     # (e.g. "Enter sample size" + stratified), apply() would otherwise return
     # a matrix instead of a list, which unlist() keeps 2-D and breaks the
@@ -42,7 +42,7 @@ make_sample <- function(sampling_frame, input) {
       simplify = FALSE
     ) %>%
       unlist
-  } else if (input$samp_type == SAMPLING_TYPE_SIMPLE) {
+  } else if (params$samp_type == SAMPLING_TYPE_SIMPLE) {
     output <- apply(
       target,
       1,
@@ -63,7 +63,7 @@ make_sample <- function(sampling_frame, input) {
     all.y = F
   )
 
-  if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
+  if (params$samp_type == SAMPLING_TYPE_CLUSTER) {
     dbout$PST_survey <- cls
   } else {
     dbout$PST_survey <- 1
@@ -98,15 +98,15 @@ make_sample <- function(sampling_frame, input) {
       # same PSU is drawn several times: the cluster size, and so the design
       # effect, are set by the design, not measured on the draw. DEFF uses the
       # ICC entered by the user.
-      Cluster_size = input$cls,
-      ICC = input$ICC,
+      Cluster_size = params$cls,
+      ICC = params$ICC,
       DEFF = 1 + (Cluster_size - 1) * ICC,
       Effective_sample = round(Surveys / DEFF, 0),
-      Surveys_buffer = input$buf,
-      Confidence_level = input$conf_level,
-      Error_margin = input$e_marg,
-      Sampling_type = input$samp_type,
-      Seed = as.integer(input$seed_value)
+      Surveys_buffer = params$buf,
+      Confidence_level = params$conf_level,
+      Error_margin = params$e_marg,
+      Sampling_type = params$samp_type,
+      Seed = as.integer(params$seed_value)
     ) |>
     dplyr::left_join(
       target[, c("PST_stratum_id", "target.with.buffer")],
@@ -114,7 +114,7 @@ make_sample <- function(sampling_frame, input) {
     ) |>
     dplyr::relocate(target.with.buffer, .after = NB_Population)
 
-  if (input$samp_type != SAMPLING_TYPE_CLUSTER) {
+  if (params$samp_type != SAMPLING_TYPE_CLUSTER) {
     # "Clusters drawn" is the draw count; it only differs from "Surveys"
     # when a draw yields more than one survey, i.e. cluster sampling.
     summary_sample[c(
@@ -126,12 +126,12 @@ make_sample <- function(sampling_frame, input) {
     )] <- NA
     # plain SRS: no replacement and no PSU concept, so the distinct count
     # is just "Surveys" again.
-    if (input$samp_type == SAMPLING_TYPE_SIMPLE) {
+    if (params$samp_type == SAMPLING_TYPE_SIMPLE) {
       summary_sample["Unique_PSUs"] <- NA
     }
   }
 
-  if (input$topup == SAMPLING_MODE_ENTER_SIZE) {
+  if (params$topup == SAMPLING_MODE_ENTER_SIZE) {
     summary_sample[c(
       "ICC",
       "DEFF",

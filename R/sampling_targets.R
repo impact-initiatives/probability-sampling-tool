@@ -33,15 +33,15 @@ Ssize <- function(population_size, conf_level, prop, margin_error, DEFF = 1) {
 #   sampling;
 # - target.with.buffer: the target again in the mode "Enter sample size";
 #   otherwise target * (1 + buffer), rounded up.
-# `sframe` is the output of format_sampling_frame(); `input` holds the settings
-# of the interface.
-create_targets <- function(sframe, input) {
+# `sframe` is the output of format_sampling_frame(); `params` holds the settings
+# of the sampling, see read_params().
+create_targets <- function(sframe, params) {
   # The design effect, 1 + (cluster size - 1) * ICC, applies to cluster sampling
   # only (it is 1 for the other types), and only when the sample size is computed
   # from the population: in the mode "Enter sample size" the typed target is used
   # as it is, without design effect, and the ICC is not used.
-  DEFF <- if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
-    1 + (input$cls - 1) * input$ICC
+  DEFF <- if (params$samp_type == SAMPLING_TYPE_CLUSTER) {
+    1 + (params$cls - 1) * params$ICC
   } else {
     1
   }
@@ -52,22 +52,22 @@ create_targets <- function(sframe, input) {
       Population = sum(PST_pop_size, na.rm = T)
     ) |>
     dplyr::mutate(
-      target = (if (input$topup == SAMPLING_MODE_ENTER_SIZE) {
-        input$target
+      target = (if (params$topup == SAMPLING_MODE_ENTER_SIZE) {
+        params$target
       } else {
         Ssize(
           population_size = Population,
-          conf_level = input$conf_level,
+          conf_level = params$conf_level,
           prop = FIXED_PROPORTION,
-          margin_error = input$e_marg,
+          margin_error = params$e_marg,
           DEFF = DEFF
         )
       }) |>
         as.numeric(),
-      target.with.buffer = if (input$topup == SAMPLING_MODE_ENTER_SIZE) {
+      target.with.buffer = if (params$topup == SAMPLING_MODE_ENTER_SIZE) {
         target
       } else {
-        as.numeric(ceiling(target * (1 + input$buf)))
+        as.numeric(ceiling(target * (1 + params$buf)))
       }
     )
 }

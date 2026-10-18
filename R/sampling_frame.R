@@ -12,21 +12,21 @@
 #   the row in its stratum.
 # A PSU of population 0 alone in its stratum gives 0 / 0: cluster sampling keeps
 # it with a probability of 0, so that the cluster size check reports it; the
-# other types drop the row. `input` holds the settings of the interface.
-format_sampling_frame <- function(sframe, input) {
+# other types drop the row. `params` holds the settings of the sampling, see read_params().
+format_sampling_frame <- function(sframe, params) {
   sframe$PST_id_sample <- paste0("id_", rownames(sframe))
-  if (input$stratified == STRATIFIED) {
-    sframe$PST_stratum_id <- sframe[[as.character(input$strata)]]
+  if (params$stratified == STRATIFIED) {
+    sframe$PST_stratum_id <- sframe[[as.character(params$strata)]]
   } else {
     sframe$PST_stratum_id <- rep("all", nrow(sframe))
   }
 
-  if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
-    sframe$PST_psu_id <- sframe[[as.character(input$col_psu)]]
-    sframe$PST_pop_size <- sframe[[as.character(input$colpop)]]
-  } else if (input$samp_type == SAMPLING_TYPE_PPS) {
+  if (params$samp_type == SAMPLING_TYPE_CLUSTER) {
+    sframe$PST_psu_id <- sframe[[as.character(params$col_psu)]]
+    sframe$PST_pop_size <- sframe[[as.character(params$colpop)]]
+  } else if (params$samp_type == SAMPLING_TYPE_PPS) {
     sframe$PST_psu_id <- sframe$PST_id_sample
-    sframe$PST_pop_size <- sframe[[as.character(input$colpop)]]
+    sframe$PST_pop_size <- sframe[[as.character(params$colpop)]]
   } else {
     sframe$PST_psu_id <- sframe$PST_id_sample
     sframe$PST_pop_size <- rep(1, nrow(sframe))
@@ -40,13 +40,13 @@ format_sampling_frame <- function(sframe, input) {
     as.numeric(sframe$PST_pop_size_stratum)
   # an empty PSU alone in its stratum gives 0/0: keep it so that the cluster
   # size guard reports it instead of the row vanishing from the frame
-  if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
+  if (params$samp_type == SAMPLING_TYPE_CLUSTER) {
     PST_prob[is.nan(PST_prob)] <- 0
   }
   sframe <- cbind(sframe, PST_prob)
   sframe <- sframe[!is.na(sframe$PST_prob), ]
 
-  if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
+  if (params$samp_type == SAMPLING_TYPE_CLUSTER) {
     sframe$PST_psu_id <- as.factor(sframe$PST_psu_id)
   }
   return(order_columns(sframe, FRAME_COLUMN_ORDER))

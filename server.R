@@ -7,6 +7,9 @@ function(input, output, session) {
 
   guide_server("guide", session)
 
+  # the settings of the sampling, read from the inputs
+  params <- reactive(read_params(input))
+
   # an uploaded file is either a usable CSV or an error message, never a crash
   upload <- reactive({
     if (!is.null(input$popdata_too_large)) {
@@ -121,7 +124,7 @@ function(input, output, session) {
 
   # create the sampling frame
   frame <- eventReactive(input$f_apply, {
-    require_valid(validate_strata_selection(input))
+    require_valid(validate_strata_selection(params()))
     require_valid(file_error())
     sframe <- db()
     validate(need(
@@ -129,23 +132,23 @@ function(input, output, session) {
       "Please upload a CSV file before applying."
     ))
     require_valid(validate_reserved_columns(sframe))
-    require_valid(validate_psu_column(sframe, input))
-    require_valid(validate_population_column(sframe, input))
-    pop_issues <- population_issues(sframe, input)
+    require_valid(validate_psu_column(sframe, params()))
+    require_valid(validate_population_column(sframe, params()))
+    pop_issues <- population_issues(sframe, params())
     issue_list(pop_issues)
-    require_valid(population_message(pop_issues, input$colpop))
-    require_valid(validate_parameters(input))
+    require_valid(population_message(pop_issues, params()$colpop))
+    require_valid(validate_parameters(params()))
     # not needed for the frame, but reported here rather than at the draw
     require_valid(validate_seed(input$seed_value))
-    format_sampling_frame(sframe, input)
+    format_sampling_frame(sframe, params())
   })
 
   # create the target sampling size by strata
   cible <- eventReactive(input$f_apply, {
-    targets <- create_targets(frame(), input)
-    issues <- cluster_size_issues(frame(), targets, input)
+    targets <- create_targets(frame(), params())
+    issues <- cluster_size_issues(frame(), targets, params())
     issue_list(issues)
-    require_valid(cluster_size_message(issues, input$cls))
+    require_valid(cluster_size_message(issues, params()$cls))
     targets
   })
 
@@ -171,7 +174,7 @@ function(input, output, session) {
 
     # cluster sampling never caps the draw: cible() already blocks a target
     # above the room of a stratum
-    affected <- if (input$samp_type != SAMPLING_TYPE_CLUSTER) {
+    affected <- if (params()$samp_type != SAMPLING_TYPE_CLUSTER) {
       check_target_vs_population(cible())
     }
     if (!is.null(affected)) showModal(exceeds_population_modal(affected))
@@ -209,7 +212,7 @@ function(input, output, session) {
     }
     # same warning as at Apply: the draw has just been capped
     affected <- if (
-      input$samp_type != SAMPLING_TYPE_CLUSTER &&
+      params()$samp_type != SAMPLING_TYPE_CLUSTER &&
         succeeds(cible())
     ) {
       check_target_vs_population(cible())
@@ -289,10 +292,10 @@ function(input, output, session) {
     frame()
     require_valid(validate_seed(input$seed_value))
     sample_out <- run_with_seed(
-      as.integer(input$seed_value),
-      make_sample(db(), input)
+      as.integer(params()$seed_value),
+      make_sample(db(), params())
     )
-    issues <- psu_overflow_issues(sample_out$sample, input)
+    issues <- psu_overflow_issues(sample_out$sample, params())
     draw_issues(issues)
     require_valid(psu_overflow_message(issues))
     sample_out
