@@ -32,12 +32,12 @@ Ssize <- function(
 }
 
 # The target sample size of each stratum: one row per stratum with
-# - Population: the total of PST_pop_size;
+# - population: the total of PST_pop_size;
 # - target: in the mode "Enter sample size", the number typed by the user (the
 #   same for every stratum); in the mode based on the population, the sample
 #   size computed by Ssize(), multiplied by the design effect for cluster
 #   sampling;
-# - target.with.buffer: the target again in the mode "Enter sample size";
+# - target_with_buffer: the target again in the mode "Enter sample size";
 #   otherwise target * (1 + buffer), rounded up.
 # `sframe` is the output of format_sampling_frame(); `params` holds the settings
 # of the sampling, see read_params().
@@ -55,14 +55,14 @@ create_targets <- function(sframe, params) {
   sframe |>
     dplyr::group_by(PST_stratum_id) |>
     dplyr::summarise(
-      Population = sum(PST_pop_size, na.rm = T)
+      population = sum(PST_pop_size, na.rm = T)
     ) |>
     dplyr::mutate(
       target = (if (params$sampling_mode == SAMPLING_MODE_ENTER_SIZE) {
         params$target_size
       } else {
         Ssize(
-          population_size = Population,
+          population_size = population,
           confidence_level = params$confidence_level,
           proportion = FIXED_PROPORTION,
           error_margin = params$error_margin,
@@ -70,7 +70,7 @@ create_targets <- function(sframe, params) {
         )
       }) |>
         as.numeric(),
-      target.with.buffer = if (
+      target_with_buffer = if (
         params$sampling_mode == SAMPLING_MODE_ENTER_SIZE
       ) {
         target
@@ -84,7 +84,7 @@ create_targets <- function(sframe, params) {
 # Returns a character vector of affected stratum names, or NULL if none.
 check_target_vs_population <- function(targets) {
   affected <- targets$PST_stratum_id[
-    targets$target.with.buffer > targets$Population
+    targets$target_with_buffer > targets$population
   ]
   if (length(affected) > 0) {
     return(as.character(affected))
@@ -95,10 +95,6 @@ check_target_vs_population <- function(targets) {
 # Labels of the "Target sampling" table. The values are what was requested: in
 # a random sampling type the draw is capped to the population of the stratum, so
 # they can be larger than the population next to them.
-label_target_table <- function(target) {
-  names(target)[names(target) == "target"] <- "Requested Target"
-  names(target)[
-    names(target) == "target.with.buffer"
-  ] <- "Requested Target (with buffer)"
-  target
+label_target_table <- function(targets) {
+  dplyr::rename(targets, dplyr::all_of(TARGET_LABELS))
 }

@@ -86,82 +86,66 @@ make_sample <- function(sampling_frame, params) {
   summary_sample <- dbout |>
     dplyr::group_by(PST_stratum_id) |>
     dplyr::summarise(
-      Surveys = sum(PST_survey, na.rm = TRUE),
-      # PSUs counts draws (PSU selections, with replacement); Unique_PSUs is
-      # the number of distinct PSUs a team actually has to visit.
-      PSUs = dplyr::n(),
-      Unique_PSUs = dplyr::n_distinct(PST_id_sample),
-      NB_Population = max(PST_pop_size_stratum, na.rm = TRUE)
+      surveys = sum(PST_survey, na.rm = TRUE),
+      # clusters_drawn counts draws (PSU selections, with replacement);
+      # distinct_psus is the number of distinct PSUs a team actually has to visit.
+      clusters_drawn = dplyr::n(),
+      distinct_psus = dplyr::n_distinct(PST_id_sample),
+      population = max(PST_pop_size_stratum, na.rm = TRUE)
     ) |>
     dplyr::mutate(
-      # every draw is an independent cluster of `cls` surveys, also when the
-      # same PSU is drawn several times: the cluster size, and so the design
-      # effect, are set by the design, not measured on the draw. DEFF uses the
-      # ICC entered by the user.
-      Cluster_size = params$cluster_size,
-      ICC = params$icc,
-      DEFF = 1 + (Cluster_size - 1) * ICC,
-      Effective_sample = round(Surveys / DEFF, 0),
-      Surveys_buffer = params$buffer,
-      Confidence_level = params$confidence_level,
-      Error_margin = params$error_margin,
-      Sampling_type = params$sampling_type,
-      Seed = as.integer(params$seed)
+      # every draw is an independent cluster of `cluster_size` surveys, also when
+      # the same PSU is drawn several times: the cluster size, and so the design
+      # effect, are set by the design, not measured on the draw. The design
+      # effect uses the ICC entered by the user.
+      cluster_size = params$cluster_size,
+      icc = params$icc,
+      deff = 1 + (cluster_size - 1) * icc,
+      effective_sample_size = round(surveys / deff, 0),
+      buffer = params$buffer,
+      confidence_level = params$confidence_level,
+      error_margin = params$error_margin,
+      sampling_type = params$sampling_type,
+      seed = as.integer(params$seed)
     ) |>
     dplyr::left_join(
-      target[, c("PST_stratum_id", "target.with.buffer")],
+      target[, c("PST_stratum_id", "target_with_buffer")],
       by = "PST_stratum_id"
     ) |>
-    dplyr::relocate(target.with.buffer, .after = NB_Population)
+    dplyr::relocate(target_with_buffer, .after = population)
 
   if (params$sampling_type != SAMPLING_TYPE_CLUSTER) {
     # "Clusters drawn" is the draw count; it only differs from "Surveys"
     # when a draw yields more than one survey, i.e. cluster sampling.
     summary_sample[c(
-      "PSUs",
-      "Cluster_size",
-      "ICC",
-      "DEFF",
-      "Effective_sample"
+      "clusters_drawn",
+      "cluster_size",
+      "icc",
+      "deff",
+      "effective_sample_size"
     )] <- NA
     # plain SRS: no replacement and no PSU concept, so the distinct count
     # is just "Surveys" again.
     if (params$sampling_type == SAMPLING_TYPE_SIMPLE) {
-      summary_sample["Unique_PSUs"] <- NA
+      summary_sample["distinct_psus"] <- NA
     }
   }
 
   if (params$sampling_mode == SAMPLING_MODE_ENTER_SIZE) {
     summary_sample[c(
-      "ICC",
-      "DEFF",
-      "Effective_sample",
-      "Error_margin",
-      "Confidence_level",
-      "Surveys_buffer"
+      "icc",
+      "deff",
+      "effective_sample_size",
+      "error_margin",
+      "confidence_level",
+      "buffer"
     )] <- NA
   }
 
-  # rename by name (not position) then drop the columns that are structurally
+  # give the columns their labels, then drop the columns that are structurally
   # not applicable to this run, so the table only shows relevant statistics.
   summary_sample <- summary_sample |>
-    dplyr::rename(
-      "Stratum" = "PST_stratum_id",
-      "Surveys" = "Surveys",
-      "Clusters drawn" = "PSUs",
-      "Distinct PSUs" = "Unique_PSUs",
-      "Population" = "NB_Population",
-      "Requested Target (with buffer)" = "target.with.buffer",
-      "Cluster size" = "Cluster_size",
-      "ICC" = "ICC",
-      "DEFF" = "DEFF",
-      "Effective sample size" = "Effective_sample",
-      "Buffer" = "Surveys_buffer",
-      "Confidence level" = "Confidence_level",
-      "Error margin" = "Error_margin",
-      "Sampling type" = "Sampling_type",
-      "Seed" = "Seed"
-    ) |>
+    dplyr::rename(dplyr::all_of(SUMMARY_LABELS)) |>
     dplyr::select(dplyr::where(~ !all(is.na(.x)))) |>
     order_columns(SUMMARY_COLUMN_ORDER)
 

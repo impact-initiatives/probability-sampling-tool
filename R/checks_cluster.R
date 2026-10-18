@@ -36,7 +36,7 @@ cluster_size_issues <- function(sampl_f, target, params) {
 
   capacity <- tapply(floor(pop / cls), strata, sum, na.rm = TRUE)
   target_by_stratum <- setNames(
-    target$target.with.buffer,
+    target$target_with_buffer,
     as.character(target$PST_stratum_id)
   )
   needed <- ceiling(target_by_stratum[names(capacity)] / cls)
@@ -48,7 +48,7 @@ cluster_size_issues <- function(sampl_f, target, params) {
       psu = NA_character_,
       n_psus = as.integer(table(strata)[short]),
       population = setNames(
-        target$Population,
+        target$population,
         as.character(target$PST_stratum_id)
       )[
         short

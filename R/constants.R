@@ -48,6 +48,30 @@ SAMPLE_COLUMN_ORDER <- c(
   "PST_pop_size_stratum",
   "PST_prob"
 )
+# The labels shown to the user: label = name of the column in the code. The
+# code names its columns in snake_case; only these tables know the labels.
+TARGET_LABELS <- c(
+  "Population" = "population",
+  "Requested Target" = "target",
+  "Requested Target (with buffer)" = "target_with_buffer"
+)
+SUMMARY_LABELS <- c(
+  "Stratum" = "PST_stratum_id",
+  "Surveys" = "surveys",
+  "Clusters drawn" = "clusters_drawn",
+  "Distinct PSUs" = "distinct_psus",
+  "Population" = "population",
+  "Requested Target (with buffer)" = "target_with_buffer",
+  "Cluster size" = "cluster_size",
+  "ICC" = "icc",
+  "DEFF" = "deff",
+  "Effective sample size" = "effective_sample_size",
+  "Buffer" = "buffer",
+  "Confidence level" = "confidence_level",
+  "Error margin" = "error_margin",
+  "Sampling type" = "sampling_type",
+  "Seed" = "seed"
+)
 # the summary: stratum and population, the result, the draw, the design, the
 # parameters, then the seed and the sampling type
 SUMMARY_COLUMN_ORDER <- c(

@@ -15,7 +15,7 @@ pps_cluster_sampling <- function(sframe, sampling_target, cls) {
     cls = cls,
     dist = as.character(sampling_target[["PST_stratum_id"]]),
     target_with_buffer = as.numeric(as.character(
-      sampling_target[["target.with.buffer"]]
+      sampling_target[["target_with_buffer"]]
     ))
   )
 }
@@ -34,8 +34,8 @@ pps_cluster_sampling <- function(sframe, sampling_target, cls) {
 simple_random_sampling <- function(sframe, sampling_target) {
   dist <- as.character(sampling_target[["PST_stratum_id"]])
   dbr <- sframe[as.character(sframe$PST_stratum_id) == dist, ]
-  tosample <- as.numeric(sampling_target[["target.with.buffer"]])
-  pop <- as.numeric(sampling_target[["Population"]])
+  tosample <- as.numeric(sampling_target[["target_with_buffer"]])
+  pop <- as.numeric(sampling_target[["population"]])
   if (tosample > pop) {
     target <- ceiling(pop)
   } else {
@@ -67,8 +67,8 @@ simple_random_sampling <- function(sframe, sampling_target) {
 pps_sampling <- function(sframe, sampling_target) {
   dist <- as.character(sampling_target[["PST_stratum_id"]])
   dbr <- sframe[as.character(sframe$PST_stratum_id) == dist, ]
-  tosample <- as.numeric(sampling_target[["target.with.buffer"]])
-  pop <- as.numeric(sampling_target[["Population"]])
+  tosample <- as.numeric(sampling_target[["target_with_buffer"]])
+  pop <- as.numeric(sampling_target[["population"]])
   if (tosample > pop) {
     target <- ceiling(pop)
   } else {

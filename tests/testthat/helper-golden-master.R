@@ -698,6 +698,16 @@ digest_lines <- function(x) {
   list(n = length(x), header = x[1], hash = rlang::hash(x))
 }
 
+# The reference was recorded when the targets had their old column names: give
+# them back, so that the values are still compared one by one.
+old_target_names <- function(x) {
+  if (is.data.frame(x)) {
+    names(x)[names(x) == "population"] <- "Population"
+    names(x)[names(x) == "target_with_buffer"] <- "target.with.buffer"
+  }
+  x
+}
+
 as_plain <- function(x) {
   if (is.data.frame(x)) as.data.frame(x) else x
 }
@@ -732,7 +742,7 @@ run_golden_scenario <- function(spec, server, data_path) {
     rec$apply_error <- html_of(output$apply_error)
     rec$applied <- applied()
     rec$frame <- digest_table(settle(sampling_frame()))
-    rec$targets <- as_plain(settle(targets()))
+    rec$targets <- old_target_names(as_plain(settle(targets())))
     rec$issue_list <- as_plain(apply_issues())
     rec$target_table <- rlang::hash(settle(output$target_table))
     rec$frame_table <- rlang::hash(settle(output$frame_table))

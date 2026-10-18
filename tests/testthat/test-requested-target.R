@@ -58,7 +58,7 @@ test_that("the target table and the sample summary say requested", {
           label = label
         )
         expect_false(
-          any(c("target", "target.with.buffer") %in% shown),
+          any(c("target", "target_with_buffer") %in% shown),
           label = label
         )
 
@@ -83,10 +83,10 @@ test_that("the labels are display only: the internal target names are kept", {
     "Enter sample size"
   )
   targets <- create_targets(format_sampling_frame(frame_24(), input), input)
-  expect_true(all(c("target", "target.with.buffer") %in% names(targets)))
+  expect_true(all(c("target", "target_with_buffer") %in% names(targets)))
   expect_identical(
     label_target_table(targets)$`Requested Target (with buffer)`,
-    targets$target.with.buffer
+    targets$target_with_buffer
   )
 })
 
