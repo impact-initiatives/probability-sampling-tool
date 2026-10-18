@@ -526,6 +526,134 @@ golden_scenarios <- function() {
     sampling_type = cluster$sampling_type
   )
 
+  # 9. odd values of the column choices and of "stratified": the interface does
+  #    not send them today, but a change in how the checks read them must not
+  #    turn into a crash or into a different message
+  odd_values <- list(
+    empty = "",
+    missing = NA_character_,
+    absent = NULL,
+    lowercase = "none",
+    leading_space = " None",
+    trailing_space = "None "
+  )
+  odd <- function(id, type, stratified, field, value) {
+    inputs <- type_inputs(type, stratified)
+    inputs[field] <- list(value)
+    add(do.call(scenario, c(list(id = paste0("odd|", id)), inputs)))
+  }
+  for (label in names(odd_values)) {
+    value <- odd_values[[label]]
+    for (type in c("simple", "cluster")) {
+      odd(
+        paste("strata", type, label, sep = "-"),
+        type,
+        TRUE,
+        "strata_column",
+        value
+      )
+    }
+    odd(
+      paste("psu", "cluster", label, sep = "-"),
+      "cluster",
+      FALSE,
+      "psu_column",
+      value
+    )
+    for (type in c("pps", "cluster")) {
+      odd(
+        paste("population", type, label, sep = "-"),
+        type,
+        FALSE,
+        "population_column",
+        value
+      )
+    }
+  }
+  # the fields a type does not use are ignored whatever they hold
+  for (label in c("empty", "missing", "absent")) {
+    value <- odd_values[[label]]
+    odd(
+      paste("strata-ignored", label, sep = "-"),
+      "simple",
+      FALSE,
+      "strata_column",
+      value
+    )
+    odd(
+      paste("psu-ignored", label, sep = "-"),
+      "pps",
+      FALSE,
+      "psu_column",
+      value
+    )
+    odd(
+      paste("population-ignored", label, sep = "-"),
+      "simple",
+      FALSE,
+      "population_column",
+      value
+    )
+  }
+  for (value in list("", NA_character_, NULL, "stratified", "Yes", "Maybe")) {
+    label <- if (is.null(value)) {
+      "absent"
+    } else if (is.na(value)) {
+      "missing"
+    } else if (!nzchar(value)) {
+      "empty"
+    } else {
+      value
+    }
+    for (type in c("simple", "cluster")) {
+      odd(
+        paste("stratified", type, label, sep = "-"),
+        type,
+        TRUE,
+        "stratified",
+        value
+      )
+    }
+  }
+  # a column that is really called "None", and a name with spaces and accents
+  add(scenario(
+    "odd|column-named-none-strata",
+    stratified = "Stratified",
+    strata_column = "None",
+    frame = function(d) {
+      names(d)[names(d) == "Region"] <- "None"
+      d
+    }
+  ))
+  add(scenario(
+    "odd|column-named-none-psu",
+    sampling_type = golden_types[["cluster"]],
+    psu_column = "None",
+    population_column = "HH_total",
+    frame = function(d) {
+      names(d)[names(d) == "VDC_code"] <- "None"
+      d
+    }
+  ))
+  add(scenario(
+    "odd|column-named-none-population",
+    sampling_type = golden_types[["pps"]],
+    population_column = "None",
+    frame = function(d) {
+      names(d)[names(d) == "HH_total"] <- "None"
+      d
+    }
+  ))
+  add(scenario(
+    "odd|column-with-spaces",
+    stratified = "Stratified",
+    strata_column = "R\u00e9gion d'origine",
+    frame = function(d) {
+      names(d)[names(d) == "Region"] <- "R\u00e9gion d'origine"
+      d
+    }
+  ))
+
   out
 }
 
