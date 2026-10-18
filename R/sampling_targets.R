@@ -25,25 +25,21 @@ Ssize <- function(population_size, conf_level, prop, margin_error, DEFF = 1) {
   ceiling(n * DEFF)
 }
 
-# Calculate the sample size required for a given population proportion
-#
-# This function takes in a  dataframe and an input list, and calculates the sample size required for a given population proportion.
-# It creates a new column 'PST_stratum_id' in the  dataframe based on the input 'strata' value.
-# It then groups the dataframe by 'PST_stratum_id' and calculates the maximum population value for each group.
-# Finally, it calculates the target sample size based on the input parameters, and also calculates the target sample size with a buffer.
-#
-# Args:
-#   sframe: A dataframe containing the sampling frame data.
-#   input: A list containing the input parameters.
-#
-# Returns:
-#   A modified version of the sampling frame dataframe with additional columns 'target' and 'target.with.buffer' representing the calculated sample sizes.
-
+# The target sample size of each stratum: one row per stratum with
+# - Population: the total of PST_pop_size;
+# - target: in the mode "Enter sample size", the number typed by the user (the
+#   same for every stratum); in the mode based on the population, the sample
+#   size computed by Ssize(), multiplied by the design effect for cluster
+#   sampling;
+# - target.with.buffer: the target again in the mode "Enter sample size";
+#   otherwise target * (1 + buffer), rounded up.
+# `sframe` is the output of format_sampling_frame(); `input` holds the settings
+# of the interface.
 create_targets <- function(sframe, input) {
-  # DEFF is fixed by the planned cluster size and ICC, computed once here so
-  # that the target sample size (and the "Target sampling" tab shown to the
-  # user) already reflects the design-effect-adjusted number for Cluster
-  # sampling. DEFF=1 (no adjustment) for the other sampling methods.
+  # The design effect, 1 + (cluster size - 1) * ICC, applies to cluster sampling
+  # only (it is 1 for the other types), and only when the sample size is computed
+  # from the population: in the mode "Enter sample size" the typed target is used
+  # as it is, without design effect, and the ICC is not used.
   DEFF <- if (input$samp_type == SAMPLING_TYPE_CLUSTER) {
     1 + (input$cls - 1) * input$ICC
   } else {

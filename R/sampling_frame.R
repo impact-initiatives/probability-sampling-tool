@@ -1,19 +1,18 @@
 # The sampling frame: the columns the tool adds to the uploaded file.
 
-# create the sampling frame
-# This function creates a sampling frame based on the input parameters.
-# It adds additional columns to the input data frame, such as PST_id_sample, PST_stratum_id, PST_psu_id, PST_pop_size, and PST_prob.
-# The PST_id_sample column is created by concatenating "id_" with the row names of the input data frame.
-# If the sampling method is "Stratified", the PST_stratum_id column is created by extracting the values from the specified strata column in the input data frame.
-# If the sampling method is "Two-stage PPS cluster sampling with replacement", the PST_psu_id column is created by extracting the values from the specified col_psu column in the input data frame,
-# and the PST_pop_size column is created by extracting the values from the specified colpop column in the input data frame.
-# If the sampling method is "PPS sampling with replacement" or any other method, the PST_psu_id column is created using the PST_id_sample column,
-# and the PST_pop_size column is created with a value of 1 for each row.
-# The PST_pop_size_stratum column is calculated by summing the PST_pop_size column within each PST_stratum_id group.
-# The PST_prob column is calculated by dividing the PST_pop_size column by the PST_pop_size_stratum column.
-# Any rows with missing values in the PST_prob column are removed.
-# If the sampling method is "Two-stage PPS cluster sampling with replacement", the PST_psu_id column is converted to a factor.
-# The resulting data frame is returned.
+# Adds the columns of the tool to the uploaded sampling frame:
+# - PST_id_sample: "id_" followed by the row number;
+# - PST_stratum_id: the stratification column, or "all" when not stratified;
+# - PST_psu_id: the PSU column for cluster sampling, the row itself otherwise
+#   (a factor for cluster sampling);
+# - PST_pop_size: the population column for PPS and cluster sampling, 1 for
+#   simple random sampling;
+# - PST_pop_size_stratum: the total of PST_pop_size in the stratum;
+# - PST_prob: PST_pop_size / PST_pop_size_stratum, the probability of drawing
+#   the row in its stratum.
+# A PSU of population 0 alone in its stratum gives 0 / 0: cluster sampling keeps
+# it with a probability of 0, so that the cluster size check reports it; the
+# other types drop the row. `input` holds the settings of the interface.
 format_sampling_frame <- function(sframe, input) {
   sframe$PST_id_sample <- paste0("id_", rownames(sframe))
   if (input$stratified == STRATIFIED) {
