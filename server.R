@@ -125,32 +125,6 @@ function(input, output, session) {
     )
   })
 
-  # Stops with the message when a validate_*() check returned one
-  require_valid <- function(msg) validate(need(is.null(msg), msg))
-
-  # NULL when `expr` succeeds, otherwise its validation message ("" if silent).
-  validation_message <- function(expr) {
-    tryCatch(
-      {
-        expr
-        NULL
-      },
-      shiny.silent.error = function(e) conditionMessage(e)
-    )
-  }
-
-  # Observers must not evaluate an `expr` that can fail without catching it:
-  # an unexpected error there would end the session.
-  succeeds <- function(expr) {
-    tryCatch(
-      {
-        expr
-        TRUE
-      },
-      error = function(e) FALSE
-    )
-  }
-
   # a new upload hides the frame and target tables until the next Apply
   tables_stale <- reactiveVal(FALSE)
   observeEvent(
@@ -282,89 +256,12 @@ function(input, output, session) {
 
   # Display the results in the UI
 
-  # Body height of the tables. The two small ones have one row per stratum
-  # (29px each, up to 5 rows, then they scroll) and sit above the two large
-  # ones, which take what is left of the page: the two constants are the rest
-  # of the Sampling frame tab and of the Sampling tab (headers, filter rows and
-  # footers included), so the page fits whatever the height.
-  small_table_height <- function(data) {
-    paste0(min(nrow(data), 5) * 29 + 2, "px")
-  }
-  big_table_height <- function(small) {
-    paste0("max(120px, 100vh - ", small, " - 520px)")
-  }
-  sample_table_height <- function(small) {
-    paste0("max(80px, 100vh - ", small, " - 520px)")
-  }
-
-  # Bootstrap 5 table look, with one line per cell and per header: a wide
-  # table scrolls sideways.
-  dt_style <- "bootstrap5"
-  dt_class <- "table table-sm table-striped table-hover nowrap"
-
-  # The four result tables share one look: a filter per column and shorter
-  # numbers for the columns the tool adds. These formats are display only: the
-  # data, and the CSV files, are untouched.
-  result_table <- function(data, height, paging = FALSE) {
-    table <- DT::datatable(
-      data,
-      rownames = FALSE,
-      style = dt_style,
-      class = dt_class,
-      filter = "top",
-      options = list(
-        # table, then the number of entries and the pages on one line
-        dom = if (paging) {
-          "<'row'<'col-12'tr>><'row'<'col-md-5'i><'col-md-7'p>>"
-        } else {
-          "t"
-        },
-        paging = paging,
-        pageLength = 100,
-        scrollY = height,
-        scrollCollapse = TRUE,
-        scrollX = TRUE
-      )
-    )
-    signif_cols <- intersect("PST_prob", names(data))
-    round_cols <- intersect(c("DEFF", "ICC"), names(data))
-    if (length(signif_cols) > 0) {
-      table <- DT::formatSignif(table, signif_cols, digits = 4)
-    }
-    if (length(round_cols) > 0) {
-      table <- DT::formatRound(table, round_cols, digits = 2)
-    }
-    table
-  }
-
-  # A failed validation is shown once, as an alert, instead of inside each table.
-  validation_alert <- function(expr, extra = NULL) {
-    msg <- validation_message(expr)
-    if (length(msg) && nzchar(msg)) {
-      div(
-        class = "alert alert-danger",
-        span(style = "white-space: pre-line;", msg),
-        extra
-      )
-    }
-  }
-
-  quiet <- function(expr) {
-    tryCatch(expr, shiny.silent.error = function(e) req(FALSE))
-  }
-
   output$apply_error <- renderUI(
     if (!tables_stale()) {
       validation_alert(
         cible(),
         extra = if (!is.null(issue_list())) {
-          div(
-            class = "mt-2",
-            downloadLink(
-              "download_issues",
-              tagList(icon("download"), "Download the full list (CSV)")
-            )
-          )
+          issues_download_link("download_issues")
         }
       )
     }
@@ -382,13 +279,7 @@ function(input, output, session) {
       validation_alert(
         out(),
         extra = if (!is.null(draw_issues())) {
-          div(
-            class = "mt-2",
-            downloadLink(
-              "download_draw_issues",
-              tagList(icon("download"), "Download the full list (CSV)")
-            )
-          )
+          issues_download_link("download_draw_issues")
         }
       )
     }
@@ -454,37 +345,16 @@ function(input, output, session) {
     result_table(summary, small_table_height(summary))
   })
 
-  # Real download buttons only exist once a sample has been drawn; before that
-  # (or after a failed draw) inert placeholders are shown. shinyjs::enable()
-  # would leave aria-disabled and tabindex=-1 on the links.
   output$export_buttons <- renderUI({
     ready <- sample_current()
-    export_button <- function(id, label, style) {
-      if (ready) {
-        downloadButton(
-          id,
-          label,
-          class = "btn-outline-primary text-nowrap",
-          style = style
-        )
-      } else {
-        tags$button(
-          type = "button",
-          class = "btn btn-outline-primary text-nowrap",
-          style = style,
-          disabled = NA,
-          icon("download"),
-          label
-        )
-      }
-    }
     tagList(
       export_button(
         "downloadBtn2",
         "Sample summary",
-        "width: 100%; margin-bottom: 10px;"
+        "width: 100%; margin-bottom: 10px;",
+        ready
       ),
-      export_button("downloadBtn", "Sample", "width: 100%;")
+      export_button("downloadBtn", "Sample", "width: 100%;", ready)
     )
   })
 
