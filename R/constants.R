@@ -72,6 +72,9 @@ SUMMARY_LABELS <- c(
   "Sampling type" = "sampling_type",
   "Seed" = "seed"
 )
+# every label of a column, by the name the code gives the column
+COLUMN_LABELS <- c(TARGET_LABELS, SUMMARY_LABELS)
+
 # the summary: stratum and population, the result, the draw, the design, the
 # parameters, then the seed and the sampling type
 SUMMARY_COLUMN_ORDER <- c(

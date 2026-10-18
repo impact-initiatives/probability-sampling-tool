@@ -3,7 +3,8 @@
 #
 # message        the text the user gets; {name} is filled in by the code.
 # guide_message  how the guide shows the message ("…" stands for a filled-in part);
-#                it defaults to the message with each {name} replaced by "…".
+#                it defaults to the first line of the message with each {name}
+#                replaced by "…".
 # fix            what to do, shown in the guide. {{NAME}} in a guide text is replaced
 #                by the constant of the same name (see guide_markdown()).
 # applies_to     the types of sampling concerned, when not all of them.

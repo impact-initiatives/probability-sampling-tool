@@ -1,9 +1,49 @@
 # The guide: its Markdown texts, and the cards and steps that show them.
 
-# Text of the guide: Markdown files in guide/ (and NEWS.md), so that it can be
-# reviewed and corrected without touching the code. {{MAX_UPLOAD_MB}} is filled in.
+# The label of a column of the tables, from the name the code gives it
+column_label <- function(key) {
+  label <- names(COLUMN_LABELS)[match(key, COLUMN_LABELS)]
+  if (is.na(label)) {
+    stop("No label for the column: ", key, call. = FALSE)
+  }
+  label
+}
+
+# What a {{...}} of a guide text stands for: the value of a constant
+# ({{MAX_UPLOAD_MB}}), the label of a column ({{label:clusters_drawn}}) or the
+# title of a check ({{check_title:exceeds_population}}).
+guide_value <- function(name) {
+  if (startsWith(name, "label:")) {
+    return(column_label(sub("^label:", "", name)))
+  }
+  if (startsWith(name, "check_title:")) {
+    return(check_title(sub("^check_title:", "", name)))
+  }
+  if (!exists(name)) {
+    stop("Unknown {{", name, "}} in a guide text", call. = FALSE)
+  }
+  as.character(get(name))
+}
+
+# Replaces every {{...}} of `text` by its value, so that a name or a limit that
+# the guide mentions is the one of the code, not a copy of it
+fill_guide_placeholders <- function(text) {
+  found <- unique(unlist(regmatches(
+    text,
+    gregexpr("\\{\\{[^}]+\\}\\}", text)
+  )))
+  for (token in found) {
+    value <- guide_value(sub("^\\{\\{(.*)\\}\\}$", "\\1", token))
+    text <- gsub(token, value, text, fixed = TRUE)
+  }
+  text
+}
+
+# Text of the guide: Markdown files in guide/ (and NEWS.md). The {{...}} of a
+# text are filled in by fill_guide_placeholders(); NEWS.md has none, as the
+# release notes tell what the names were at the time.
 guide_markdown <- function(text) {
-  text <- gsub("{{MAX_UPLOAD_MB}}", MAX_UPLOAD_MB, text, fixed = TRUE)
+  text <- fill_guide_placeholders(text)
   # markdown::mark() turns $...$ into \(...\) for MathJax, unlike shiny::markdown()
   div(
     class = "guide-text",
@@ -57,43 +97,70 @@ guide_card <- function(title, file) {
 
 # The checks of the app, by group, closed until opened
 guide_checks <- function(ns) {
+  panels <- lapply(names(CHECKS$groups), function(id) {
+    accordion_panel(
+      CHECKS$groups[[id]]$title,
+      value = id,
+      guide_markdown(guide_checks_markdown(id))
+    )
+  })
   card(
     class = "guide-card",
     fill = FALSE,
     card_header(h3("What the tool checks", class = "h6 fw-semibold mb-0")),
     card_body(
       fillable = FALSE,
-      accordion(
-        id = ns("checks_accordion"),
-        open = FALSE,
-        multiple = TRUE,
-        accordion_panel(
-          "The file",
-          value = "file",
-          guide_text("guide/checks-file.md")
-        ),
-        accordion_panel(
-          "The columns",
-          value = "columns",
-          guide_text("guide/checks-columns.md")
-        ),
-        accordion_panel(
-          "The parameters",
-          value = "parameters",
-          guide_text("guide/checks-parameters.md")
-        ),
-        accordion_panel(
-          "The cluster design",
-          value = "cluster",
-          guide_text("guide/checks-cluster.md")
-        ),
-        accordion_panel(
-          "The draw",
-          value = "draw",
-          guide_text("guide/checks-draw.md")
+      do.call(
+        accordion,
+        c(
+          list(id = ns("checks_accordion"), open = FALSE, multiple = TRUE),
+          panels
         )
       )
     )
+  )
+}
+
+# The Markdown of a group of checks: when it is checked, the table of its
+# messages and what to do, then its note. A check that only warns is not in the
+# table: the note of the group tells about it.
+guide_checks_markdown <- function(group_id) {
+  group <- CHECKS$groups[[group_id]]
+  blocks <- Filter(
+    function(check) {
+      check$group == group_id && !identical(check$kind, "warning")
+    },
+    CHECKS$checks
+  )
+  cell <- function(text) gsub("|", "\\|", text, fixed = TRUE)
+  rows <- vapply(
+    blocks,
+    function(check) {
+      shown <- if (is.null(check$guide_message)) {
+        first_line <- strsplit(check$message, "\n", fixed = TRUE)[[1]][1]
+        gsub("\\{[a-z_]+\\}", "\u2026", first_line)
+      } else {
+        check$guide_message
+      }
+      applies <- if (is.null(check$applies_to)) {
+        ""
+      } else {
+        paste0(" (", check$applies_to, ")")
+      }
+      paste0("| *", cell(shown), "*", applies, " | ", cell(check$fix), " |")
+    },
+    character(1)
+  )
+  paste(
+    c(
+      paste0("*", group$when, "*"),
+      "",
+      "| Message | What to do |",
+      "|---|---|",
+      unname(rows),
+      if (!is.null(group$note)) c("", group$note)
+    ),
+    collapse = "\n"
   )
 }
 

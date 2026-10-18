@@ -1,4 +1,4 @@
-| | Simple random sampling | PPS sampling with replacement | Two-stage PPS cluster sampling |
+| | {{SAMPLING_TYPE_SIMPLE}} | {{SAMPLING_TYPE_PPS}} | {{SAMPLING_TYPE_CLUSTER}} |
 |---|---|---|---|
 | **One row is** | a unit to survey | a PSU (an area) with its population | a PSU with its population |
 | **Population column** | not used | numeric, $\geq 0$, no missing | numeric, $\geq 0$, no missing, $\geq$ cluster size |

@@ -16,7 +16,7 @@
 | PSU A | 3 | 3 | $3 \times 5 = 15$ |
 | PSU B | 1 | 1 | $1 \times 5 = 5$ |
 
-*Clusters drawn* counts the draws (here 4), *Distinct PSUs* the different PSUs, that is the sites to visit (here 2).
+*{{label:clusters_drawn}}* counts the draws (here 4), *{{label:distinct_psus}}* the different PSUs, that is the sites to visit (here 2).
 
 **Good to know.**
 

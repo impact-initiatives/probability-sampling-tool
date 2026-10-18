@@ -54,24 +54,13 @@ test_that("what the guide shows of a message is part of the message", {
   }
 })
 
-test_that("the {{...}} of the guide texts name a constant or a check", {
+test_that("the {{...}} of the guide texts of the checks can be filled in", {
   texts <- unlist(lapply(checks, function(check) {
     c(check$fix, check$guide_message)
   }))
   texts <- c(texts, unlist(lapply(CHECKS$groups, function(group) group$note)))
-  used <- unique(unlist(regmatches(
-    texts,
-    gregexpr("(?<=\\{\\{)[^}]+(?=\\}\\})", texts, perl = TRUE)
-  )))
-  for (name in used) {
-    if (startsWith(name, "check_title:")) {
-      expect_true(
-        !is.null(checks[[sub("^check_title:", "", name)]]$title),
-        info = name
-      )
-    } else {
-      expect_true(exists(name), info = name)
-    }
+  for (text in texts) {
+    expect_no_error(fill_guide_placeholders(text))
   }
 })
 

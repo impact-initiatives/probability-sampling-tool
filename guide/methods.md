@@ -10,11 +10,11 @@ where $z$ is the two-sided normal quantile of the confidence level, $e$ the erro
 
 **Proportion.** $p$ is fixed at 0.5: it maximises $p(1-p)$, so it gives the largest sample, the most cautious choice, used for every indicator. The formula is exact for a proportion; for means it is an approximation. See the [discussion #9](https://github.com/impact-initiatives/probability-sampling-tool/issues/9).
 
-**Target.** The size is multiplied by the design effect (1 outside the cluster type, see below) and rounded up. This is the *Requested Target*:
+**Target.** The size is multiplied by the design effect (1 outside the cluster type, see below) and rounded up. This is the *{{label:target}}*:
 
 $$n_{\text{target}} = \lceil n \times \mathrm{DEFF} \rceil$$
 
-**Buffer.** The target is then increased to cover non-response. This is the *Requested Target (with buffer)*, the number the draw aims at:
+**Buffer.** The target is then increased to cover non-response. This is the *{{label:target_with_buffer}}*, the number the draw aims at:
 
 $$n_{\text{requested}} = \lceil n_{\text{target}} \times (1 + \text{buffer}) \rceil$$
 
@@ -36,9 +36,9 @@ At each draw, the PSU $i$ is drawn with probability $p_i = N_i / N$, its share o
 
 | Type | Number of draws | Probability at each draw |
 |---|---|---|
-| Simple random sampling | $\min(n_{\text{requested}}, N)$ units, **without replacement** | the same for every unit not yet drawn |
-| PPS sampling with replacement | $\min(n_{\text{requested}}, N)$ independent draws, **with replacement**; the surveys of a PSU are the number of times it is drawn | $p_i = N_i / N$ |
-| Two-stage PPS cluster sampling with replacement | $m = \lceil n_{\text{requested}} / b \rceil$ independent draws, **with replacement**; each draw is a cluster of $b$ surveys | $p_i = N_i / N$ |
+| {{SAMPLING_TYPE_SIMPLE}} | $\min(n_{\text{requested}}, N)$ units, **without replacement** | the same for every unit not yet drawn |
+| {{SAMPLING_TYPE_PPS}} | $\min(n_{\text{requested}}, N)$ independent draws, **with replacement**; the surveys of a PSU are the number of times it is drawn | $p_i = N_i / N$ |
+| {{SAMPLING_TYPE_CLUSTER}} | $m = \lceil n_{\text{requested}} / b \rceil$ independent draws, **with replacement**; each draw is a cluster of $b$ surveys | $p_i = N_i / N$ |
 
 In the cluster type the number of surveys is $m \times b$, which can be a little above $n_{\text{requested}}$ because clusters are whole. If the households are selected at random with equal probability in each PSU, every household has the same probability of inclusion.
 
