@@ -3,12 +3,8 @@
 
 require(data.table)
 require(dplyr)
-require(car)
-require(reshape2)
-require(stringr)
 library(shiny)
 library(shinyjs)
-library(crayon)
 library(markdown)
 library(bslib)
 

@@ -35,12 +35,8 @@ jobs:
             any::shiny
             any::data.table
             any::dplyr
-            any::car
-            any::reshape2
-            any::stringr
             any::shinyjs
             any::markdown
-            any::crayon
             any::DT
             any::testthat
             any::shinytest2
