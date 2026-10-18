@@ -6,7 +6,7 @@ page_navbar(
   navbar_options = navbar_options(bg = "#12355B", theme = "dark"),
   fillable = FALSE,
   header = app_header(),
-  guide_tab(),
+  guide_ui("guide"),
   frame_tab(),
   sampling_tab()
 )

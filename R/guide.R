@@ -56,7 +56,7 @@ guide_card <- function(title, file) {
 }
 
 # The checks of the app, by group, closed until opened
-guide_checks <- function() {
+guide_checks <- function(ns) {
   card(
     class = "guide-card",
     fill = FALSE,
@@ -64,7 +64,7 @@ guide_checks <- function() {
     card_body(
       fillable = FALSE,
       accordion(
-        id = "checks_accordion",
+        id = ns("checks_accordion"),
         open = FALSE,
         multiple = TRUE,
         accordion_panel(
@@ -137,7 +137,7 @@ guide_type_card <- function(name, before, one_row, needs, button_id) {
 }
 
 # The landing of the guide
-guide_start <- function() {
+guide_start <- function(ns) {
   tagList(
     div(
       class = "guide-hero",
@@ -147,7 +147,7 @@ guide_start <- function() {
         "Load your CSV, choose a sampling type and set the parameters. The tool returns the units to survey and the number of surveys to run in each."
       ),
       actionButton(
-        "guide_to_app",
+        ns("to_app"),
         tagList("Start sampling ", icon("arrow-right")),
         class = "btn-primary"
       )
@@ -160,13 +160,13 @@ guide_start <- function() {
         1,
         "Prepare the frame",
         "One CSV, one row per unit of your frame.",
-        actionLink("guide_to_data", "What the frame must contain")
+        actionLink(ns("to_data"), "What the frame must contain")
       ),
       guide_step(
         2,
         "Set up",
         "Mode, type of sampling, columns and parameters in the Sampling frame tab.",
-        actionLink("guide_to_parameters", "The parameters")
+        actionLink(ns("to_parameters"), "The parameters")
       ),
       guide_step(
         3,
@@ -177,7 +177,7 @@ guide_start <- function() {
         4,
         "Sample and export",
         "Draws the sample in the Sampling tab, then download the Sample and its summary.",
-        actionLink("guide_to_results", "Reading the results")
+        actionLink(ns("to_results"), "Reading the results")
       )
     ),
     h2("Three sampling types", class = "h6 fw-semibold mt-3"),
@@ -189,21 +189,21 @@ guide_start <- function() {
         "Simple random",
         "a unit to survey (household, person).",
         "no population column.",
-        "guide_open_simple_random"
+        ns("open_simple_random")
       ),
       guide_type_card(
         SAMPLING_TYPE_PPS,
         "Simple random - allocation",
         "a PSU (an area) with its population.",
         "a population column.",
-        "guide_open_pps"
+        ns("open_pps")
       ),
       guide_type_card(
         SAMPLING_TYPE_CLUSTER,
         "Cluster sampling",
         "a PSU with its population.",
         "a cluster column and a population column.",
-        "guide_open_cluster"
+        ns("open_cluster")
       )
     ),
     div(
@@ -213,22 +213,24 @@ guide_start <- function() {
         strong(" Coming from the previous version? "),
         "The sampling types and the columns of the results have new names."
       ),
-      actionLink("guide_to_news", "What's new")
+      actionLink(ns("to_news"), "What's new")
     )
   )
 }
 
-# The "Guide" tab: one pill per section
-guide_tab <- function() {
+# The guide, a module: the "Guide" tab with one pill per section. Its links, to
+# its own sections and to the app, are handled by guide_server().
+guide_ui <- function(id) {
+  ns <- NS(id)
   nav_panel(
     "Guide",
     withMathJax(
       div(
         class = "guide",
         navset_pill(
-          id = "guide_nav",
-          nav_panel("Start", value = "start", guide_start()),
-          nav_panel("Sampling types", value = "types", guide_types()),
+          id = ns("nav"),
+          nav_panel("Start", value = "start", guide_start(ns)),
+          nav_panel("Sampling types", value = "types", guide_types(ns)),
           nav_panel(
             "Your data",
             value = "data",
@@ -241,7 +243,7 @@ guide_tab <- function() {
                 "guide/data-types.md"
               )
             ),
-            guide_checks()
+            guide_checks(ns)
           ),
           nav_panel(
             "Parameters",
@@ -280,9 +282,9 @@ guide_tab <- function() {
 }
 
 # The three sampling types, one panel each, closed until opened
-guide_types <- function() {
+guide_types <- function(ns) {
   accordion(
-    id = "types_accordion",
+    id = ns("types_accordion"),
     open = FALSE,
     multiple = FALSE,
     guide_type_panel(
@@ -319,4 +321,38 @@ guide_type_panel <- function(type, before, value, file) {
     value = value,
     guide_text(file)
   )
+}
+
+# The links of the guide: to its own sections, to the types and to the app.
+# `parent` is the session of the app, whose main tabs the guide can switch.
+guide_server <- function(id, parent) {
+  moduleServer(id, function(input, output, session) {
+    section_links <- c(
+      to_data = "data",
+      to_parameters = "parameters",
+      to_results = "results",
+      to_news = "news"
+    )
+    type_links <- c(
+      open_simple_random = "simple_random",
+      open_pps = "pps",
+      open_cluster = "cluster"
+    )
+    lapply(names(section_links), function(link) {
+      observeEvent(
+        input[[link]],
+        bslib::nav_select("nav", section_links[[link]])
+      )
+    })
+    lapply(names(type_links), function(link) {
+      observeEvent(input[[link]], {
+        bslib::nav_select("nav", "types")
+        bslib::accordion_panel_set("types_accordion", type_links[[link]])
+      })
+    })
+    observeEvent(
+      input$to_app,
+      bslib::nav_select("main_nav", "Sampling frame", session = parent)
+    )
+  })
 }

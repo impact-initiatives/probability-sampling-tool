@@ -38,16 +38,16 @@ test_that("the links of the guide open its sections and the app", {
   }
   expect_identical(active(), "start")
 
-  app$click("guide_open_cluster")
+  app$click("guide-open_cluster")
   Sys.sleep(1)
   app$wait_for_idle()
   expect_identical(active(), "types")
   open_panel <- app$get_js(
-    "Array.from(document.querySelectorAll('#types_accordion .accordion-collapse.show')).map(function(e) { return e.closest('.accordion-item').getAttribute('data-value'); }).join(',')"
+    "Array.from(document.querySelectorAll('#guide-types_accordion .accordion-collapse.show')).map(function(e) { return e.closest('.accordion-item').getAttribute('data-value'); }).join(',')"
   )
   expect_identical(open_panel, "cluster")
 
-  app$click("guide_to_app")
+  app$click("guide-to_app")
   Sys.sleep(1)
   expect_identical(app$get_value(input = "main_nav"), "Sampling frame")
 })
