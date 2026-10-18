@@ -156,7 +156,8 @@ format_sampling_frame <- function(sframe, input) {
     dplyr::group_by(PST_stratum_id) %>%
     dplyr::summarise(PST_pop_size_stratum = sum(PST_pop_size, na.rm = T))
   sframe <- merge(sframe, sumdist, by = "PST_stratum_id")
-  PST_prob <- as.numeric(sframe$PST_pop_size) / as.numeric(sframe$PST_pop_size_stratum)
+  PST_prob <- as.numeric(sframe$PST_pop_size) /
+    as.numeric(sframe$PST_pop_size_stratum)
   # an empty PSU alone in its stratum gives 0/0: keep it so that the cluster
   # size guard reports it instead of the row vanishing from the frame
   if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
@@ -211,7 +212,11 @@ validate_reserved_columns <- function(sframe) {
 # Returns an error message string if the input is invalid, or NULL if valid.
 validate_population_column <- function(sframe, input) {
   if (
-    !(input$samp_type %in% c("Two-stage PPS cluster sampling with replacement", "PPS sampling with replacement"))
+    !(input$samp_type %in%
+      c(
+        "Two-stage PPS cluster sampling with replacement",
+        "PPS sampling with replacement"
+      ))
   ) {
     return(NULL)
   }
@@ -254,7 +259,11 @@ validate_population_column <- function(sframe, input) {
 # Returns one row per problem (`data_row` ignores the header), or NULL.
 population_issues <- function(sframe, input) {
   if (
-    !(input$samp_type %in% c("Two-stage PPS cluster sampling with replacement", "PPS sampling with replacement"))
+    !(input$samp_type %in%
+      c(
+        "Two-stage PPS cluster sampling with replacement",
+        "PPS sampling with replacement"
+      ))
   ) {
     return(NULL)
   }
@@ -270,7 +279,9 @@ population_issues <- function(sframe, input) {
       "Negative population"
     ),
     data_row = bad,
-    psu = if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
+    psu = if (
+      input$samp_type == "Two-stage PPS cluster sampling with replacement"
+    ) {
       as.character(sframe[[as.character(input$col_psu)]][bad])
     } else {
       NA_character_
@@ -483,7 +494,10 @@ cluster_size_issues <- function(sampl_f, target, input) {
       stratum = short,
       psu = NA_character_,
       n_psus = as.integer(table(strata)[short]),
-      population = setNames(target$Population, as.character(target$PST_stratum_id))[
+      population = setNames(
+        target$Population,
+        as.character(target$PST_stratum_id)
+      )[
         short
       ],
       cluster_size = cls,
@@ -723,7 +737,9 @@ create_targets <- function(sframe, input) {
   # that the target sample size (and the "Target sampling" tab shown to the
   # user) already reflects the design-effect-adjusted number for Cluster
   # sampling. DEFF=1 (no adjustment) for the other sampling methods.
-  DEFF <- if (input$samp_type == "Two-stage PPS cluster sampling with replacement") {
+  DEFF <- if (
+    input$samp_type == "Two-stage PPS cluster sampling with replacement"
+  ) {
     1 + (input$cls - 1) * input$ICC
   } else {
     1
@@ -798,7 +814,11 @@ simple_random_sampling <- function(sframe, sampling_target, buf) {
   } else {
     target <- ceiling(tosample)
   }
-  out <- sample(x = as.character(dbr$PST_id_sample), size = target, replace = FALSE)
+  out <- sample(
+    x = as.character(dbr$PST_id_sample),
+    size = target,
+    replace = FALSE
+  )
   # incProgress(round(1/nrow(sampling_target),2), detail = paste("Sampling", dist))
   return(out)
 }
@@ -864,7 +884,12 @@ draw_pps_clusters <- function(
   dbr <- sframe[as.character(sframe$PST_stratum_id) == dist, ]
   m <- ceiling(as.numeric(target_with_buffer) / cls)
 
-  sample(as.character(dbr$PST_id_sample), size = m, prob = dbr$PST_prob, replace = TRUE)
+  sample(
+    as.character(dbr$PST_id_sample),
+    size = m,
+    prob = dbr$PST_prob,
+    replace = TRUE
+  )
 }
 
 
@@ -1000,7 +1025,9 @@ make_sample <- function(sampling_frame, input) {
     )] <- NA
     # plain SRS: no replacement and no PSU concept, so the distinct count
     # is just "Surveys" again.
-    if (input$samp_type == "Simple random sampling") summary_sample["Unique_PSUs"] <- NA
+    if (input$samp_type == "Simple random sampling") {
+      summary_sample["Unique_PSUs"] <- NA
+    }
   }
 
   if (input$topup == "Enter sample size") {
