@@ -60,6 +60,12 @@ checks:
     message: "The sampling frame has column(s) with protected names: {columns}.\n\nNames starting with {prefix} are reserved: the tool creates columns with these names during the sampling and in the sample file, so yours would be overwritten or cause an error. Rename or remove them in the CSV."
     guide_message: "The sampling frame has column(s) with protected names"
     fix: "rename or remove the `{{RESERVED_PREFIX}}` columns"
+  strata_not_found:
+    group: columns
+    applies_to: "stratified"
+    message: "Input strata '{column}' was not found in the uploaded data. Please re-select the column."
+    guide_message: "Input strata '…' was not found in the uploaded data"
+    fix: "select the column again after changing the file"
   psu_missing:
     group: columns
     applies_to: "cluster type"

@@ -25,6 +25,20 @@ validate_reserved_columns <- function(sframe) {
   )
 }
 
+# Check that the stratification column is in the sampling frame: the selection
+# can be older than the file when the file has been changed.
+# Returns an error message string if it is not, or NULL if valid or not needed.
+validate_strata_column <- function(sframe, params) {
+  if (!params$stratified || is.null(params$strata_column)) {
+    return(NULL)
+  }
+  column <- as.character(params$strata_column)
+  if (!column %in% names(sframe)) {
+    return(check_message("strata_not_found", column = column))
+  }
+  return(NULL)
+}
+
 # Check that the PSU (cluster) column is selected, distinct from the
 # stratification column, and contains unique values (no duplicate PSU IDs).
 # Returns an error message string if the input is invalid, or NULL if valid.

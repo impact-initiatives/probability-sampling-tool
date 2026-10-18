@@ -205,6 +205,15 @@ golden_scenarios <- function() {
     add(scenario(paste0("columns|", id), ..., frame = frame))
   }
   e("strata-missing", stratified = "Stratified", strata_column = "None")
+  e("strata-not-found", stratified = "Stratified", strata_column = "nope")
+  e(
+    "strata-not-found-cluster",
+    sampling_type = golden_types[["cluster"]],
+    psu_column = "VDC_code",
+    population_column = "HH_total",
+    stratified = "Stratified",
+    strata_column = "nope"
+  )
   e("reserved", frame = function(d) {
     d$PST_prob <- 1
     d$PST_notes <- "x"
@@ -524,6 +533,23 @@ golden_scenarios <- function() {
     stratified = "Stratified",
     strata_column = "None",
     sampling_type = cluster$sampling_type
+  )
+  m(
+    "strata-not-found-then-psu-not-found",
+    stratified = "Stratified",
+    strata_column = "nope",
+    sampling_type = cluster$sampling_type,
+    psu_column = "also-nope",
+    population_column = "HH_total"
+  )
+  m(
+    "reserved-then-strata-not-found",
+    stratified = "Stratified",
+    strata_column = "nope",
+    frame = function(d) {
+      d$PST_a <- 1
+      d
+    }
   )
 
   # 9. odd values of the column choices and of "stratified": the interface does

@@ -127,6 +127,7 @@ function(input, output, session) {
     sframe <- frame_data()
     validate(need(!is.null(sframe), check_message("no_file")))
     require_valid(validate_reserved_columns(sframe))
+    require_valid(validate_strata_column(sframe, params()))
     require_valid(validate_psu_column(sframe, params()))
     require_valid(validate_population_column(sframe, params()))
     pop_issues <- population_issues(sframe, params())
