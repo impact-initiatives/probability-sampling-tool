@@ -32,9 +32,9 @@ sampling_tab <- function() {
         table_card(
           "Sample summary",
           uiOutput("sample_error"),
-          DT::dataTableOutput("test_1")
+          DT::dataTableOutput("summary_table")
         ),
-        table_card("Sample", DT::dataTableOutput("sampling_output"))
+        table_card("Sample", DT::dataTableOutput("sample_table"))
       )
     )
   )

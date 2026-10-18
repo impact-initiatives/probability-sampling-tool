@@ -11,7 +11,7 @@ function(input, output, session) {
   params <- reactive(read_params(input))
 
   # an uploaded file is either a usable CSV or an error message, never a crash
-  upload <- reactive({
+  uploaded_file <- reactive({
     if (!is.null(input$rejected_file_name)) {
       return(list(
         data = NULL,
@@ -33,15 +33,15 @@ function(input, output, session) {
   })
 
   file_error <- reactive(
-    if (input$data_source == DATA_SOURCE_UPLOAD) upload()$error
+    if (input$data_source == DATA_SOURCE_UPLOAD) uploaded_file()$error
   )
 
   # get the data
-  db <- reactive({
+  frame_data <- reactive({
     if (input$data_source == DATA_SOURCE_TEST) {
       fread("data/data_example.csv")
     } else {
-      upload()$data
+      uploaded_file()$data
     }
   })
 
@@ -53,7 +53,7 @@ function(input, output, session) {
 
   # one-line feedback under the data source selector
   output$data_status <- renderUI({
-    d <- db()
+    d <- frame_data()
     req(d)
     src <- if (input$data_source == DATA_SOURCE_TEST) {
       "data_example.csv"
@@ -84,19 +84,19 @@ function(input, output, session) {
     updateSelectInput(
       session,
       "psu_column",
-      choices = c(NO_COLUMN, colnames(db())),
+      choices = c(NO_COLUMN, colnames(frame_data())),
       selected = NO_COLUMN
     )
     updateSelectInput(
       session,
       "strata_column",
-      choices = c(NO_COLUMN, colnames(db())),
+      choices = c(NO_COLUMN, colnames(frame_data())),
       selected = NO_COLUMN
     )
     updateSelectInput(
       session,
       "population_column",
-      choices = c(NO_COLUMN, colnames(db())),
+      choices = c(NO_COLUMN, colnames(frame_data())),
       selected = NO_COLUMN
     )
   })
@@ -109,24 +109,24 @@ function(input, output, session) {
     ignoreInit = TRUE
   )
   # what Apply found wrong in the data, for the downloadable list
-  issue_list <- reactiveVal(NULL)
+  apply_issues <- reactiveVal(NULL)
   # same for a draw blocked because a PSU is assigned too many surveys
   draw_issues <- reactiveVal(NULL)
   observeEvent(
     input$apply_button,
     {
       tables_stale(FALSE)
-      issue_list(NULL)
+      apply_issues(NULL)
       draw_issues(NULL)
     },
     priority = 10
   )
 
   # create the sampling frame
-  frame <- eventReactive(input$apply_button, {
+  sampling_frame <- eventReactive(input$apply_button, {
     require_valid(validate_strata_selection(params()))
     require_valid(file_error())
-    sframe <- db()
+    sframe <- frame_data()
     validate(need(
       !is.null(sframe),
       "Please upload a CSV file before applying."
@@ -135,7 +135,7 @@ function(input, output, session) {
     require_valid(validate_psu_column(sframe, params()))
     require_valid(validate_population_column(sframe, params()))
     pop_issues <- population_issues(sframe, params())
-    issue_list(pop_issues)
+    apply_issues(pop_issues)
     require_valid(population_message(pop_issues, params()$population_column))
     require_valid(validate_parameters(params()))
     # not needed for the frame, but reported here rather than at the draw
@@ -144,12 +144,12 @@ function(input, output, session) {
   })
 
   # create the target sampling size by strata
-  cible <- eventReactive(input$apply_button, {
-    targets <- create_targets(frame(), params())
-    issues <- cluster_size_issues(frame(), targets, params())
-    issue_list(issues)
+  targets <- eventReactive(input$apply_button, {
+    target_data <- create_targets(sampling_frame(), params())
+    issues <- cluster_size_issues(sampling_frame(), target_data, params())
+    apply_issues(issues)
     require_valid(cluster_size_message(issues, params()$cluster_size))
-    targets
+    target_data
   })
 
   # "Sample" is usable after a successful Apply, until a parameter changes or a
@@ -167,15 +167,15 @@ function(input, output, session) {
     applied(FALSE)
     draw_failed(FALSE)
     # the errors are shown by the outputs; here they must not end the session
-    if (!succeeds(frame()) || !succeeds(cible())) {
+    if (!succeeds(sampling_frame()) || !succeeds(targets())) {
       return()
     }
     applied(TRUE)
 
-    # cluster sampling never caps the draw: cible() already blocks a target
+    # cluster sampling never caps the draw: targets() already blocks a target
     # above the room of a stratum
     affected <- if (params()$sampling_type != SAMPLING_TYPE_CLUSTER) {
-      check_target_vs_population(cible())
+      check_target_vs_population(targets())
     }
     if (!is.null(affected)) showModal(exceeds_population_modal(affected))
   })
@@ -204,7 +204,7 @@ function(input, output, session) {
   )
 
   observeEvent(input$draw_button, {
-    drawn <- succeeds(out())
+    drawn <- succeeds(drawn_sample())
     sample_current(drawn)
     if (!drawn) {
       draw_failed(TRUE)
@@ -213,9 +213,9 @@ function(input, output, session) {
     # same warning as at Apply: the draw has just been capped
     affected <- if (
       params()$sampling_type != SAMPLING_TYPE_CLUSTER &&
-        succeeds(cible())
+        succeeds(targets())
     ) {
-      check_target_vs_population(cible())
+      check_target_vs_population(targets())
     }
     if (!is.null(affected)) {
       showModal(exceeds_population_modal(affected, drawn = TRUE))
@@ -235,8 +235,8 @@ function(input, output, session) {
   output$apply_error <- renderUI(
     if (!tables_stale()) {
       validation_alert(
-        cible(),
-        extra = if (!is.null(issue_list())) {
+        targets(),
+        extra = if (!is.null(apply_issues())) {
           issues_download_link("download_issues")
         }
       )
@@ -246,14 +246,14 @@ function(input, output, session) {
   output$download_issues <- downloadHandler(
     filename = function() paste0("sampling_issues_", humanTime(), ".csv"),
     content = function(file) {
-      write.csv(issue_list(), file, row.names = FALSE, na = "")
+      write.csv(apply_issues(), file, row.names = FALSE, na = "")
     }
   )
-  # out() keeps its error until the next draw, so gate it on draw_failed()
+  # drawn_sample() keeps its error until the next draw, so gate it on draw_failed()
   output$sample_error <- renderUI(
     if (draw_failed()) {
       validation_alert(
-        out(),
+        drawn_sample(),
         extra = if (!is.null(draw_issues())) {
           issues_download_link("download_draw_issues")
         }
@@ -268,32 +268,32 @@ function(input, output, session) {
     }
   )
 
-  output$sampling_frame <- DT::renderDataTable({
+  output$frame_table <- DT::renderDataTable({
     req(!tables_stale())
-    targets <- quiet(cible())
+    target_data <- quiet(targets())
     result_table(
-      quiet(frame()),
-      big_table_height(small_table_height(targets)),
+      quiet(sampling_frame()),
+      big_table_height(small_table_height(target_data)),
       paging = TRUE
     )
   })
 
-  output$target_frame <- DT::renderDataTable({
+  output$target_table <- DT::renderDataTable({
     req(!tables_stale())
-    targets <- label_target_table(quiet(cible()))
-    result_table(targets, small_table_height(targets))
+    target_data <- label_target_table(quiet(targets()))
+    result_table(target_data, small_table_height(target_data))
   })
 
   # create the sample based on the sampling frame and the input parameters
-  out <- eventReactive(input$draw_button, {
-    # frame() already validated the strata, cluster and population selections
-    # and cible() the cluster size; the seed is checked again because it can
+  drawn_sample <- eventReactive(input$draw_button, {
+    # sampling_frame() already validated the strata, cluster and population selections
+    # and targets() the cluster size; the seed is checked again because it can
     # change after Apply
-    frame()
+    sampling_frame()
     require_valid(validate_seed(input$seed))
     sample_out <- run_with_seed(
       as.integer(params()$seed),
-      make_sample(db(), params())
+      make_sample(frame_data(), params())
     )
     issues <- psu_overflow_issues(sample_out$sample, params())
     draw_issues(issues)
@@ -305,9 +305,9 @@ function(input, output, session) {
 
   # The drawn sample carries every column of the uploaded frame: the sideways
   # scroll keeps long or numerous column names readable.
-  output$sampling_output <- DT::renderDataTable({
+  output$sample_table <- DT::renderDataTable({
     req(sample_current())
-    result <- quiet(out())
+    result <- quiet(drawn_sample())
     result_table(
       result[[1]],
       sample_table_height(small_table_height(result[[2]])),
@@ -315,9 +315,9 @@ function(input, output, session) {
     )
   })
 
-  output$test_1 <- DT::renderDataTable({
+  output$summary_table <- DT::renderDataTable({
     req(sample_current())
-    summary <- quiet(out())[[2]]
+    summary <- quiet(drawn_sample())[[2]]
     result_table(summary, small_table_height(summary))
   })
 
@@ -325,32 +325,32 @@ function(input, output, session) {
     ready <- sample_current()
     tagList(
       export_button(
-        "downloadBtn2",
+        "download_summary",
         "Sample summary",
         "width: 100%; margin-bottom: 10px;",
         ready
       ),
-      export_button("downloadBtn", "Sample", "width: 100%;", ready)
+      export_button("download_sample", "Sample", "width: 100%;", ready)
     )
   })
 
-  output$downloadBtn <- downloadHandler(
+  output$download_sample <- downloadHandler(
     filename = function() {
       paste("sample_", humanTime(), '.csv', sep = '')
     },
     content = function(file) {
       req(sample_current())
-      write.csv(out()[[1]], file, row.names = FALSE)
+      write.csv(drawn_sample()[[1]], file, row.names = FALSE)
     }
   )
 
-  output$downloadBtn2 <- downloadHandler(
+  output$download_summary <- downloadHandler(
     filename = function() {
       paste("sampling_summary", humanTime(), '.csv', sep = '')
     },
     content = function(file) {
       req(sample_current())
-      write.csv(out()[[2]], file, row.names = FALSE)
+      write.csv(drawn_sample()[[2]], file, row.names = FALSE)
     }
   )
 }

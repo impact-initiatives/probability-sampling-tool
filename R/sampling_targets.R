@@ -82,8 +82,10 @@ create_targets <- function(sframe, params) {
 
 # Check whether the requested target exceeds the available population in any stratum.
 # Returns a character vector of affected stratum names, or NULL if none.
-check_target_vs_population <- function(cible) {
-  affected <- cible$PST_stratum_id[cible$target.with.buffer > cible$Population]
+check_target_vs_population <- function(targets) {
+  affected <- targets$PST_stratum_id[
+    targets$target.with.buffer > targets$Population
+  ]
   if (length(affected) > 0) {
     return(as.character(affected))
   }

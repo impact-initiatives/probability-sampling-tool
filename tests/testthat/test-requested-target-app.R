@@ -51,9 +51,9 @@ test_that("the capped sample warning is shown after Apply and after Sample", {
   Sys.sleep(1)
   expect_match(modal_text(), "will be capped")
   close_modal()
-  expect_true("Requested Target" %in% unlist(headers("target_frame")))
+  expect_true("Requested Target" %in% unlist(headers("target_table")))
   expect_true(
-    "Requested Target (with buffer)" %in% unlist(headers("target_frame"))
+    "Requested Target (with buffer)" %in% unlist(headers("target_table"))
   )
 
   go_tab("Sampling")
@@ -62,7 +62,9 @@ test_that("the capped sample warning is shown after Apply and after Sample", {
   Sys.sleep(1)
   expect_match(modal_text(), "was capped")
   close_modal()
-  expect_true("Requested Target (with buffer)" %in% unlist(headers("test_1")))
+  expect_true(
+    "Requested Target (with buffer)" %in% unlist(headers("summary_table"))
+  )
 
   # a target within the population shows no warning, neither at Apply nor Sample
   go_tab("Sampling frame")

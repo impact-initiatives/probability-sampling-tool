@@ -15,9 +15,9 @@ frame_tab <- function() {
         table_card(
           "Target sampling",
           uiOutput("apply_error"),
-          DT::dataTableOutput("target_frame")
+          DT::dataTableOutput("target_table")
         ),
-        table_card("Sampling frame", DT::dataTableOutput("sampling_frame"))
+        table_card("Sampling frame", DT::dataTableOutput("frame_table"))
       )
     )
   )

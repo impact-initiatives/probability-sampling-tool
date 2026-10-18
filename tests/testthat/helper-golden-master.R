@@ -603,15 +603,15 @@ run_golden_scenario <- function(spec, server, data_path) {
     rec$data_status <- html_of(output$data_status)
     rec$apply_error <- html_of(output$apply_error)
     rec$applied <- applied()
-    rec$frame <- digest_table(settle(frame()))
-    rec$targets <- as_plain(settle(cible()))
-    rec$issue_list <- as_plain(issue_list())
-    rec$target_table <- rlang::hash(settle(output$target_frame))
-    rec$frame_table <- rlang::hash(settle(output$sampling_frame))
+    rec$frame <- digest_table(settle(sampling_frame()))
+    rec$targets <- as_plain(settle(targets()))
+    rec$issue_list <- as_plain(apply_issues())
+    rec$target_table <- rlang::hash(settle(output$target_table))
+    rec$frame_table <- rlang::hash(settle(output$frame_table))
     rec$exceeds <- if (
       isTRUE(applied()) && inputs$sampling_type != golden_types[["cluster"]]
     ) {
-      check_target_vs_population(cible())
+      check_target_vs_population(targets())
     }
 
     if (isTRUE(applied())) {
@@ -620,10 +620,10 @@ run_golden_scenario <- function(spec, server, data_path) {
       rec$draw_failed <- draw_failed()
       rec$sample_error <- html_of(output$sample_error)
       rec$draw_issues <- as_plain(draw_issues())
-      rec$sample_file <- digest_lines(settle(readLines(output$downloadBtn)))
-      rec$summary_file <- settle(readLines(output$downloadBtn2))
-      rec$sample_table <- rlang::hash(settle(output$sampling_output))
-      rec$summary_table <- rlang::hash(settle(output$test_1))
+      rec$sample_file <- digest_lines(settle(readLines(output$download_sample)))
+      rec$summary_file <- settle(readLines(output$download_summary))
+      rec$sample_table <- rlang::hash(settle(output$sample_table))
+      rec$summary_table <- rlang::hash(settle(output$summary_table))
     }
   })
   mget(sort(ls(rec)), envir = rec)

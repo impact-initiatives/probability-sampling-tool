@@ -29,14 +29,14 @@ test_that("a new Apply hides the previous sample and its downloads", {
 
     session$setInputs(apply_button = 1)
     expect_true(applied())
-    hidden(output$sampling_output)
+    hidden(output$sample_table)
 
     session$setInputs(draw_button = 1)
     expect_true(sample_current())
-    expect_no_error(output$sampling_output)
-    expect_no_error(output$test_1)
-    expect_no_error(output$downloadBtn)
-    expect_no_error(output$downloadBtn2)
+    expect_no_error(output$sample_table)
+    expect_no_error(output$summary_table)
+    expect_no_error(output$download_sample)
+    expect_no_error(output$download_summary)
 
     # changing a parameter without Apply keeps the last validated sample
     session$setInputs(buffer = 0.10)
@@ -45,19 +45,19 @@ test_that("a new Apply hides the previous sample and its downloads", {
 
     session$setInputs(apply_button = 2)
     expect_false(sample_current())
-    hidden(output$sampling_output)
-    hidden(output$test_1)
-    hidden(output$downloadBtn)
-    hidden(output$downloadBtn2)
+    hidden(output$sample_table)
+    hidden(output$summary_table)
+    hidden(output$download_sample)
+    hidden(output$download_summary)
 
     session$setInputs(draw_button = 2)
     expect_true(sample_current())
-    expect_no_error(output$sampling_output)
+    expect_no_error(output$sample_table)
 
     # an Apply that fails validation hides it too
     session$setInputs(stratified = "Stratified", apply_button = 3)
     expect_false(applied())
     expect_false(sample_current())
-    hidden(output$downloadBtn)
+    hidden(output$download_sample)
   })
 })

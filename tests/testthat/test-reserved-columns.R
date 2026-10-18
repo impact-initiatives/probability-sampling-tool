@@ -242,8 +242,8 @@ test_that("the downloads have no unnamed row-number column", {
     session$setInputs(apply_button = 1)
     session$setInputs(draw_button = 1)
 
-    sample_file <- readLines(output$downloadBtn, n = 1)
-    summary_file <- readLines(output$downloadBtn2, n = 1)
+    sample_file <- readLines(output$download_sample, n = 1)
+    summary_file <- readLines(output$download_summary, n = 1)
     expect_match(sample_file, '^"PST_id_sample"')
     expect_false(startsWith(sample_file, '""'))
     expect_match(summary_file, '^"Stratum"')
