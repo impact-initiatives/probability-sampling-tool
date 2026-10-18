@@ -44,11 +44,10 @@ jobs:
 
       - name: Launch Shiny app smoke test
         run: |
-          Rscript -e "
-            options(shiny.autoload.r = FALSE)
-            options(shiny.launch.browser = FALSE)
-            library(shiny)
-            source('global.R')
-            app <- shinyApp(ui = source('ui.R', local = new.env())$value, server = function(input, output, session) source('server.R', local = environment()) )
-            cat('Shiny app object created successfully\n')
-          "
+          Rscript -e "options(shiny.launch.browser = FALSE); shiny::runApp('.', port = 3838)" &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:3838/ > /dev/null && break
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:3838/ | grep -q "Probability sampling tool"
+          echo "Shiny app answered"

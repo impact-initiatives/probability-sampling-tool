@@ -42,13 +42,22 @@ jobs:
             any::markdown
             any::crayon
             any::DT
+            any::testthat
+            any::shinytest2
+            any::withr
+            any::rlang
 
       - name: Check R files parse cleanly
         run: |
           Rscript -e "
-            source('global.R')
+            shiny::loadSupport('.', renv = globalenv(), globalrenv = globalenv())
             for (f in c('ui.R', 'server.R')) {
               source(f, local = new.env())
             }
             cat('R files parsed successfully\n')
           "
+
+      - name: Run the tests
+        env:
+          NOT_CRAN: true
+        run: Rscript -e "shinytest2::test_app()"
