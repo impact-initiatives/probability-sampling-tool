@@ -217,3 +217,106 @@ guide_start <- function() {
     )
   )
 }
+
+# The "Guide" tab: one pill per section
+guide_tab <- function() {
+  nav_panel(
+    "Guide",
+    withMathJax(
+      div(
+        class = "guide",
+        navset_pill(
+          id = "guide_nav",
+          nav_panel("Start", value = "start", guide_start()),
+          nav_panel("Sampling types", value = "types", guide_types()),
+          nav_panel(
+            "Your data",
+            value = "data",
+            layout_columns(
+              col_widths = c(5, 7),
+              fill = FALSE,
+              guide_card("The file", "guide/data-file.md"),
+              guide_card(
+                "What each type expects",
+                "guide/data-types.md"
+              )
+            ),
+            guide_checks()
+          ),
+          nav_panel(
+            "Parameters",
+            value = "parameters",
+            guide_card("Mode of sampling", "guide/parameters-mode.md"),
+            guide_card("Parameters", "guide/parameters-list.md"),
+            guide_card(
+              "Which parameters apply",
+              "guide/parameters-applies.md"
+            )
+          ),
+          nav_panel(
+            "Results",
+            value = "results",
+            guide_card("The tables", "guide/results-tables.md"),
+            guide_card(
+              "Columns added by the tool",
+              "guide/results-columns.md"
+            ),
+            guide_card("Sample summary", "guide/results-summary.md")
+          ),
+          nav_panel(
+            "What's new",
+            value = "news",
+            guide_sections("NEWS.md", "27rem")
+          ),
+          nav_panel(
+            "Methods",
+            value = "methods",
+            guide_sections("guide/methods.md", "30rem")
+          )
+        )
+      )
+    )
+  )
+}
+
+# The three sampling types, one panel each, closed until opened
+guide_types <- function() {
+  accordion(
+    id = "types_accordion",
+    open = FALSE,
+    multiple = FALSE,
+    guide_type_panel(
+      SAMPLING_TYPE_SIMPLE,
+      "Simple random",
+      "simple_random",
+      "guide/type-simple-random.md"
+    ),
+    guide_type_panel(
+      SAMPLING_TYPE_PPS,
+      "Simple random - allocation",
+      "pps",
+      "guide/type-pps.md"
+    ),
+    guide_type_panel(
+      SAMPLING_TYPE_CLUSTER,
+      "Cluster sampling",
+      "cluster",
+      "guide/type-cluster.md"
+    )
+  )
+}
+
+# A sampling type of the guide: its name, the name it had before, its text
+guide_type_panel <- function(type, before, value, file) {
+  accordion_panel(
+    tagList(
+      type,
+      span(
+        class = "badge text-bg-light fw-normal ms-2",
+        paste("before:", before)
+      )
+    ),
+    value = value,
+    guide_text(file)
+  )
+}

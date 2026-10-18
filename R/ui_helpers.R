@@ -59,3 +59,25 @@ select_input_overlay <- function(inputId, label, choices = NULL, ...) {
 # JavaScript condition of a conditionalPanel(): the input is, or is not, a value
 js_equals <- function(id, value) sprintf("input.%s == '%s'", id, value)
 js_differs <- function(id, value) sprintf("input.%s != '%s'", id, value)
+
+# Sidebar of a tab, open on desktop and resizable
+tab_sidebar <- function(id, width, ...) {
+  sidebar(
+    id = id,
+    width = width,
+    open = "desktop",
+    resizable = TRUE,
+    fillable = FALSE,
+    gap = 0,
+    padding = 0,
+    ...
+  )
+}
+
+# A card with a title, around a table or the message that goes with it
+table_card <- function(title, ...) {
+  card(
+    card_header(h2(title, class = "h6 mb-0")),
+    card_body(fillable = FALSE, ...)
+  )
+}
