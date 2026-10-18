@@ -28,7 +28,7 @@ read_uploaded_csv <- function(name, path) {
   parse_warned <- FALSE
   data <- tryCatch(
     withCallingHandlers(
-      fread(path),
+      data.table::fread(path),
       warning = function(w) {
         parse_warned <<- TRUE
         invokeRestart("muffleWarning")

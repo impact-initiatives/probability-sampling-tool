@@ -1,11 +1,10 @@
 # Run once when the app starts, before ui.R and server.R: the packages and the
 # options. The functions of the app are in R/, which Shiny loads after this file.
 
-require(data.table)
-require(dplyr)
+# shiny and bslib are attached because the interface uses their functions (div,
+# card, observeEvent...) some 240 times; every other package is called with its
+# name, e.g. dplyr::mutate().
 library(shiny)
-library(shinyjs)
-library(markdown)
 library(bslib)
 
 # upload size limit, checked in the browser; Shiny refuses larger requests

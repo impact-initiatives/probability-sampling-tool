@@ -27,8 +27,8 @@ make_sample <- function(sampling_frame, params) {
       sframe = sampl_f,
       cls = cls,
       simplify = FALSE
-    ) %>%
-      unlist
+    ) |>
+      unlist()
   } else if (params$sampling_type == SAMPLING_TYPE_PPS) {
     # simplify = FALSE: when every stratum draws the same number of units
     # (e.g. "Enter sample size" + stratified), apply() would otherwise return
@@ -40,8 +40,8 @@ make_sample <- function(sampling_frame, params) {
       pps_sampling,
       sframe = sampl_f,
       simplify = FALSE
-    ) %>%
-      unlist
+    ) |>
+      unlist()
   } else if (params$sampling_type == SAMPLING_TYPE_SIMPLE) {
     output <- apply(
       target,
@@ -49,8 +49,8 @@ make_sample <- function(sampling_frame, params) {
       simple_random_sampling,
       sframe = sampl_f,
       simplify = FALSE
-    ) %>%
-      unlist
+    ) |>
+      unlist()
   }
 
   # one row per PSU draw, so repeated draws stay separate visits instead of
@@ -89,7 +89,7 @@ make_sample <- function(sampling_frame, params) {
       Surveys = sum(PST_survey, na.rm = TRUE),
       # PSUs counts draws (PSU selections, with replacement); Unique_PSUs is
       # the number of distinct PSUs a team actually has to visit.
-      PSUs = n(),
+      PSUs = dplyr::n(),
       Unique_PSUs = dplyr::n_distinct(PST_id_sample),
       NB_Population = max(PST_pop_size_stratum, na.rm = TRUE)
     ) |>

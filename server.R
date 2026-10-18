@@ -39,7 +39,7 @@ function(input, output, session) {
   # get the data
   frame_data <- reactive({
     if (input$data_source == DATA_SOURCE_TEST) {
-      fread("data/data_example.csv")
+      data.table::fread("data/data_example.csv")
     } else {
       uploaded_file()$data
     }

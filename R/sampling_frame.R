@@ -32,8 +32,8 @@ format_sampling_frame <- function(sframe, params) {
     sframe$PST_pop_size <- rep(1, nrow(sframe))
   }
 
-  sumdist <- sframe %>%
-    dplyr::group_by(PST_stratum_id) %>%
+  sumdist <- sframe |>
+    dplyr::group_by(PST_stratum_id) |>
     dplyr::summarise(PST_pop_size_stratum = sum(PST_pop_size, na.rm = T))
   sframe <- merge(sframe, sumdist, by = "PST_stratum_id")
   PST_prob <- as.numeric(sframe$PST_pop_size) /
