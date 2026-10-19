@@ -15,10 +15,23 @@ column_label <- function(key) {
   label
 }
 
+#' Get the label of a field of the form
+#'
+#' @param field The name of the field in the settings, see `FIELD_LABELS`.
+#' @returns The label, as a string. A field without a label is an error.
+#' @noRd
+field_label <- function(field) {
+  if (!field %in% names(FIELD_LABELS)) {
+    stop("No label for the field: ", field, call. = FALSE)
+  }
+  unname(FIELD_LABELS[[field]])
+}
+
 #' Get what a placeholder of a guide text stands for
 #'
 #' A placeholder is the value of a constant (`{{MAX_UPLOAD_MB}}`), the label of a
-#' column (`{{label:clusters_drawn}}`) or the title of a check
+#' column (`{{label:clusters_drawn}}`), the label of a field of the form
+#' (`{{field:buffer}}`) or the title of a check
 #' (`{{check_title:exceeds_population}}`).
 #'
 #' @param name What is between the braces.
@@ -27,6 +40,9 @@ column_label <- function(key) {
 guide_value <- function(name) {
   if (startsWith(name, "label:")) {
     return(column_label(sub("^label:", "", name)))
+  }
+  if (startsWith(name, "field:")) {
+    return(field_label(sub("^field:", "", name)))
   }
   if (startsWith(name, "check_title:")) {
     return(check_title(sub("^check_title:", "", name)))

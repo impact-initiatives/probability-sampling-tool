@@ -10,7 +10,7 @@ check_of <- function(html) {
     return("none")
   }
   first_line <- function(check) {
-    strsplit(check$message, "\n", fixed = TRUE)[[1]][1]
+    strsplit(fill_field_labels(check$message), "\n", fixed = TRUE)[[1]][1]
   }
   pattern <- function(check) {
     escaped <- gsub(

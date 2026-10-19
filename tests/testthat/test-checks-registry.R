@@ -23,6 +23,18 @@ test_that("every check has a known group, a message and what to do", {
 test_that("the placeholders of a message are well formed and fill in", {
   for (id in names(checks)) {
     message <- checks[[id]]$message
+    # the labels of the fields are filled in first, and must be known
+    fields <- regmatches(
+      message,
+      gregexpr("\\{\\{field:[^{}]*\\}\\}", message)
+    )[[1]]
+    expect_true(
+      all(
+        sub("^\\{\\{field:(.*)\\}\\}$", "\\1", fields) %in% names(FIELD_LABELS)
+      ),
+      info = id
+    )
+    message <- fill_field_labels(message)
     names_in <- regmatches(message, gregexpr("\\{[^{}]*\\}", message))[[1]]
     expect_true(all(grepl("^\\{[a-z_]+\\}$", names_in)), info = id)
     values <- stats::setNames(

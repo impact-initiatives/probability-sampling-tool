@@ -11,8 +11,6 @@ SAMPLING_TYPE_CLUSTER <- "Two-stage PPS cluster sampling with replacement"
 SAMPLING_MODE_ENTER_SIZE <- "Enter sample size"
 SAMPLING_MODE_FROM_POPULATION <- "Sample size based on population"
 
-# the label of the checkbox that makes the sample stratified
-STRATIFIED <- "Stratified"
 
 # where the sampling frame comes from
 DATA_SOURCE_UPLOAD <- "upload"
@@ -37,6 +35,25 @@ MAX_BUFFER <- 2
 # cautious value, since p * (1 - p) is largest there and so is the sample size.
 # The field stays visible, not editable, in the interface (issues #8 and #9).
 FIXED_PROPORTION <- 0.5
+
+# The labels of the fields of the form, by the name of the field in the settings
+# (see PARAM_FIELDS). The form, the Guide and the summary all read them here.
+FIELD_LABELS <- c(
+  sampling_mode = "Mode of sampling",
+  sampling_type = "Type of sampling",
+  stratified = "Stratified",
+  strata_column = "Input strata",
+  psu_column = "Input cluster",
+  population_column = "Input population",
+  confidence_level = "Confidence level",
+  error_margin = "Error margin",
+  proportion = "Proportion",
+  buffer = "Buffer",
+  target_size = "Enter target sample size",
+  cluster_size = "Cluster size",
+  icc = "ICC",
+  seed = "Seed"
+)
 
 # Order of the columns of the tables and of the CSV files. The columns the tool
 # adds come first, by order of importance, then the columns of the sampling
@@ -73,15 +90,28 @@ SUMMARY_LABELS <- c(
   "Distinct PSUs" = "distinct_psus",
   "Population" = "population",
   "Requested Target (with buffer)" = "target_with_buffer",
-  "Cluster size" = "cluster_size",
-  "ICC" = "icc",
   "DEFF" = "deff",
   "Effective sample size" = "effective_sample_size",
-  "Buffer" = "buffer",
-  "Confidence level" = "confidence_level",
-  "Error margin" = "error_margin",
   "Sampling type" = "sampling_type",
-  "Seed" = "seed"
+  # the parameters are labelled like their field of the form
+  stats::setNames(
+    c(
+      "cluster_size",
+      "icc",
+      "buffer",
+      "confidence_level",
+      "error_margin",
+      "seed"
+    ),
+    FIELD_LABELS[c(
+      "cluster_size",
+      "icc",
+      "buffer",
+      "confidence_level",
+      "error_margin",
+      "seed"
+    )]
+  )
 )
 # every label of a column, by the name the code gives the column
 COLUMN_LABELS <- c(TARGET_LABELS, SUMMARY_LABELS)
@@ -95,14 +125,16 @@ SUMMARY_COLUMN_ORDER <- c(
   "Requested Target (with buffer)",
   "Clusters drawn",
   "Distinct PSUs",
-  "Cluster size",
+  unname(FIELD_LABELS["cluster_size"]),
   "DEFF",
   "Effective sample size",
-  "ICC",
-  "Buffer",
-  "Confidence level",
-  "Error margin",
-  "Seed",
+  unname(FIELD_LABELS[c(
+    "icc",
+    "buffer",
+    "confidence_level",
+    "error_margin",
+    "seed"
+  )]),
   "Sampling type"
 )
 

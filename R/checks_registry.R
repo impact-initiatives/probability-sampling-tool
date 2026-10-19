@@ -26,6 +26,26 @@ fill_template <- function(template, values) {
   template
 }
 
+#' Replace the labels of the fields in a message
+#'
+#' `{{field:buffer}}` is the label of the field, so that a message names it as
+#' the form does.
+#'
+#' @param text A text with `{{field:name}}` parts.
+#' @returns The text with the labels filled in.
+#' @noRd
+fill_field_labels <- function(text) {
+  found <- unique(unlist(regmatches(
+    text,
+    gregexpr("\\{\\{field:[a-z_]+\\}\\}", text)
+  )))
+  for (token in found) {
+    label <- field_label(sub("^\\{\\{field:(.*)\\}\\}$", "\\1", token))
+    text <- gsub(token, label, text, fixed = TRUE)
+  }
+  text
+}
+
 #' Get the message of a check
 #'
 #' The message is written in `guide/checks.yml`; the code only fills in its parts.
@@ -39,7 +59,7 @@ check_message <- function(id, ...) {
   if (is.null(check)) {
     stop("Unknown check: ", id, call. = FALSE)
   }
-  fill_template(check$message, list(...))
+  fill_template(fill_field_labels(check$message), list(...))
 }
 
 #' Get the title of a check

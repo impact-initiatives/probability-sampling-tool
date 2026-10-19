@@ -1,7 +1,8 @@
 # The checks of the app, defined once: the code builds its messages from this file
 # and the guide builds its tables from it (see R/checks_registry.R).
 #
-# message        the text the user gets; {name} is filled in by the code.
+# message        the text the user gets; {name} is filled in by the code, and
+#                {{field:name}} is the label of a field of the form (FIELD_LABELS).
 # guide_message  how the guide shows the message ("…" stands for a filled-in part);
 #                it defaults to the first line of the message with each {name}
 #                replaced by "…".
@@ -63,13 +64,13 @@ checks:
     fix: "rename or remove the `{{RESERVED_PREFIX}}` columns"
   strata_missing:
     group: columns
-    message: "Please select a stratification variable, or uncheck 'Stratified'."
-    fix: "pick the column, or uncheck \"Stratified\""
+    message: "Please select a stratification variable, or uncheck '{{field:stratified}}'."
+    fix: "pick the column, or uncheck \"{{field:stratified}}\""
   strata_not_found:
     group: columns
     applies_to: "stratified"
-    message: "Input strata '{column}' was not found in the uploaded data. Please re-select the column."
-    guide_message: "Input strata '…' was not found in the uploaded data"
+    message: "{{field:strata_column}} '{column}' was not found in the uploaded data. Please re-select the column."
+    guide_message: "{{field:strata_column}} '…' was not found in the uploaded data"
     fix: "select the column again after changing the file"
   psu_missing:
     group: columns
@@ -84,13 +85,13 @@ checks:
   psu_not_found:
     group: columns
     applies_to: "cluster type"
-    message: "Input cluster '{column}' was not found in the uploaded data. Please re-select the column."
-    guide_message: "Input cluster '…' was not found in the uploaded data"
+    message: "{{field:psu_column}} '{column}' was not found in the uploaded data. Please re-select the column."
+    guide_message: "{{field:psu_column}} '…' was not found in the uploaded data"
     fix: "select the column again after changing the file"
   psu_duplicates:
     group: columns
     applies_to: "cluster type"
-    message: "Input cluster '{column}' contains duplicate values: the sampling frame must have one row per cluster (PSU), so this column must uniquely identify each cluster."
+    message: "{{field:psu_column}} '{column}' contains duplicate values: the sampling frame must have one row per cluster (PSU), so this column must uniquely identify each cluster."
     guide_message: "… contains duplicate values"
     fix: "one row per PSU"
   population_missing:
@@ -137,30 +138,30 @@ checks:
     fix: "\"{{SAMPLING_MODE_ENTER_SIZE}}\" mode"
   confidence_level:
     group: parameters
-    message: "Confidence level must be a number strictly between 0 and 1."
+    message: "{{field:confidence_level}} must be a number strictly between 0 and 1."
     fix: "for example 0.95"
   error_margin:
     group: parameters
-    message: "Error margin must be a number strictly between 0 and 1."
+    message: "{{field:error_margin}} must be a number strictly between 0 and 1."
     fix: "for example 0.05"
   buffer:
     group: parameters
-    message: "Buffer must be a number between 0 and {max} (a share of the target: 0.05 = 5%)."
-    guide_message: "Buffer must be a number between 0 and {{MAX_BUFFER}} (a share of the target: 0.05 = 5%)"
+    message: "{{field:buffer}} must be a number between 0 and {max} (a share of the target: 0.05 = 5%)."
+    guide_message: "{{field:buffer}} must be a number between 0 and {{MAX_BUFFER}} (a share of the target: 0.05 = 5%)"
     fix: "0 for none"
   cluster_size:
     group: parameters
     applies_to: "cluster type"
-    message: "Cluster size must be a whole number of at least 2."
+    message: "{{field:cluster_size}} must be a whole number of at least 2."
     fix: "2 or more"
   icc:
     group: parameters
     applies_to: "cluster type"
-    message: "ICC must be a number between 0 and 1."
+    message: "{{field:icc}} must be a number between 0 and 1."
     fix: "between 0 and 1"
   seed:
     group: parameters
-    message: "Seed must be a whole number between -2147483647 and 2147483647."
+    message: "{{field:seed}} must be a whole number between -2147483647 and 2147483647."
     fix: "a whole number"
   cluster_psu_too_small:
     group: cluster
