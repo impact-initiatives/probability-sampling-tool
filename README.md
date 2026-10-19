@@ -16,7 +16,7 @@ The **Guide** tab of the application explains the sampling types, what the file 
 
 The file you load is read during your session to draw the sample. The tool does not save it, and does not send it anywhere else: it is processed by the application, which runs on shinyapps.io (Posit). Follow the data protection rules of your organisation, and do not load personal data: a sampling frame lists areas, camps or population groups, not individuals.
 
-The file must be a CSV of at most 100 MB, with one row per unit of the frame (see the Guide, *Your data*). An example is in [data/data_example.csv](data/data_example.csv) and in the application (*Use test data*).
+The file must be a CSV of at most 100 MB, with one row per unit of the frame (see the Guide, *Your sampling frame*). An example is in [data/data_example.csv](data/data_example.csv) and in the application (*Use test data*).
 
 ## Help and feedback
 

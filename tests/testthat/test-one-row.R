@@ -26,7 +26,7 @@ test_that("the comparison tables and the type pages use the phrases of the code"
     pps = "type-pps.md",
     cluster = "type-cluster.md"
   )
-  comparison <- fill_guide_placeholders(read_text("guide", "data-types.md"))
+  comparison <- fill_guide_placeholders(read_text("guide", "frame.md"))
   for (type in names(types)) {
     expect_match(comparison, ONE_ROW[[type]], fixed = TRUE, info = type)
     page <- fill_guide_placeholders(read_text("guide", types[[type]]))

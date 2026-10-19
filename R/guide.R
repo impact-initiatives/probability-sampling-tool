@@ -453,16 +453,15 @@ guide_ui <- function(id) {
           nav_panel("Start", value = "start", guide_start(ns)),
           nav_panel("Sampling types", value = "types", guide_types(ns)),
           nav_panel(
-            "Your data",
+            "Your sampling frame",
             value = "data",
             guide_accordion(
               ns("data_accordion"),
-              open = "file",
-              guide_panel("The file", "file", "guide/data-file.md"),
+              open = "frame",
               guide_panel(
-                "What each type expects",
-                "types",
-                "guide/data-types.md"
+                "What your sampling frame must contain",
+                "frame",
+                "guide/frame.md"
               ),
               # an accordion of its own, one panel per group of checks
               accordion_panel(
