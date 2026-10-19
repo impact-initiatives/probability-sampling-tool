@@ -3,6 +3,10 @@
 #
 # To record the reference again after a change of behaviour that is wanted:
 #   UPDATE_GOLDEN=true Rscript -e 'testthat::test_file("tests/testthat/test-golden-master.R")'
+#
+# It is skipped on a CI server: the reference was recorded on one machine, and it
+# holds fingerprints of the tables, which contain the paths of the package
+# library, and of the samples, whose weighted draws can differ between platforms.
 
 reference_file <- file.path(
   app_root,
@@ -13,6 +17,7 @@ reference_file <- file.path(
 )
 
 test_that("the app gives the same results as the recorded reference", {
+  skip_on_ci()
   withr::local_dir(app_root)
   server <- source("server.R")$value
   data_path <- file.path(app_root, "data", "data_example.csv")
