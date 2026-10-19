@@ -121,8 +121,8 @@ The application is deployed to shinyapps.io (account `impact-initiatives`) by th
 
 **Before a release**: deploy the development branch to dev and check the application there. Then merge it into `master`, tag the merge, and deploy that tag to production.
 
-**Settings** (*Settings → Secrets and variables → Actions*): the secrets `SHINYAPPS_TOKEN` and `SHINYAPPS_SECRET`, the token named `github-actions` of the shinyapps.io account; the variables `SHINYAPPS_ACCOUNT`, `SHINYAPPS_APP_NAME_DEV` and `SHINYAPPS_APP_NAME_PROD`.
+**Settings** (*Settings → Secrets and variables → Actions*): the secrets `SHINYAPPS_TOKEN` and `SHINYAPPS_SECRET`, the token and the secret of a token of the shinyapps.io account (*Account → Tokens*); the variables `SHINYAPPS_ACCOUNT`, `SHINYAPPS_APP_NAME_DEV` and `SHINYAPPS_APP_NAME_PROD`.
 
 **Who can deploy.** Whoever can run a workflow in the repository, so the people with write access: GitHub Environments, which would ask for an approval, are not available on the plan of the organisation. Keep the write access to people you trust, and when someone with access leaves, or in case of doubt, create a new token on shinyapps.io and replace the two secrets. Every deployment is in the history of the *Actions* tab, with who started it.
 
-shinyapps.io is moving to Posit Connect Cloud: this section will have to be updated then.
+> *N.B. shinyapps.io is moving to Posit Connect Cloud, with an automatic migration planned early 2027: this section will have to be updated then.*
