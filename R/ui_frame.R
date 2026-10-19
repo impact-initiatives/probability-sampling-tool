@@ -113,9 +113,16 @@ setup_sampling_choice <- function() {
           numeric_input_with_tip(
             'buffer',
             "Buffer",
-            tip = "Extra share added to the target to cover non-response or unusable interviews: target \u00d7 (1 + buffer). Base it on the non-response rate you expect.",
+            tip = paste0(
+              "A share of the target added to cover non-response or unusable interviews, not a number of surveys: 0.05 adds 5%, 0.5 adds 50% (maximum ",
+              MAX_BUFFER,
+              ", i.e. ",
+              MAX_BUFFER * 100,
+              "%). Requested target = target \u00d7 (1 + buffer)."
+            ),
             value = 0.05,
             min = 0,
+            max = MAX_BUFFER,
             step = 0.01
           )
         )
@@ -125,7 +132,7 @@ setup_sampling_choice <- function() {
         numeric_input_with_tip(
           'seed',
           "Seed",
-          tip = "Starting point of the random draw. The same seed with the same settings gives the same sample, so a draw can be reproduced. Change it to get a different sample.",
+          tip = "Starting point of the random draw. The same seed with the same settings gives the same sample, so a draw can be reproduced.",
           value = 1,
           min = -2147483647,
           max = 2147483647,

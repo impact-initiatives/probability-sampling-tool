@@ -145,7 +145,8 @@ checks:
     fix: "for example 0.05"
   buffer:
     group: parameters
-    message: "Buffer must be a number greater than or equal to 0."
+    message: "Buffer must be a number between 0 and {max} (a share of the target: 0.05 = 5%)."
+    guide_message: "Buffer must be a number between 0 and {{MAX_BUFFER}} (a share of the target: 0.05 = 5%)"
     fix: "0 for none"
   cluster_size:
     group: parameters

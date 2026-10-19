@@ -29,6 +29,10 @@ EXAMPLE_COLUMNS <- c(
 # the choice of a column select that stands for "no column"
 NO_COLUMN <- "None"
 
+# The largest buffer, a share of the target: 2 is 200%. A buffer above it is
+# most likely a number of surveys typed in place of a share.
+MAX_BUFFER <- 2
+
 # Proportion used by the sample size computation. It is fixed: 0.5 is the most
 # cautious value, since p * (1 - p) is largest there and so is the sample size.
 # The field stays visible, not editable, in the interface (issues #8 and #9).

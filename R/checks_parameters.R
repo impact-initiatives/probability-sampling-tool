@@ -25,8 +25,12 @@ validate_parameters <- function(params) {
     if (!strictly_between_0_and_1(params$error_margin)) {
       return(check_message("error_margin"))
     }
-    if (!is_number(params$buffer) || params$buffer < 0) {
-      return(check_message("buffer"))
+    if (
+      !is_number(params$buffer) ||
+        params$buffer < 0 ||
+        params$buffer > MAX_BUFFER
+    ) {
+      return(check_message("buffer", max = MAX_BUFFER))
     }
   }
 
