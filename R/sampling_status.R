@@ -71,7 +71,7 @@ sampling_status <- function(
     return(state(
       "sampled",
       "success",
-      "Sample drawn. Download it with the Export buttons."
+      "Sample drawn. Download it with the Export button."
     ))
   }
   state(

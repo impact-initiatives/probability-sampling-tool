@@ -341,36 +341,29 @@ function(input, output, session) {
 
   output$export_buttons <- renderUI({
     ready <- sample_current()
-    why_not <- if (!ready) status()$text
-    tagList(
-      export_button(
-        "download_summary",
-        "Sample summary",
-        "width: 100%; margin-bottom: 10px;",
-        ready,
-        why_not
-      ),
-      export_button("download_sample", "Sample", "width: 100%;", ready, why_not)
+    export_button(
+      "download_output",
+      "Excel file (.xlsx)",
+      "width: 100%;",
+      ready,
+      if (!ready) status()$text
     )
   })
 
-  output$download_sample <- downloadHandler(
+  # one Excel file: the inputs of the draw, the summary and the sample
+  output$download_output <- downloadHandler(
     filename = function() {
-      paste("sample_", humanTime(), '.csv', sep = '')
+      req(sample_current())
+      output_file_name(drawn_sample()$record)
     },
     content = function(file) {
       req(sample_current())
-      write.csv(drawn_sample()[[1]], file, row.names = FALSE)
-    }
-  )
-
-  output$download_summary <- downloadHandler(
-    filename = function() {
-      paste("sampling_summary", humanTime(), '.csv', sep = '')
-    },
-    content = function(file) {
-      req(sample_current())
-      write.csv(drawn_sample()[[2]], file, row.names = FALSE)
+      result <- drawn_sample()
+      build_output_workbook(
+        result$sample,
+        result$summary_sample,
+        result$record
+      )$save(file)
     }
   )
 }

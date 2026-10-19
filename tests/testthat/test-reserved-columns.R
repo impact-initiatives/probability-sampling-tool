@@ -217,7 +217,7 @@ test_that("a reloaded sample is blocked at Apply with the reserved columns liste
   })
 })
 
-test_that("the downloads have no unnamed row-number column", {
+test_that("the output file has no unnamed row-number column", {
   withr::local_dir(app_root)
   server <- source("server.R")$value
 
@@ -242,10 +242,11 @@ test_that("the downloads have no unnamed row-number column", {
     session$setInputs(apply_button = 1)
     session$setInputs(draw_button = 1)
 
-    sample_file <- readLines(output$download_sample, n = 1)
-    summary_file <- readLines(output$download_summary, n = 1)
-    expect_match(sample_file, '^"PST_id_sample"')
-    expect_false(startsWith(sample_file, '""'))
-    expect_match(summary_file, '^"Stratum"')
+    file <- output$download_output
+    sample <- openxlsx2::wb_to_df(file, sheet = "sample")
+    summary <- openxlsx2::wb_to_df(file, sheet = "sample_summary")
+    expect_identical(names(sample)[1], "PST_id_sample")
+    expect_false(any(grepl("^(X|V)[0-9]+$|^$", names(sample))))
+    expect_identical(names(summary)[1], "Stratum")
   })
 })

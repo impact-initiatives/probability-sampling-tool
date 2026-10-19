@@ -51,13 +51,24 @@ test_that("a change of the setup or a new Apply empties the Sampling tab until S
   go_tab("Sampling")
   expect_true(sample_enabled())
   expect_false(has_rows("sample_table"))
-  expect_false(has_link("download_sample"))
+  expect_false(has_link("download_output"))
 
   draw()
   expect_true(has_rows("sample_table"))
   expect_true(has_rows("summary_table"))
-  expect_true(has_link("download_sample"))
-  expect_true(has_link("download_summary"))
+  expect_true(has_link("download_output"))
+
+  # the download is the Excel file of this draw
+  file <- app$get_download("download_output")
+  expect_true(file.exists(file))
+  expect_match(
+    basename(file),
+    "^PST_Sampling_Output_[0-9]{8}-[0-9]{6}\\.xlsx$"
+  )
+  expect_identical(
+    unname(openxlsx2::wb_get_sheet_names(openxlsx2::wb_load(file))),
+    c("inputs", "sample_summary", "sample")
+  )
 
   # a change of the setup hides the sample and the downloads, and says why
   go_tab("Sampling frame")
@@ -65,7 +76,7 @@ test_that("a change of the setup or a new Apply empties the Sampling tab until S
   app$wait_for_idle()
   go_tab("Sampling")
   expect_false(has_rows("sample_table"))
-  expect_false(has_link("download_sample"))
+  expect_false(has_link("download_output"))
   expect_false(sample_enabled())
   expect_match(
     app$get_js("document.getElementById('sample_status').innerText"),
@@ -78,11 +89,10 @@ test_that("a change of the setup or a new Apply empties the Sampling tab until S
   go_tab("Sampling")
   expect_false(has_rows("sample_table"))
   expect_false(has_rows("summary_table"))
-  expect_false(has_link("download_sample"))
-  expect_false(has_link("download_summary"))
+  expect_false(has_link("download_output"))
   expect_true(sample_enabled())
 
   draw()
   expect_true(has_rows("sample_table"))
-  expect_true(has_link("download_sample"))
+  expect_true(has_link("download_output"))
 })

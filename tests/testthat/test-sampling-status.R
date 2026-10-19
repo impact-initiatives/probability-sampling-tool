@@ -112,7 +112,7 @@ test_that("the tables say why they are empty, and the downloads why they are ine
     session$setInputs(draw_button = 1)
     expect_identical(status()$id, "sampled")
     expect_null(output$sample_empty$html)
-    expect_match(output$export_buttons$html, 'id="download_sample"')
+    expect_match(output$export_buttons$html, 'id="download_output"')
     expect_no_match(output$export_buttons$html, "<button")
 
     # a change without Apply hides the sample and inactivates the downloads

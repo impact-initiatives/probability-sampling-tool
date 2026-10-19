@@ -80,6 +80,10 @@ test_that("a draw keeps the settings it was made with, whatever the form says af
     expect_identical(record$params$buffer, 0.05)
     expect_s3_class(record$drawn_at, "POSIXct")
     expect_match(record$app_version, paste0("^", APP_VERSION))
+    expect_match(
+      output_file_name(record),
+      "^PST_Sampling_Output_[0-9]{8}-[0-9]{6}\\.xlsx$"
+    )
 
     # the form changes after the draw: the record does not
     session$setInputs(buffer = 0.1, seed = 43)
