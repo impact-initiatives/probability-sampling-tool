@@ -379,7 +379,7 @@ setup_cluster_design <- function() {
         numeric_input_with_tip(
           'icc',
           "ICC",
-          tip = "Intracluster correlation: how alike the units of a cluster are (0 = not at all, 1 = identical). It inflates the sample through the design effect, 1 + (cluster size \u2212 1) \u00d7 ICC. Use a value from a similar past survey.",
+          tip = "Intracluster correlation: how alike the units of a cluster are (0 = not at all, 1 = identical). It inflates the computed sample size through the design effect, 1 + (cluster size \u2212 1) \u00d7 ICC. With \"Enter sample size\" the size is not changed: the design effect and the effective sample size are shown in the summary. Use a value from a similar past survey.",
           source = KISH_1965,
           value = 0.06,
           min = 0,

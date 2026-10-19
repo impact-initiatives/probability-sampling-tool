@@ -51,9 +51,10 @@ Ssize <- function(
 #' @noRd
 create_targets <- function(sframe, params) {
   # The design effect, 1 + (cluster size - 1) * ICC, applies to cluster sampling
-  # only (it is 1 for the other types), and only when the sample size is computed
-  # from the population: in the mode "Enter sample size" the typed target is used
-  # as it is, without design effect, and the ICC is not used.
+  # only (it is 1 for the other types), and it only changes the sample size when
+  # this is computed from the population. In the mode "Enter sample size" the
+  # typed target is used as it is: the ICC does not change it, it only gives the
+  # design effect and the effective sample size of the summary.
   deff <- if (params$sampling_type == SAMPLING_TYPE_CLUSTER) {
     1 + (params$cluster_size - 1) * params$icc
   } else {

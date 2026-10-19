@@ -6,7 +6,7 @@
 | **Required columns** | a **cluster** column (one unique value per row) and a **population** column |
 | **Draw** | PSUs proportional to the population, with replacement |
 | **Surveys per draw** | the **cluster size, noted $b$** (at least 2), the same for every draw |
-| **Design effect** | applied to the sample size: $\mathrm{DEFF} = 1 + (b - 1)\,\mathrm{ICC}$, where $b$ is the **cluster size** (surveys per cluster) and ICC the intracluster correlation: how alike the units of a cluster are (0 = not at all, 1 = identical) |
+| **Design effect** | applied to the computed sample size (with "Enter sample size" it is only shown in the summary): $\mathrm{DEFF} = 1 + (b - 1)\,\mathrm{ICC}$, where $b$ is the **cluster size** (surveys per cluster) and ICC the intracluster correlation: how alike the units of a cluster are (0 = not at all, 1 = identical) |
 | **Number of clusters** | the target divided by the cluster size $b$, rounded up |
 
 **Reading the results.** A **cluster** is one draw: a PSU and the surveys taken in it. A PSU drawn several times gives several independent clusters.

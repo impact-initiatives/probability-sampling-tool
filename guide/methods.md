@@ -26,7 +26,7 @@ $$\mathrm{DEFF} = 1 + (b - 1)\,\mathrm{ICC}$$
 
 where $b$ is the **cluster size** (surveys per cluster) and ICC the intracluster correlation: 0 if the units of a cluster are not alike, 1 if they are identical. In the two other types $\mathrm{DEFF} = 1$.
 
-The **effective sample size** shown in the summary is $\text{Surveys} / \mathrm{DEFF}$.
+The **effective sample size** shown in the summary is $\text{Surveys} / \mathrm{DEFF}$. With "Enter sample size" the design effect does not change the number of surveys, but it is still shown with the effective sample size: for example, 300 surveys in clusters of 5 with an ICC of 0.06 are worth about 242 simple random surveys.
 
 The ICC is the value you enter, not a measure on the draw. $b$ and the DEFF are set by the design: a PSU drawn $k$ times is $k$ independent clusters of $b$ surveys, so they do not depend on the PSUs drawn.
 
