@@ -1,21 +1,5 @@
 # Checks of the file and of the columns, run at Apply.
 
-#' Check that a stratification column is chosen
-#'
-#' When the sample is stratified, a column must say which stratum each unit
-#' belongs to.
-#'
-#' @param params The settings of the sampling, see `read_params()`.
-#' @returns An error message when the sample is stratified and no column is chosen,
-#'   `NULL` otherwise.
-#' @noRd
-validate_strata_selection <- function(params) {
-  if (params$stratified && is.null(params$strata_column)) {
-    return(check_message("strata_missing"))
-  }
-  return(NULL)
-}
-
 #' Check that the sampling frame has no column with a reserved name
 #'
 #' A column whose name starts with `RESERVED_PREFIX` would be overwritten or
@@ -37,19 +21,25 @@ validate_reserved_columns <- function(sframe) {
   )
 }
 
-#' Check that the stratification column is in the sampling frame
+#' Check the stratification column
 #'
-#' The selection can be older than the file when the file has been changed.
-#' Nothing is checked when the sample is not stratified, or when no column is
-#' chosen: `validate_strata_selection()` reports that case.
+#' When the sample is stratified, the column that says which stratum each unit
+#' belongs to must be chosen and be in the sampling frame: the selection can be
+#' older than the file when the file has been changed. Like the checks of the PSU
+#' and population columns, it needs the file, so it comes after the checks of the
+#' file. Nothing is checked when the sample is not stratified.
 #'
 #' @param sframe The sampling frame, as read from the uploaded file.
 #' @param params The settings of the sampling, see `read_params()`.
-#' @returns An error message when the column is not in the frame, `NULL` otherwise.
+#' @returns An error message when the column is not chosen or not in the frame,
+#'   `NULL` otherwise.
 #' @noRd
 validate_strata_column <- function(sframe, params) {
-  if (!params$stratified || is.null(params$strata_column)) {
+  if (!params$stratified) {
     return(NULL)
+  }
+  if (is.null(params$strata_column)) {
+    return(check_message("strata_missing"))
   }
   column <- as.character(params$strata_column)
   if (!column %in% names(sframe)) {
