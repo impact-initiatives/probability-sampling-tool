@@ -57,6 +57,7 @@ The formulas are in [Methods](#guide:methods) and the checks in [What the tool c
 
   A frame with a column named like one of them was silently altered or made the draw fail: it is now blocked, with a message.
 
+- **The Sample has one row per PSU**, with the total number of surveys to run there (`PST_survey`). Before, a PSU drawn several times appeared on several rows.
 - **Requested Target**: the target columns show what was asked for, which is not always what is drawn. In simple random and PPS sampling a stratum cannot give more than its population: when the request is larger, the draw stops at the population and a warning says so, after Apply and after Sample. The *Surveys* column of the summary is what was drawn.
 - Changing a parameter, like a new Apply, **hides the previous sample** and its downloads until Apply and then Sample are clicked again. The Sampling tab says why Sample, the tables and the downloads are not available.
 
@@ -70,3 +71,10 @@ The tool now checks the sampling frame and the settings before the draw. Every c
 - A **seed** makes the draw reproducible: the same seed and settings give the same sample.
 - With "Enter sample size", the number applies to each stratum, and no buffer is added. For the cluster type the summary still shows the ICC, the design effect and the effective sample size.
 - The **buffer** is a share of the target between 0 and 2 (200%): a larger value is reported before the draw.
+
+## Interface
+
+- The Sampling frame tab groups the setup in one panel (type of sampling, parameters, data source and columns), and the Sampling tab holds the draw and the export. The panels can be folded to give the tables the whole width.
+- The Introduction page is replaced by this Guide.
+- The four tables have a filter on each column and shorter numbers (display only: the Excel file keeps every digit).
+- The *New seed* and *Refresh* buttons are gone: the seed is a field you edit.
