@@ -38,6 +38,7 @@ jobs:
             any::markdown
             any::DT
             any::yaml
+            any::openxlsx2
 
       - name: Launch Shiny app smoke test
         run: |
