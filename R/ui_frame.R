@@ -247,7 +247,9 @@ setup_data_source <- function() {
         7,
         conditionalPanel(
           condition = js_equals("data_source", DATA_SOURCE_UPLOAD),
-          # aria-label on the inputs: a hidden label would still take up space
+          # aria-label on the inputs: a hidden label would still take up space.
+          # autocomplete off on the box that shows the name of the file: a browser
+          # could put the name back after a reload, when the file is gone.
           htmltools::tagQuery(
             fileInput(
               'frame_file',
@@ -264,6 +266,8 @@ setup_data_source <- function() {
             )
           )$find("input")$addAttrs(
             "aria-label" = "CSV file"
+          )$resetSelected()$find("input.form-control")$addAttrs(
+            autocomplete = "off"
           )$allTags()
         ),
         conditionalPanel(

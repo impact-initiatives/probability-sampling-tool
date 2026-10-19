@@ -60,6 +60,14 @@ app_header <- function() {
 			}, true);",
       as.integer(MAX_UPLOAD_MB * 1024^2)
     ))),
+    # The box of the file input shows the name of the file the user chose. A
+    # browser can put the name back after a reload although the new session has no
+    # file: clear it when the page connects, a new session never has a file yet.
+    tags$script(HTML(
+      "$(document).on('shiny:connected', function() {
+        $('#frame_file').closest('.input-group').find('input[type=text]').val('');
+      });"
+    )),
     # Cache-bust: without a version query string, browsers keep serving a
     # previously-cached app.css after it changes on disk.
     tags$link(
