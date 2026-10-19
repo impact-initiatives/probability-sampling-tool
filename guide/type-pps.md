@@ -1,8 +1,8 @@
-Draws **PSUs** one survey at a time, **with probability proportional to their population and with replacement**: a large PSU can be drawn several times and then gets several surveys. Use it when your frame lists areas (regions, camps, settlements) with their population, not the individuals.
+Draws **PSUs** one survey at a time, **with probability proportional to their population and with replacement**: a large PSU can be drawn several times and then gets several surveys. Use it when your frame lists areas (regions, camps, settlements) or population groups (host, IDP, returnee) with their population, not the individuals.
 
 | | |
 |---|---|
-| **One row of your CSV is** | a **PSU**: an area (region, camp, settlement) or any group, with its population |
+| **One row of your CSV is** | a **PSU**: an area (region, camp, settlement) or any population group (host, IDP, returnee), with its population |
 | **Required columns** | a **population** column (numeric, no missing or negative value) |
 | **Draw** | probability proportional to the population, with replacement |
 | **Surveys per draw** | 1; the surveys of a PSU are the number of times it is drawn |
