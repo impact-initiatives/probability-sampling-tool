@@ -2,6 +2,10 @@
 # case. The choices of the interface are defined here once: the interface, the
 # checks and the draw all use these values, so a name is changed in one place.
 
+# The version of the app, in calendar versioning like the branches and the
+# milestone. A release tag vX.Y.Z must be equal to it (checked by the CI, see #56).
+APP_VERSION <- "2026.1.0"
+
 # the three sampling types
 SAMPLING_TYPE_SIMPLE <- "Simple random sampling"
 SAMPLING_TYPE_PPS <- "PPS sampling with replacement"

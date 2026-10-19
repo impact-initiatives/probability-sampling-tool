@@ -31,3 +31,6 @@ shinyapps/
 *.temp
 *.log
 .positai
+
+# written by the deployment (the commit of the deployed version)
+BUILD_INFO
