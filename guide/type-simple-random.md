@@ -2,7 +2,7 @@ Draws units **one by one with the same probability, without replacement**: a uni
 
 | | |
 |---|---|
-| **One row of your CSV is** | a unit to survey: a household, a person, a beneficiary |
+| **One row of your CSV is** | {{one_row_detail:simple}} |
 | **Required columns** | none (an optional stratification column) |
 | **Draw** | equal probability, without replacement |
 | **Surveys per unit drawn** | 1 |

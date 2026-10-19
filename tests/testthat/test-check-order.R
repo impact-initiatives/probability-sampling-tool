@@ -10,7 +10,7 @@ check_of <- function(html) {
     return("none")
   }
   first_line <- function(check) {
-    strsplit(check$message, "\n", fixed = TRUE)[[1]][1]
+    strsplit(fill_field_labels(check$message), "\n", fixed = TRUE)[[1]][1]
   }
   pattern <- function(check) {
     escaped <- gsub(
@@ -49,7 +49,7 @@ settings_for <- function(
   list(
     sampling_mode = mode,
     sampling_type = type,
-    stratified = if (stratified) STRATIFIED else NOT_STRATIFIED,
+    stratified = stratified,
     strata_column = strata,
     psu_column = psu,
     population_column = population,
@@ -153,15 +153,15 @@ test_that("with a valid file, the columns are reported in the order of the form,
       "strata_not_found"
     ),
     list(
-      settings_for(cluster, by_mode, TRUE, "Region", "None", "None", TRUE),
+      settings_for(cluster, by_mode, TRUE, "strata", "None", "None", TRUE),
       "psu_missing"
     ),
     list(
-      settings_for(cluster, by_mode, TRUE, "Region", "nope", "None", TRUE),
+      settings_for(cluster, by_mode, TRUE, "strata", "nope", "None", TRUE),
       "psu_not_found"
     ),
     list(
-      settings_for(cluster, by_mode, TRUE, "Region", "VDC_code", "None", TRUE),
+      settings_for(cluster, by_mode, TRUE, "strata", "psu_id", "None", TRUE),
       "population_missing"
     ),
     list(
@@ -169,9 +169,9 @@ test_that("with a valid file, the columns are reported in the order of the form,
         cluster,
         by_mode,
         TRUE,
-        "Region",
-        "VDC_code",
-        "P_CODE",
+        "strata",
+        "psu_id",
+        "strata",
         TRUE
       ),
       "population_not_numeric"
@@ -190,9 +190,9 @@ test_that("with a valid file, the columns are reported in the order of the form,
         cluster,
         by_mode,
         TRUE,
-        "Region",
-        "VDC_code",
-        "HH_total",
+        "strata",
+        "psu_id",
+        "population",
         TRUE
       ),
       "confidence_level"
@@ -202,9 +202,9 @@ test_that("with a valid file, the columns are reported in the order of the form,
         cluster,
         SAMPLING_MODE_ENTER_SIZE,
         TRUE,
-        "Region",
-        "VDC_code",
-        "HH_total",
+        "strata",
+        "psu_id",
+        "population",
         TRUE
       ),
       "target_size"
@@ -215,9 +215,9 @@ test_that("with a valid file, the columns are reported in the order of the form,
         cluster,
         by_mode,
         TRUE,
-        "Region",
-        "VDC_code",
-        "HH_total",
+        "strata",
+        "psu_id",
+        "population",
         FALSE
       ),
       "none"

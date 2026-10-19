@@ -1,6 +1,6 @@
 | | {{SAMPLING_TYPE_SIMPLE}} | {{SAMPLING_TYPE_PPS}} | {{SAMPLING_TYPE_CLUSTER}} |
 |---|---|---|---|
-| **One row is** | a unit to survey | a PSU (an area) with its population | a PSU with its population |
+| **One row is** | {{one_row:simple}} | {{one_row:pps}} | {{one_row:cluster}} |
 | **Population column** | not used | numeric, $\geq 0$, no missing | numeric, $\geq 0$, no missing, $\geq$ cluster size |
 | **Cluster column** | not used | not used | one unique value per row |
 

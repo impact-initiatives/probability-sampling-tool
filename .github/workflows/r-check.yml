@@ -39,6 +39,7 @@ jobs:
             any::markdown
             any::DT
             any::yaml
+            any::openxlsx2
             any::testthat
             any::shinytest2
             any::withr

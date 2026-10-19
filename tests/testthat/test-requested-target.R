@@ -42,7 +42,7 @@ test_that("the target table and the sample summary say requested", {
   )
   for (sampling_mode in modes) {
     for (sampling_type in types) {
-      for (stratified in c("Not stratified", "Stratified")) {
+      for (stratified in c(FALSE, TRUE)) {
         input <- sampling_input(sampling_type, stratified, sampling_mode)
         label <- paste(sampling_mode, sampling_type, stratified, sep = " / ")
 
@@ -79,7 +79,7 @@ test_that("the target table and the sample summary say requested", {
 test_that("the labels are display only: the internal target names are kept", {
   input <- sampling_input(
     "Simple random sampling",
-    "Stratified",
+    TRUE,
     "Enter sample size"
   )
   targets <- create_targets(format_sampling_frame(frame_24(), input), input)
@@ -93,7 +93,7 @@ test_that("the labels are display only: the internal target names are kept", {
 test_that("a capped draw shows the requested target next to the drawn surveys", {
   input <- sampling_input(
     "Simple random sampling",
-    "Stratified",
+    TRUE,
     "Enter sample size",
     500
   )
@@ -129,7 +129,7 @@ test_that("a target above the population warns in the random types and blocks cl
       guard = cluster_size_issues(frame, targets, input)
     )
   }
-  for (stratified in c("Not stratified", "Stratified")) {
+  for (stratified in c(FALSE, TRUE)) {
     for (sampling_type in c(
       "Simple random sampling",
       "PPS sampling with replacement"

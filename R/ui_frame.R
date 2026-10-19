@@ -74,7 +74,7 @@ setup_sampling_choice <- function() {
         12,
         select_input_overlay(
           "sampling_mode",
-          "Mode of sampling",
+          FIELD_LABELS[["sampling_mode"]],
           c(
             SAMPLING_MODE_ENTER_SIZE,
             SAMPLING_MODE_FROM_POPULATION
@@ -86,7 +86,7 @@ setup_sampling_choice <- function() {
         12,
         select_input_overlay(
           "sampling_type",
-          "Type of sampling",
+          FIELD_LABELS[["sampling_type"]],
           c(
             SAMPLING_TYPE_SIMPLE,
             SAMPLING_TYPE_PPS,
@@ -98,10 +98,15 @@ setup_sampling_choice <- function() {
     fluidRow(
       column(
         4,
-        select_input_overlay(
-          "stratified",
-          "Stratified ?",
-          c(NOT_STRATIFIED, STRATIFIED)
+        # the label above the box, like the other fields
+        div(
+          class = "stratified-check",
+          tags$label(
+            class = "control-label",
+            `for` = "stratified",
+            FIELD_LABELS[["stratified"]]
+          ),
+          checkboxInput("stratified", NULL, value = FALSE)
         )
       ),
       conditionalPanel(
@@ -111,10 +116,17 @@ setup_sampling_choice <- function() {
           4,
           numeric_input_with_tip(
             'buffer',
-            "Buffer",
-            tip = "Extra share added to the target to cover non-response or unusable interviews: target \u00d7 (1 + buffer). Base it on the non-response rate you expect.",
+            FIELD_LABELS[["buffer"]],
+            tip = paste0(
+              "A share of the target added to cover non-response or unusable interviews, not a number of surveys: 0.05 adds 5%, 0.5 adds 50% (maximum ",
+              MAX_BUFFER,
+              ", i.e. ",
+              MAX_BUFFER * 100,
+              "%). Requested target = target \u00d7 (1 + buffer)."
+            ),
             value = 0.05,
             min = 0,
+            max = MAX_BUFFER,
             step = 0.01
           )
         )
@@ -123,8 +135,8 @@ setup_sampling_choice <- function() {
         4,
         numeric_input_with_tip(
           'seed',
-          "Seed",
-          tip = "Starting point of the random draw. The same seed with the same settings gives the same sample, so a draw can be reproduced. Change it to get a different sample.",
+          FIELD_LABELS[["seed"]],
+          tip = "Starting point of the random draw. The same seed with the same settings gives the same sample, so a draw can be reproduced.",
           value = 1,
           min = -2147483647,
           max = 2147483647,
@@ -153,7 +165,7 @@ setup_sample_size <- function() {
         4,
         numeric_input_with_tip(
           'confidence_level',
-          "Confidence level",
+          FIELD_LABELS[["confidence_level"]],
           tip = "How often the interval around your estimate would contain the true value if the survey were repeated (0.95 = 95% of the time). Higher confidence needs a larger sample.",
           source = COCHRAN_1977,
           value = 0.95,
@@ -169,7 +181,7 @@ setup_sample_size <- function() {
         4,
         numeric_input_with_tip(
           'error_margin',
-          "Error Margin",
+          FIELD_LABELS[["error_margin"]],
           tip = "Largest gap you accept between the estimate and the true value, at the chosen confidence level (0.05 = \u00b15 percentage points). A smaller margin needs a larger sample.",
           source = COCHRAN_1977,
           value = 0.05,
@@ -187,7 +199,7 @@ setup_sample_size <- function() {
         htmltools::tagQuery(
           numeric_input_with_tip(
             'proportion',
-            "Proportion",
+            FIELD_LABELS[["proportion"]],
             tip = "Fixed at 0.5, the most cautious value: it gives the largest sample size. See the Guide for details.",
             value = FIXED_PROPORTION
           )
@@ -200,7 +212,7 @@ setup_sample_size <- function() {
         4,
         numericInput(
           'target_size',
-          'Enter target sample size',
+          FIELD_LABELS[["target_size"]],
           NULL,
           min = 1,
           step = 1
@@ -303,7 +315,7 @@ setup_column_mapping <- function() {
     condition = paste(
       js_differs("sampling_type", SAMPLING_TYPE_SIMPLE),
       "||",
-      js_equals("stratified", STRATIFIED)
+      "input.stratified"
     ),
     div(class = "param-subhead", "Column mapping"),
     fluidRow(
@@ -313,7 +325,7 @@ setup_column_mapping <- function() {
           4,
           select_input_overlay(
             'psu_column',
-            'Input cluster',
+            FIELD_LABELS[["psu_column"]],
             choices = NULL
           )
         )
@@ -328,7 +340,7 @@ setup_column_mapping <- function() {
           4,
           select_input_overlay(
             'population_column',
-            'Input population',
+            FIELD_LABELS[["population_column"]],
             choices = NULL
           )
         )
@@ -336,14 +348,14 @@ setup_column_mapping <- function() {
       # last, so that the two other fields keep their place
       # whether the sample is stratified or not
       conditionalPanel(
-        condition = js_equals("stratified", STRATIFIED),
+        condition = "input.stratified",
         column(
           4,
           select_input_overlay(
             'strata_column',
-            'Input strata',
+            FIELD_LABELS[["strata_column"]],
             choices = NULL,
-            multiple = F
+            multiple = FALSE
           )
         )
       )
@@ -366,7 +378,7 @@ setup_cluster_design <- function() {
         6,
         numeric_input_with_tip(
           'cluster_size',
-          "Cluster size",
+          FIELD_LABELS[["cluster_size"]],
           tip = "Number of interviews planned in each selected cluster (at least 2). Larger clusters lower the fieldwork cost but raise the design effect.",
           source = KISH_1965,
           value = 5,
@@ -378,7 +390,7 @@ setup_cluster_design <- function() {
         6,
         numeric_input_with_tip(
           'icc',
-          "ICC",
+          FIELD_LABELS[["icc"]],
           tip = "Intracluster correlation: how alike the units of a cluster are (0 = not at all, 1 = identical). It inflates the computed sample size through the design effect, 1 + (cluster size \u2212 1) \u00d7 ICC. With \"Enter sample size\" the size is not changed: the design effect and the effective sample size are shown in the summary. Use a value from a similar past survey.",
           source = KISH_1965,
           value = 0.06,

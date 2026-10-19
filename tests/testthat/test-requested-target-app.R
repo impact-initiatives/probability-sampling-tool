@@ -42,7 +42,7 @@ test_that("the capped sample warning is shown after Apply and after Sample", {
     data_source = "test",
     sampling_mode = "Enter sample size",
     sampling_type = "Simple random sampling",
-    stratified = "Not stratified"
+    stratified = FALSE
   )
   app$set_inputs(target_size = 1000)
   go_tab("Sampling frame")

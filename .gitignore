@@ -32,5 +32,5 @@ shinyapps/
 *.log
 .positai
 
-# the reference of the golden master test
-!tests/testthat/fixtures/*.rds
+# written by the deployment (the commit of the deployed version)
+BUILD_INFO

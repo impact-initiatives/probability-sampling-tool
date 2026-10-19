@@ -15,10 +15,50 @@ column_label <- function(key) {
   label
 }
 
+#' Get what one row of the frame is, for a type of sampling
+#'
+#' @param type The key of the type: `"simple"`, `"pps"` or `"cluster"`.
+#' @param detail Whether to give the longer form, for the page of the type.
+#' @returns The text, as a string. An unknown type is an error.
+#' @noRd
+one_row <- function(type, detail = FALSE) {
+  texts <- if (detail) ONE_ROW_DETAIL else ONE_ROW
+  if (!type %in% names(texts)) {
+    stop("No type of sampling named: ", type, call. = FALSE)
+  }
+  unname(texts[[type]])
+}
+
+#' Get the name of a sheet of the Excel file
+#'
+#' @param key The name the code gives the sheet, a name of `OUTPUT_SHEETS`.
+#' @returns The name of the sheet, as a string. An unknown sheet is an error.
+#' @noRd
+sheet_name <- function(key) {
+  if (!key %in% names(OUTPUT_SHEETS)) {
+    stop("No sheet named: ", key, call. = FALSE)
+  }
+  unname(OUTPUT_SHEETS[[key]])
+}
+
+#' Get the label of a field of the form
+#'
+#' @param field The name of the field in the settings, see `FIELD_LABELS`.
+#' @returns The label, as a string. A field without a label is an error.
+#' @noRd
+field_label <- function(field) {
+  if (!field %in% names(FIELD_LABELS)) {
+    stop("No label for the field: ", field, call. = FALSE)
+  }
+  unname(FIELD_LABELS[[field]])
+}
+
 #' Get what a placeholder of a guide text stands for
 #'
 #' A placeholder is the value of a constant (`{{MAX_UPLOAD_MB}}`), the label of a
-#' column (`{{label:clusters_drawn}}`) or the title of a check
+#' column (`{{label:clusters_drawn}}`), the label of a field of the form
+#' (`{{field:buffer}}`), the name of a sheet of the Excel file (`{{sheet:inputs}}`)
+#' or the title of a check
 #' (`{{check_title:exceeds_population}}`).
 #'
 #' @param name What is between the braces.
@@ -27,6 +67,18 @@ column_label <- function(key) {
 guide_value <- function(name) {
   if (startsWith(name, "label:")) {
     return(column_label(sub("^label:", "", name)))
+  }
+  if (startsWith(name, "one_row:")) {
+    return(one_row(sub("^one_row:", "", name), detail = FALSE))
+  }
+  if (startsWith(name, "one_row_detail:")) {
+    return(one_row(sub("^one_row_detail:", "", name), detail = TRUE))
+  }
+  if (startsWith(name, "sheet:")) {
+    return(sheet_name(sub("^sheet:", "", name)))
+  }
+  if (startsWith(name, "field:")) {
+    return(field_label(sub("^field:", "", name)))
   }
   if (startsWith(name, "check_title:")) {
     return(check_title(sub("^check_title:", "", name)))
@@ -87,66 +139,47 @@ guide_text <- function(file) {
   guide_markdown(paste(readLines(file, warn = FALSE), collapse = "\n"))
 }
 
-#' Show a Markdown file as one card per section
+#' Show a Markdown file as one accordion panel per section
 #'
-#' One card per second level heading, in a grid. What comes before the first
-#' heading is shown above the cards.
+#' One panel per second level heading; the first starts open. What comes before the
+#' first heading is shown above the panels, as a discreet note.
 #'
 #' @param file The path of the file.
-#' @param width The minimum width of a card, a CSS length.
-#' @returns The introduction and the grid of cards.
+#' @param id The id of the accordion.
+#' @returns The introduction and the accordion.
 #' @noRd
-guide_sections <- function(file, width = "30rem") {
+guide_sections <- function(file, id) {
   lines <- readLines(file, warn = FALSE)
   starts <- grep("^## ", lines)
   intro <- if (starts[1] > 1) lines[seq_len(starts[1] - 1)] else character()
   ends <- c(starts[-1] - 1, length(lines))
-  cards <- lapply(seq_along(starts), function(i) {
+  panels <- lapply(seq_along(starts), function(i) {
     body <- lines[(starts[i] + 1):ends[i]]
-    card(
-      class = "guide-card h-100",
-      fill = FALSE,
-      card_header(h3(
-        sub("^## ", "", lines[starts[i]]),
-        class = "h6 fw-semibold mb-0"
-      )),
-      card_body(fillable = FALSE, guide_markdown(paste(body, collapse = "\n")))
+    guide_panel_text(
+      sub("^## ", "", lines[starts[i]]),
+      paste0("section", i),
+      paste(body, collapse = "\n")
     )
   })
   tagList(
     if (length(intro) > 0 && any(nzchar(intro))) {
-      guide_markdown(paste(intro, collapse = "\n"))
+      # a discreet note above the panels
+      div(
+        class = "text-muted fst-italic small mb-2",
+        guide_markdown(paste(intro, collapse = "\n"))
+      )
     },
-    do.call(
-      layout_column_wrap,
-      c(list(width = width, fill = FALSE, heights_equal = "row"), cards)
-    )
-  )
-}
-
-#' Show a Markdown file in a titled card
-#'
-#'
-#'
-#' @param title The title of the card.
-#' @param file The path of the file.
-#' @returns A card.
-#' @noRd
-guide_card <- function(title, file) {
-  card(
-    class = "guide-card h-100",
-    fill = FALSE,
-    card_header(h3(title, class = "h6 fw-semibold mb-0")),
-    card_body(fillable = FALSE, guide_text(file))
+    do.call(guide_accordion, c(list(id), panels, list(open = "section1")))
   )
 }
 
 #' Show the checks of the app
 #'
-#' One closed panel per group of checks of `guide/checks.yml`.
+#' One closed panel per group of checks of `guide/checks.yml`, in an accordion that
+#' goes inside a panel of the accordion of the page.
 #'
 #' @param ns The namespace function of the guide module.
-#' @returns A card.
+#' @returns An accordion.
 #' @noRd
 guide_checks <- function(ns) {
   panels <- lapply(names(CHECKS$groups), function(id) {
@@ -156,20 +189,9 @@ guide_checks <- function(ns) {
       guide_markdown(guide_checks_markdown(id))
     )
   })
-  card(
-    class = "guide-card",
-    fill = FALSE,
-    card_header(h3("What the tool checks", class = "h6 fw-semibold mb-0")),
-    card_body(
-      fillable = FALSE,
-      do.call(
-        accordion,
-        c(
-          list(id = ns("checks_accordion"), open = FALSE, multiple = TRUE),
-          panels
-        )
-      )
-    )
+  do.call(
+    accordion,
+    c(list(id = ns("checks_accordion"), open = FALSE, multiple = TRUE), panels)
   )
 }
 
@@ -327,7 +349,7 @@ guide_start <- function(ns) {
       guide_step(
         4,
         "Sample and export",
-        "Draws the sample in the Sampling tab, then download the Sample and its summary.",
+        "Draws the sample in the Sampling tab, then download one Excel file with the inputs, the summary and the sample.",
         actionLink(ns("to_results"), "Reading the results")
       )
     ),
@@ -338,21 +360,21 @@ guide_start <- function(ns) {
       guide_type_card(
         SAMPLING_TYPE_SIMPLE,
         "Simple random",
-        "a unit to survey (household, person).",
+        paste0(ONE_ROW[["simple"]], "."),
         "no population column.",
         ns("open_simple_random")
       ),
       guide_type_card(
         SAMPLING_TYPE_PPS,
         "Simple random - allocation",
-        "a PSU (an area) with its population.",
+        paste0(ONE_ROW[["pps"]], "."),
         "a population column.",
         ns("open_pps")
       ),
       guide_type_card(
         SAMPLING_TYPE_CLUSTER,
         "Cluster sampling",
-        "a PSU with its population.",
+        paste0(ONE_ROW[["cluster"]], "."),
         "a cluster column and a population column.",
         ns("open_cluster")
       )
@@ -367,6 +389,42 @@ guide_start <- function(ns) {
       actionLink(ns("to_news"), "What's new")
     )
   )
+}
+
+#' Build a panel of a guide accordion from a file
+#'
+#' @param title The title of the panel.
+#' @param value The identifier of the panel, to say which panels start open.
+#' @param file The Markdown file of its text.
+#' @returns An accordion panel.
+#' @noRd
+guide_panel <- function(title, value, file) {
+  accordion_panel(title, value = value, guide_text(file))
+}
+
+#' Build a panel of a guide accordion from a text
+#'
+#' @param title The title of the panel.
+#' @param value The identifier of the panel, to say which panels start open.
+#' @param text The Markdown text of the panel.
+#' @returns An accordion panel.
+#' @noRd
+guide_panel_text <- function(title, value, text) {
+  accordion_panel(title, value = value, guide_markdown(text))
+}
+
+#' Build an accordion of the guide
+#'
+#' Several panels can be open at once. The detail that is looked up, not read, starts
+#' closed.
+#'
+#' @param id The id of the accordion.
+#' @param open The identifiers of the panels that start open.
+#' @param ... The panels, see `guide_panel()`.
+#' @returns An accordion.
+#' @noRd
+guide_accordion <- function(id, ..., open) {
+  accordion(id = id, open = open, multiple = TRUE, ...)
 }
 
 #' Build the Guide tab, the UI of the guide module
@@ -391,46 +449,71 @@ guide_ui <- function(id) {
           nav_panel(
             "Your data",
             value = "data",
-            layout_columns(
-              col_widths = c(5, 7),
-              fill = FALSE,
-              guide_card("The file", "guide/data-file.md"),
-              guide_card(
+            guide_accordion(
+              ns("data_accordion"),
+              open = "file",
+              guide_panel("The file", "file", "guide/data-file.md"),
+              guide_panel(
                 "What each type expects",
+                "types",
                 "guide/data-types.md"
+              ),
+              # an accordion of its own, one panel per group of checks
+              accordion_panel(
+                "What the tool checks",
+                value = "checks",
+                guide_checks(ns)
               )
-            ),
-            guide_checks(ns)
+            )
           ),
           nav_panel(
             "Parameters",
             value = "parameters",
-            guide_card("Mode of sampling", "guide/parameters-mode.md"),
-            guide_card("Parameters", "guide/parameters-list.md"),
-            guide_card(
-              "Which parameters apply",
-              "guide/parameters-applies.md"
+            guide_accordion(
+              ns("parameters_accordion"),
+              open = "mode",
+              guide_panel(
+                "Mode of sampling",
+                "mode",
+                "guide/parameters-mode.md"
+              ),
+              guide_panel("Parameters", "list", "guide/parameters-list.md"),
+              guide_panel(
+                "Which parameters apply",
+                "applies",
+                "guide/parameters-applies.md"
+              )
             )
           ),
           nav_panel(
             "Results",
             value = "results",
-            guide_card("The tables", "guide/results-tables.md"),
-            guide_card(
-              "Columns added by the tool",
-              "guide/results-columns.md"
-            ),
-            guide_card("Sample summary", "guide/results-summary.md")
+            guide_accordion(
+              ns("results_accordion"),
+              open = "tables",
+              guide_panel("The tables", "tables", "guide/results-tables.md"),
+              guide_panel("The Excel file", "file", "guide/results-file.md"),
+              guide_panel(
+                "Columns added by the tool",
+                "columns",
+                "guide/results-columns.md"
+              ),
+              guide_panel(
+                "Sample summary",
+                "summary",
+                "guide/results-summary.md"
+              )
+            )
           ),
           nav_panel(
             "What's new",
             value = "news",
-            guide_sections("NEWS.md", "27rem")
+            guide_sections("NEWS.md", ns("news_accordion"))
           ),
           nav_panel(
             "Methods",
             value = "methods",
-            guide_sections("guide/methods.md", "30rem")
+            guide_sections("guide/methods.md", ns("methods_accordion"))
           )
         )
       )

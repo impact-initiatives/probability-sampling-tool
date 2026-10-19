@@ -27,12 +27,12 @@ test_that("the population field keeps its place whether the sample is stratified
   app$set_inputs(
     sampling_type = "Two-stage PPS cluster sampling with replacement"
   )
-  app$set_inputs(stratified = "Not stratified")
+  app$set_inputs(stratified = FALSE)
   app$wait_for_idle()
   Sys.sleep(0.5)
   population_alone <- left("population_column")
 
-  app$set_inputs(stratified = "Stratified")
+  app$set_inputs(stratified = TRUE)
   app$wait_for_idle()
   Sys.sleep(0.5)
   expect_equal(left("population_column"), population_alone)

@@ -46,6 +46,19 @@
 	padding-top: 6px;
 }
 
+/* The Stratified checkbox: its label is above it, like the other fields, and the
+   box is on the line of the boxes of the fields next to it */
+.stratified-check .shiny-input-container {
+	display: flex;
+	align-items: center;
+	width: auto;
+	min-height: 38px;
+	margin-bottom: 0;
+}
+.stratified-check .checkbox {
+	margin: 0;
+}
+
 /* Result tables: the header keeps room for the sort icon on its right, so the
    numbers get the same room and end under the text of their header */
 table.dataTable td.dt-right {
@@ -128,50 +141,6 @@ table.dataTable td.dt-right {
 .guide-text h2 {
 	font-size: 1.2rem;
 	margin-top: 1.5rem;
-}
-
-/* Blocks of the guide: compact, so that a section fits on one screen */
-.guide-card {
-	margin-bottom: 0.5rem;
-}
-
-.guide .tab-pane > .guide-card:last-child {
-	margin-bottom: 0;
-}
-
-.guide .bslib-grid .guide-card {
-	margin-bottom: 0;
-}
-
-.guide-card .card-header {
-	padding: 0.3rem 0.75rem;
-}
-
-.guide-card .card-body {
-	padding: 0.5rem 0.75rem;
-}
-
-.guide-card .guide-text {
-	font-size: 0.8rem;
-}
-
-.guide-card .guide-text table {
-	margin: 0.25rem 0 0.5rem;
-}
-
-.guide-card .guide-text th,
-.guide-card .guide-text td {
-	padding: 0.15rem 0.4rem;
-}
-
-.guide-card .accordion-button {
-	font-size: 0.9rem;
-	padding: 0.4rem 0.75rem;
-}
-
-.guide-card .guide-text p,
-.guide-card .guide-text ul {
-	margin-bottom: 0.4rem;
 }
 
 /* Sampling types: the title of each type is the first thing to read */

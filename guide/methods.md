@@ -1,4 +1,4 @@
-This part is for readers who want the statistical detail. $N$ is the population of the stratum (its number of rows in simple random sampling, the sum of the population column otherwise) and $N_i$ the population of the PSU $i$.
+This part is for readers who want the statistical detail.
 
 ## Sample size (mode "based on population")
 
@@ -6,7 +6,7 @@ For a proportion, per stratum, with the finite population correction (Cochran, 1
 
 $$n_0 = \frac{z^2\,p\,(1-p)}{e^2}, \qquad n = \frac{n_0}{1 + \dfrac{n_0 - 1}{N}}$$
 
-where $z$ is the two-sided normal quantile of the confidence level, $e$ the error margin and $p$ the expected proportion.
+where $z$ is the two-sided normal quantile of the confidence level, $e$ the error margin, $p$ the expected proportion and $N$ the population of the stratum (its number of rows in simple random sampling, the sum of the population column otherwise).
 
 **Proportion.** $p$ is fixed at 0.5: it maximises $p(1-p)$, so it gives the largest sample, the most cautious choice, used for every indicator. The formula is exact for a proportion; for means it is an approximation. See the [discussion #9](https://github.com/impact-initiatives/probability-sampling-tool/issues/9).
 
@@ -32,7 +32,7 @@ The ICC is the value you enter, not a measure on the draw. $b$ and the DEFF are 
 
 ## Draws
 
-At each draw, the PSU $i$ is drawn with probability $p_i = N_i / N$, its share of the population of the stratum. Draws are independent and **with replacement**: a PSU can be drawn again.
+At each draw, the PSU $i$ is drawn with probability $p_i = N_i / N$, its share of the population of the stratum, where $N_i$ is the population of the PSU $i$ and $N$ that of its stratum. Draws are independent and **with replacement**: a PSU can be drawn again.
 
 | Type | Number of draws | Probability at each draw |
 |---|---|---|

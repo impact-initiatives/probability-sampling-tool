@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **One row of your CSV is** | a PSU (village, camp...) with its population |
+| **One row of your CSV is** | {{one_row_detail:cluster}} |
 | **Required columns** | a **cluster** column (one unique value per row) and a **population** column |
 | **Draw** | PSUs proportional to the population, with replacement |
 | **Surveys per draw** | the **cluster size, noted $b$** (at least 2), the same for every draw |

@@ -3,7 +3,7 @@
 
 frame <- data.frame(region = c("N", "S"), value = 1:2)
 settings <- function(...) {
-  base <- list(stratified = "Stratified", strata_column = "region")
+  base <- list(stratified = TRUE, strata_column = "region")
   normalize_params(utils::modifyList(base, list(...)))
 }
 
@@ -37,10 +37,10 @@ test_that("a stratified sample without a chosen column is reported", {
 test_that("nothing is checked when the sample is not stratified", {
   expect_null(validate_strata_column(
     frame,
-    settings(stratified = "Not stratified", strata_column = "nope")
+    settings(stratified = FALSE, strata_column = "nope")
   ))
   expect_null(validate_strata_column(
     frame,
-    settings(stratified = "Not stratified", strata_column = "None")
+    settings(stratified = FALSE, strata_column = "None")
   ))
 })

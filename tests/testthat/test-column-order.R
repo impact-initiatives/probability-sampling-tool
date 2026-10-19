@@ -19,9 +19,9 @@ sampling_input <- function(sampling_mode, sampling_type, stratified) {
     buffer = 0.05,
     sampling_type = sampling_type,
     stratified = stratified,
-    strata_column = "Region",
-    psu_column = "VDC_code",
-    population_column = "HH_total",
+    strata_column = "strata",
+    psu_column = "psu_id",
+    population_column = "population",
     cluster_size = 5,
     icc = 0.06,
     seed = 7
@@ -49,7 +49,7 @@ test_that("the tables and the CSV files have the same column order in every conf
 
     for (sampling_mode in modes) {
       for (sampling_type in types) {
-        for (stratified in c("Not stratified", "Stratified")) {
+        for (stratified in c(FALSE, TRUE)) {
           label <- paste(
             frame_class,
             sampling_mode,

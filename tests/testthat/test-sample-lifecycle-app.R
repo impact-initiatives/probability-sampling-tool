@@ -4,7 +4,7 @@
 skip_if_not_installed("chromote")
 skip_if(is.null(chromote::find_chrome()), "Chrome is not available")
 
-test_that("a new Apply empties the Sampling tab until Sample is clicked again", {
+test_that("a change of the setup or a new Apply empties the Sampling tab until Sample is clicked again", {
   app <- AppDriver$new(
     app_dir = normalizePath(testthat::test_path("..", "..")),
     name = "sample-lifecycle",
@@ -46,18 +46,45 @@ test_that("a new Apply empties the Sampling tab until Sample is clicked again", 
   }
 
   app$set_inputs(data_source = "test")
+  # the columns of the example data are chosen by the server just after: an Apply
+  # before they arrive would be followed by a change of the setup
+  app$wait_for_idle()
   app$click("apply_button")
   app$wait_for_idle()
   go_tab("Sampling")
   expect_true(sample_enabled())
   expect_false(has_rows("sample_table"))
-  expect_false(has_link("download_sample"))
+  expect_false(has_link("download_output"))
 
   draw()
   expect_true(has_rows("sample_table"))
   expect_true(has_rows("summary_table"))
-  expect_true(has_link("download_sample"))
-  expect_true(has_link("download_summary"))
+  expect_true(has_link("download_output"))
+
+  # the download is the Excel file of this draw
+  file <- app$get_download("download_output")
+  expect_true(file.exists(file))
+  expect_match(
+    basename(file),
+    "^PST_Sampling_Output_[0-9]{8}-[0-9]{6}\\.xlsx$"
+  )
+  expect_identical(
+    unname(openxlsx2::wb_get_sheet_names(openxlsx2::wb_load(file))),
+    c("inputs", "sample_summary", "sample")
+  )
+
+  # a change of the setup hides the sample and the downloads, and says why
+  go_tab("Sampling frame")
+  app$set_inputs(buffer = 0.1)
+  app$wait_for_idle()
+  go_tab("Sampling")
+  expect_false(has_rows("sample_table"))
+  expect_false(has_link("download_output"))
+  expect_false(sample_enabled())
+  expect_match(
+    app$get_js("document.getElementById('sample_status').innerText"),
+    "setup changed"
+  )
 
   go_tab("Sampling frame")
   app$click("apply_button")
@@ -65,11 +92,10 @@ test_that("a new Apply empties the Sampling tab until Sample is clicked again", 
   go_tab("Sampling")
   expect_false(has_rows("sample_table"))
   expect_false(has_rows("summary_table"))
-  expect_false(has_link("download_sample"))
-  expect_false(has_link("download_summary"))
+  expect_false(has_link("download_output"))
   expect_true(sample_enabled())
 
   draw()
   expect_true(has_rows("sample_table"))
-  expect_true(has_link("download_sample"))
+  expect_true(has_link("download_output"))
 })

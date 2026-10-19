@@ -37,7 +37,7 @@ function(input, output, session) {
   # get the data
   frame_data <- reactive({
     if (input$data_source == DATA_SOURCE_TEST) {
-      data.table::fread("data/data_example.csv")
+      data.table::fread(EXAMPLE_DATA_PATH)
     } else {
       uploaded_file()$data
     }
@@ -49,15 +49,20 @@ function(input, output, session) {
     }
   })
 
+  # the name of the file of the frame
+  frame_name <- reactive(
+    if (input$data_source == DATA_SOURCE_TEST) {
+      basename(EXAMPLE_DATA_PATH)
+    } else {
+      input$frame_file$name
+    }
+  )
+
   # one-line feedback under the data source selector
   output$data_status <- renderUI({
     d <- frame_data()
     req(d)
-    src <- if (input$data_source == DATA_SOURCE_TEST) {
-      "data_example.csv"
-    } else {
-      input$frame_file$name
-    }
+    src <- frame_name()
     div(
       class = "data-status",
       paste0(
@@ -73,30 +78,25 @@ function(input, output, session) {
   })
 
   output$download_example <- downloadHandler(
-    filename = "data_example.csv",
-    content = function(file) file.copy("data/data_example.csv", file)
+    filename = basename(EXAMPLE_DATA_PATH),
+    content = function(file) file.copy(EXAMPLE_DATA_PATH, file)
   )
 
-  # update the check ox based on the data headings
+  # offer the columns of the data in the column selects; the example data comes
+  # with its columns already chosen
   observe({
-    updateSelectInput(
-      session,
-      "psu_column",
-      choices = c(NO_COLUMN, colnames(frame_data())),
-      selected = NO_COLUMN
-    )
-    updateSelectInput(
-      session,
-      "strata_column",
-      choices = c(NO_COLUMN, colnames(frame_data())),
-      selected = NO_COLUMN
-    )
-    updateSelectInput(
-      session,
-      "population_column",
-      choices = c(NO_COLUMN, colnames(frame_data())),
-      selected = NO_COLUMN
-    )
+    for (field in COLUMN_FIELDS) {
+      updateSelectInput(
+        session,
+        field,
+        choices = c(NO_COLUMN, colnames(frame_data())),
+        selected = if (input$data_source == DATA_SOURCE_TEST) {
+          EXAMPLE_COLUMNS[[field]]
+        } else {
+          NO_COLUMN
+        }
+      )
+    }
   })
 
   # a new upload hides the frame and target tables until the next Apply
@@ -151,16 +151,19 @@ function(input, output, session) {
   # draw fails; an impossible seed blocks it too.
   applied <- reactiveVal(FALSE)
   draw_failed <- reactiveVal(FALSE)
+  # the setup changed since the last Apply, said in the Sampling tab
+  setup_changed <- reactiveVal(FALSE)
 
-  # The sample on screen is the one drawn after the last Apply: a new Apply
-  # hides it and its downloads until Sample is clicked again. Changing a
-  # parameter without Apply leaves it, like the frame and target tables.
+  # The sample on screen is the one drawn after the last Apply: a new Apply, or a
+  # change of the setup, hides it and its downloads until Sample is clicked
+  # again. The frame and target tables stay until the next Apply.
   sample_current <- reactiveVal(FALSE)
   observeEvent(input$apply_button, sample_current(FALSE), priority = 10)
 
   observeEvent(input$apply_button, {
     applied(FALSE)
     draw_failed(FALSE)
+    setup_changed(FALSE)
     # the errors are shown by the outputs; here they must not end the session
     if (!succeeds(sampling_frame()) || !succeeds(targets())) {
       return()
@@ -194,7 +197,11 @@ function(input, output, session) {
       input$cluster_size,
       input$icc
     ),
-    applied(FALSE),
+    {
+      applied(FALSE)
+      setup_changed(TRUE)
+      sample_current(FALSE)
+    },
     ignoreInit = TRUE
   )
 
@@ -293,6 +300,9 @@ function(input, output, session) {
     issues <- psu_overflow_issues(sample_out$sample, params())
     draw_issues(issues)
     require_valid(psu_overflow_message(issues))
+    require_valid(excel_size_message(sample_out$sample))
+    # the settings of this draw, for the output file
+    sample_out$record <- draw_record(params(), frame_name(), frame_data())
     sample_out
   })
 
@@ -316,36 +326,44 @@ function(input, output, session) {
     result_table(summary, small_table_height(summary))
   })
 
+  # why "Sample" can or cannot be used, and why there is nothing to show
+  status <- reactive(sampling_status(
+    apply_clicked = isTRUE(input$apply_button > 0),
+    setup_changed = setup_changed(),
+    applied = applied(),
+    seed_message = validate_seed(input$seed),
+    draw_failed = draw_failed(),
+    sample_current = sample_current()
+  ))
+  output$sample_status <- renderUI(status_note(status()))
+  output$summary_empty <- renderUI(empty_table_note(status(), sample_current()))
+  output$sample_empty <- renderUI(empty_table_note(status(), sample_current()))
+
   output$export_buttons <- renderUI({
     ready <- sample_current()
-    tagList(
-      export_button(
-        "download_summary",
-        "Sample summary",
-        "width: 100%; margin-bottom: 10px;",
-        ready
-      ),
-      export_button("download_sample", "Sample", "width: 100%;", ready)
+    export_button(
+      "download_output",
+      "Excel file (.xlsx)",
+      "width: 100%;",
+      ready,
+      if (!ready) status()$text
     )
   })
 
-  output$download_sample <- downloadHandler(
+  # one Excel file: the inputs of the draw, the summary and the sample
+  output$download_output <- downloadHandler(
     filename = function() {
-      paste("sample_", humanTime(), '.csv', sep = '')
+      req(sample_current())
+      output_file_name(drawn_sample()$record)
     },
     content = function(file) {
       req(sample_current())
-      write.csv(drawn_sample()[[1]], file, row.names = FALSE)
-    }
-  )
-
-  output$download_summary <- downloadHandler(
-    filename = function() {
-      paste("sampling_summary", humanTime(), '.csv', sep = '')
-    },
-    content = function(file) {
-      req(sample_current())
-      write.csv(drawn_sample()[[2]], file, row.names = FALSE)
+      result <- drawn_sample()
+      build_output_workbook(
+        result$sample,
+        result$summary_sample,
+        result$record
+      )$save(file)
     }
   )
 }
