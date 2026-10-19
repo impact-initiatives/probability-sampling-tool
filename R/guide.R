@@ -384,9 +384,15 @@ guide_start <- function(ns) {
       span(
         icon("circle-info"),
         strong(" Coming from the previous version? "),
-        "The sampling types and the columns of the results have new names."
+        HTML(
+          "The output, the names of the sampling types and of the columns, and the <strong>cluster sampling method</strong> have changed."
+        )
       ),
-      actionLink(ns("to_news"), "What's new")
+      actionLink(
+        ns("to_news"),
+        tagList("What's new ", icon("arrow-right")),
+        class = "ms-3 text-nowrap"
+      )
     )
   )
 }
@@ -442,21 +448,25 @@ guide_ui <- function(id) {
     withMathJax(
       div(
         class = "guide",
+        # the links of the texts, `#guide:...`, are handled by guide_server()
+        tags$script(HTML(sprintf(
+          "$(document).on('click', 'a[href^=\"#guide:\"]', function(e) { e.preventDefault(); Shiny.setInputValue('%s', this.getAttribute('href').slice(7), {priority: 'event'}); });",
+          ns("goto")
+        ))),
         navset_pill(
           id = ns("nav"),
           nav_panel("Start", value = "start", guide_start(ns)),
           nav_panel("Sampling types", value = "types", guide_types(ns)),
           nav_panel(
-            "Your data",
+            "Your sampling frame",
             value = "data",
             guide_accordion(
               ns("data_accordion"),
-              open = "file",
-              guide_panel("The file", "file", "guide/data-file.md"),
+              open = "frame",
               guide_panel(
-                "What each type expects",
-                "types",
-                "guide/data-types.md"
+                "What your sampling frame must contain",
+                "frame",
+                "guide/frame.md"
               ),
               # an accordion of its own, one panel per group of checks
               accordion_panel(
@@ -610,6 +620,15 @@ guide_server <- function(id, parent) {
         bslib::nav_select("nav", "types")
         bslib::accordion_panel_set("types_accordion", type_links[[link]])
       })
+    })
+    # a link of a text, `[text](#guide:tab)` or `[text](#guide:tab/panel)`: go to the
+    # tab and open the panel of its accordion, if one is named
+    observeEvent(input$goto, {
+      target <- strsplit(input$goto, "/", fixed = TRUE)[[1]]
+      bslib::nav_select("nav", target[1])
+      if (length(target) > 1) {
+        bslib::accordion_panel_open(paste0(target[1], "_accordion"), target[2])
+      }
     })
     observeEvent(
       input$to_app,

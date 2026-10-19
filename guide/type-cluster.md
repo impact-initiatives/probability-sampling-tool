@@ -21,4 +21,4 @@
 **Good to know.**
 
 - The tool does **not** select the households. They have to be selected at random, with equal probability, inside each PSU for the sample to be self-weighting.
-- Every PSU needs a population of at least the cluster size, and a PSU drawn $k$ times needs at least $k \times$ cluster size. The tool blocks the draw otherwise (see *Your data*).
+- Every PSU needs a population of at least the cluster size $b$, and a PSU can host $\lfloor N_i / b \rfloor$ whole clusters. The tool blocks **Apply** when a PSU is smaller than the cluster size or a stratum does not have room for all its clusters, and blocks **Sample** when a PSU is drawn more often than it can host (see *What the tool checks*, in *Your sampling frame*). It never switches to another type of sampling.

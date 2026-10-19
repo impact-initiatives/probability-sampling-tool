@@ -1,4 +1,0 @@
-- **CSV only**, up to {{MAX_UPLOAD_MB}} MB (an Excel workbook has to be saved as CSV).
-- **One row per unit of the frame**, covering the whole population of interest, not a sample already drawn.
-- **Simple column names**: letters, digits and underscores.
-- **No column starting with `PST_`**: the prefix is reserved for the columns the tool adds. A previous sample reloaded as a frame has them: rename or remove them.
