@@ -68,7 +68,7 @@ The tool now checks the sampling frame and the settings before the draw. Every c
 ## Parameters
 
 - The **proportion** is fixed at 0.5: the field is shown but not editable.
-- A **seed** makes the draw reproducible: the same seed and settings give the same sample.
+- **New: a seed field.** The same file, settings and seed give the same sample, so a draw can be reproduced and checked. The seed is in the Sample summary and in the Excel file.
 - With "Enter sample size", the number applies to each stratum, and no buffer is added. For the cluster type the summary still shows the ICC, the design effect and the effective sample size.
 - The **buffer** is a share of the target between 0 and 2 (200%): a larger value is reported before the draw.
 
@@ -77,4 +77,3 @@ The tool now checks the sampling frame and the settings before the draw. Every c
 - The Sampling frame tab groups the setup in one panel (type of sampling, parameters, data source and columns), and the Sampling tab holds the draw and the export. The panels can be folded to give the tables the whole width.
 - The Introduction page is replaced by this Guide.
 - The four tables have a filter on each column and shorter numbers (display only: the Excel file keeps every digit).
-- The *Refresh* button of the Sampling tab is gone: the tables update by themselves.
