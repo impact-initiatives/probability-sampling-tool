@@ -383,10 +383,16 @@ guide_start <- function(ns) {
       class = "alert alert-info mt-3 mb-0 py-2 d-flex justify-content-between align-items-center",
       span(
         icon("circle-info"),
-        strong(" Coming from the previous version? "),
-        "The sampling types and the columns of the results have new names."
+        strong(" Note. "),
+        HTML(
+          "This version changes the names of the sampling types and of the columns, the output (one Excel file instead of two CSV files) and the <strong>cluster sampling method</strong>."
+        )
       ),
-      actionLink(ns("to_news"), "What's new")
+      actionLink(
+        ns("to_news"),
+        tagList("What's new ", icon("arrow-right")),
+        class = "ms-3 text-nowrap"
+      )
     )
   )
 }
