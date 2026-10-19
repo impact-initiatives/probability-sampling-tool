@@ -32,6 +32,9 @@ jobs:
           persist-credentials: false
 
       - uses: posit-dev/setup-air@cf390573ff4fe0f198f35df3a642b1409328d859 # v1
+        with:
+          # pinned: a new version of Air can format differently and fail the check
+          version: "0.12.0"
 
       - name: Check the formatting
         run: air format . --check
