@@ -383,9 +383,9 @@ guide_start <- function(ns) {
       class = "alert alert-info mt-3 mb-0 py-2 d-flex justify-content-between align-items-center",
       span(
         icon("circle-info"),
-        strong(" Note. "),
+        strong(" Coming from the previous version? "),
         HTML(
-          "This version changes the names of the sampling types and of the columns, the output (one Excel file instead of two CSV files) and the <strong>cluster sampling method</strong>."
+          "The output, the names of the sampling types and of the columns, and the <strong>cluster sampling method</strong> have changed."
         )
       ),
       actionLink(
