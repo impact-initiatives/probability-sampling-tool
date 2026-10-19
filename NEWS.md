@@ -1,7 +1,5 @@
 ## Names of the sampling types
 
-The three types are named after what they do (the word *allocation* is not used any more).
-
 | Before | Now |
 |---|---|
 | Simple random | **Simple random sampling** |

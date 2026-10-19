@@ -325,6 +325,21 @@ guide_start <- function(ns) {
         class = "btn-primary"
       )
     ),
+    div(
+      class = "alert alert-info mt-2 mb-0 py-2 d-flex justify-content-between align-items-center",
+      span(
+        icon("circle-info"),
+        strong(" Coming from the previous version? "),
+        HTML(
+          "The output, the names of the sampling types and of the columns, and the <strong>cluster sampling method</strong> have changed."
+        )
+      ),
+      actionLink(
+        ns("to_news"),
+        tagList("What's new ", icon("arrow-right")),
+        class = "ms-3 text-nowrap"
+      )
+    ),
     h2("How it works", class = "h6 fw-semibold mt-3"),
     layout_column_wrap(
       width = "14rem",
@@ -377,21 +392,6 @@ guide_start <- function(ns) {
         paste0(ONE_ROW[["cluster"]], "."),
         "a cluster column and a population column.",
         ns("open_cluster")
-      )
-    ),
-    div(
-      class = "alert alert-info mt-3 mb-0 py-2 d-flex justify-content-between align-items-center",
-      span(
-        icon("circle-info"),
-        strong(" Coming from the previous version? "),
-        HTML(
-          "The output, the names of the sampling types and of the columns, and the <strong>cluster sampling method</strong> have changed."
-        )
-      ),
-      actionLink(
-        ns("to_news"),
-        tagList("What's new ", icon("arrow-right")),
-        class = "ms-3 text-nowrap"
       )
     )
   )
