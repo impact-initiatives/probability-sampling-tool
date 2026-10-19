@@ -1,0 +1,101 @@
+name: Deploy
+
+# Started by hand, from the Actions tab: choose the environment, and the branch or the
+# tag to deploy with "Use workflow from". Nothing else starts it.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Where to deploy"
+        type: choice
+        options:
+          - dev
+          - production
+        default: dev
+        required: true
+
+permissions:
+  contents: read
+
+# One deployment at a time to an environment, never cancelled while it runs
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  # The same checks as a pull request, on the commit to deploy
+  ci:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  deploy:
+    needs: ci
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      ENVIRONMENT: ${{ inputs.environment }}
+      APP_NAME_DEV: ${{ vars.SHINYAPPS_APP_NAME_DEV }}
+      APP_NAME_PROD: ${{ vars.SHINYAPPS_APP_NAME_PROD }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Production is a version tag, equal to APP_VERSION and on master
+      - name: Check the tag
+        if: inputs.environment == 'production'
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$REF_TYPE" != "tag" ]; then
+            echo "::error::Production is deployed from a version tag, not from '$REF_NAME'"
+            exit 1
+          fi
+          .github/scripts/check-tag.sh "$REF_NAME"
+          git fetch --quiet origin master
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/master
+
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
+        with:
+          r-version: renv
+          use-public-rspm: true
+
+      # the packages of the app come from renv.lock, rsconnect only sends the app
+      - name: Install rsconnect
+        run: Rscript -e 'install.packages(c("rsconnect", "renv"))'
+
+      # .git is not sent to shinyapps.io: the version of the app shows this commit
+      - name: Write the commit for the app
+        run: |
+          echo "Commit: ${GITHUB_SHA::7}" > BUILD_INFO
+
+      # the files sent are those of .rscignore
+      - name: Deploy
+        env:
+          SHINYAPPS_ACCOUNT: ${{ vars.SHINYAPPS_ACCOUNT }}
+          SHINYAPPS_TOKEN: ${{ secrets.SHINYAPPS_TOKEN }}
+          SHINYAPPS_SECRET: ${{ secrets.SHINYAPPS_SECRET }}
+        run: |
+          if [ "$ENVIRONMENT" = "production" ]; then APP_NAME="$APP_NAME_PROD"; else APP_NAME="$APP_NAME_DEV"; fi
+          if [ -z "$APP_NAME" ] || [ -z "$SHINYAPPS_ACCOUNT" ]; then
+            echo "::error::The variables SHINYAPPS_ACCOUNT and SHINYAPPS_APP_NAME_* are not set (Settings > Secrets and variables > Actions > Variables)"
+            exit 1
+          fi
+          export APP_NAME
+          Rscript -e '
+            rsconnect::setAccountInfo(
+              name = Sys.getenv("SHINYAPPS_ACCOUNT"),
+              token = Sys.getenv("SHINYAPPS_TOKEN"),
+              secret = Sys.getenv("SHINYAPPS_SECRET")
+            )
+            rsconnect::deployApp(
+              appDir = ".",
+              appName = Sys.getenv("APP_NAME"),
+              account = Sys.getenv("SHINYAPPS_ACCOUNT"),
+              server = "shinyapps.io",
+              forceUpdate = TRUE,
+              launch.browser = FALSE
+            )'
