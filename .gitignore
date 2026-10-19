@@ -31,6 +31,3 @@ shinyapps/
 *.temp
 *.log
 .positai
-
-# the reference of the golden master test
-!tests/testthat/fixtures/*.rds
