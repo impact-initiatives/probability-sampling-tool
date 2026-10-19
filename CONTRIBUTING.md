@@ -102,6 +102,7 @@ Because the packages come from `renv.lock`, a new package or a new version is te
 1. All the issues of the release are merged in the development branch, [NEWS.md](NEWS.md) describes them (it is shown in the Guide, under *What's new*) and the CI is green.
 2. The development branch is merged into `master`, by pull request.
 3. The merge commit of `master` is tagged with the version of the app, `v` followed by `APP_VERSION` (`v2026.1.0`).
+4. The tag is deployed to production (see *Deployment*).
 
 When a tag is pushed, the `tag` job checks that it is the version of the app (so that the Excel files of the release say the right version) and that its commit is on `master`; otherwise the release is refused.
 
@@ -109,4 +110,19 @@ When a tag is pushed, the `tag` job checks that it is the version of the app (so
 
 ## Deployment
 
-The application is deployed to shinyapps.io. The deployment workflow, its environments and its safeguards are being set up (#49): they will be described here.
+The application is deployed to shinyapps.io (account `impact-initiatives`) by the workflow [`deploy.yml`](.github/workflows/deploy.yml), started by hand.
+
+| | dev | production |
+|---|---|---|
+| Application | `probability-sampling-tool-dev`, shared by link for the tests | `probability-sampling-tool` |
+| Deployed from | a branch or a tag, usually `dev<year>.<n>` | a version tag only (`vYYYY.N.N`) |
+
+**To deploy**: in the *Actions* tab, choose *Deploy*, *Run workflow*, pick the branch or the tag under *Use workflow from*, choose where to deploy and run it. The workflow runs the CI on that commit and goes on only if it passes; for production it also checks that the tag is `APP_VERSION` and that its commit is on `master`. It writes `BUILD_INFO` (the commit, shown in the Excel file), and sends the files that `.rscignore` does not leave out; the packages come from `renv.lock`. A workflow that is started by hand has to be on `master` to appear in the *Actions* tab.
+
+**Before a release**: deploy the development branch to dev and check the application there. Then merge it into `master`, tag the merge, and deploy that tag to production.
+
+**Settings** (*Settings → Secrets and variables → Actions*): the secrets `SHINYAPPS_TOKEN` and `SHINYAPPS_SECRET`, the token named `github-actions` of the shinyapps.io account; the variables `SHINYAPPS_ACCOUNT`, `SHINYAPPS_APP_NAME_DEV` and `SHINYAPPS_APP_NAME_PROD`.
+
+**Who can deploy.** Whoever can run a workflow in the repository, so the people with write access: GitHub Environments, which would ask for an approval, are not available on the plan of the organisation. Keep the write access to people you trust, and when someone with access leaves, or in case of doubt, create a new token on shinyapps.io and replace the two secrets. Every deployment is in the history of the *Actions* tab, with who started it.
+
+shinyapps.io is moving to Posit Connect Cloud: this section will have to be updated then.
