@@ -24,7 +24,7 @@ concurrency:
 jobs:
   # The code follows the formatting of Air
   format:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -40,9 +40,10 @@ jobs:
         run: air format . --check
 
   # The tests run on the packages of renv.lock, with the R version of the lockfile,
-  # on Ubuntu: the same as the deployment on shinyapps.io
+  # on a fixed Ubuntu (not ubuntu-latest, which GitHub moves to a new version without
+  # notice): shinyapps.io also runs on Ubuntu Linux
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       NOT_CRAN: "true"
@@ -76,7 +77,7 @@ jobs:
   tag:
     if: github.ref_type == 'tag'
     needs: [format, test]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
