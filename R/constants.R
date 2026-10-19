@@ -9,7 +9,7 @@ APP_VERSION <- "2026.1.0"
 # What one row of the sampling frame is, for each type (simple, pps and cluster):
 # the short form for the tables that compare the types, the longer
 # one for the page of the type. The Guide reads them ({{one_row:pps}},
-# {{one_row_detail:pps}}); the README repeats the short ones, a test checks them.
+# {{one_row_detail:pps}}).
 ONE_ROW <- c(
   simple = "a unit to survey (household, person)",
   pps = "a PSU (an area or a population group) with its population",
