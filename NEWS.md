@@ -77,4 +77,4 @@ The tool now checks the sampling frame and the settings before the draw. Every c
 - The Sampling frame tab groups the setup in one panel (type of sampling, parameters, data source and columns), and the Sampling tab holds the draw and the export. The panels can be folded to give the tables the whole width.
 - The Introduction page is replaced by this Guide.
 - The four tables have a filter on each column and shorter numbers (display only: the Excel file keeps every digit).
-- The *New seed* and *Refresh* buttons are gone: the seed is a field you edit.
+- The *Refresh* button of the Sampling tab is gone: the tables update by themselves.
