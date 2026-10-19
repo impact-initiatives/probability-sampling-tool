@@ -133,15 +133,11 @@ make_sample <- function(sampling_frame, params) {
     }
   }
 
+  # with "Enter sample size" the size is not computed, so the parameters of the
+  # computation are not used. The ICC is: it gives the design effect and the
+  # effective sample size, which tell what the surveys are worth.
   if (params$sampling_mode == SAMPLING_MODE_ENTER_SIZE) {
-    summary_sample[c(
-      "icc",
-      "deff",
-      "effective_sample_size",
-      "error_margin",
-      "confidence_level",
-      "buffer"
-    )] <- NA
+    summary_sample[c("error_margin", "confidence_level", "buffer")] <- NA
   }
 
   # give the columns their labels, then drop the columns that are structurally

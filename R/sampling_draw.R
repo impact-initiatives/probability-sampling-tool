@@ -100,8 +100,8 @@ pps_sampling <- function(sframe, sampling_target) {
 #' @param cls The planned cluster size.
 #' @param dist The stratum id.
 #' @param target_with_buffer The target sample size of the stratum, buffer included, as computed by
-#'   `create_targets()`. The design effect, when there is one, is already in it:
-#'   it is not applied here.
+#'   `create_targets()`. The design effect, when it changes the size (only in the
+#'   mode based on the population), is already in it: it is not applied here.
 #' @returns The sampled PSU ids, one entry per draw. Every PSU must be able to host a
 #'   cluster: `cluster_size_issues()` blocks the other cases.
 #' @noRd
