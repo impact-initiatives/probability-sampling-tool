@@ -63,9 +63,13 @@ jobs:
           r-version: renv
           use-public-rspm: true
 
-      # the packages of the app come from renv.lock, rsconnect only sends the app
+      # rsconnect reads the packages of the app from renv.lock and from the project
+      # library: restore it, the same way as the CI
+      - uses: r-lib/actions/setup-renv@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
+
+      # rsconnect itself is not a package of the app: it is not in renv.lock
       - name: Install rsconnect
-        run: Rscript -e 'install.packages(c("rsconnect", "renv"))'
+        run: Rscript -e 'install.packages("rsconnect")'
 
       # .git is not sent to shinyapps.io: the version of the app shows this commit
       - name: Write the commit for the app
