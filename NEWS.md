@@ -38,4 +38,4 @@ The `Sampling type` column of the summary shows the new names.
 
 - The **proportion** is fixed at 0.5: the field is shown but not editable.
 - A **seed** makes the draw reproducible: the same seed and settings give the same sample.
-- With "Enter sample size", the number applies to each stratum, and no buffer is added.
+- With "Enter sample size", the number applies to each stratum, and no buffer is added. For the cluster type the summary still shows the ICC, the design effect and the effective sample size.
