@@ -1,0 +1,15 @@
+# Proposes the update of the actions of the workflows, which are pinned to a commit.
+# Dependabot reads this file on the default branch (master) and opens its pull
+# requests against it: it starts working once the release is merged there.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns:
+          - "*"

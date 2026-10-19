@@ -7,7 +7,7 @@
 #' @returns A `bs_theme`.
 #' @noRd
 app_theme <- function() {
-  theme = bs_theme(
+  theme <- bs_theme(
     version = 5,
     # WCAG AA: white text on primary/danger/success is above 4.5:1
     primary = "#1A56A0",
@@ -45,7 +45,7 @@ app_theme <- function() {
 #' @returns A tag list.
 #' @noRd
 app_header <- function() {
-  header = tagList(
+  header <- tagList(
     shinyjs::useShinyjs(),
     # Spinner on the outputs being recalculated and a pulse while the app is busy
     useBusyIndicators(),

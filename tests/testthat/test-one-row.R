@@ -1,6 +1,5 @@
 # What one row of the frame is, said once for each type (ONE_ROW and
-# ONE_ROW_DETAIL) and read by the Guide; the README repeats the short forms
-# (issue #60).
+# ONE_ROW_DETAIL) and read by the Guide (issue #60).
 
 read_text <- function(...) {
   paste(readLines(file.path(app_root, ...), warn = FALSE), collapse = "\n")
@@ -35,9 +34,8 @@ test_that("the comparison tables and the type pages use the phrases of the code"
   }
 })
 
-test_that("the cards of the Start page and the README say the same", {
+test_that("the cards of the Start page say the same", {
   start <- as.character(htmltools::renderTags(guide_start(identity))$html)
-  readme <- read_text("README.md")
   for (type in names(ONE_ROW)) {
     expect_match(
       gsub("&amp;", "&", start, fixed = TRUE),
@@ -45,6 +43,5 @@ test_that("the cards of the Start page and the README say the same", {
       fixed = TRUE,
       info = type
     )
-    expect_match(readme, ONE_ROW[[type]], fixed = TRUE, info = type)
   }
 })

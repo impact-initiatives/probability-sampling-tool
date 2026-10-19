@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - "dev[0-9][0-9][0-9][0-9].*"
+    tags:
+      - "v[0-9]*"
+  pull_request:
+    branches:
+      - master
+      - "dev[0-9][0-9][0-9][0-9].*"
+
+# Nothing here needs to write to the repository
+permissions:
+  contents: read
+
+# A new push to the same branch or pull request cancels the run it makes useless
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The code follows the formatting of Air
+  format:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: posit-dev/setup-air@cf390573ff4fe0f198f35df3a642b1409328d859 # v1
+        with:
+          # pinned: a new version of Air can format differently and fail the check
+          version: "0.12.0"
+
+      - name: Check the formatting
+        run: air format . --check
+
+  # The tests run on the packages of renv.lock, with the R version of the lockfile,
+  # on a fixed Ubuntu (not ubuntu-latest, which GitHub moves to a new version without
+  # notice): shinyapps.io also runs on Ubuntu Linux
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NOT_CRAN: "true"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
+        with:
+          r-version: renv
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-renv@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
+
+      - name: Run the tests
+        shell: bash
+        run: |
+          set -o pipefail
+          Rscript -e 'shinytest2::test_app()' 2>&1 | tee test-output.log
+
+      - name: Keep the log of a failed run
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-output
+          path: test-output.log
+          retention-days: 7
+
+  # A release tag is the version of the app, and is on master
+  tag:
+    if: github.ref_type == 'tag'
+    needs: [format, test]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: The tag is the version of the app
+        env:
+          TAG: ${{ github.ref_name }}
+        run: .github/scripts/check-tag.sh "$TAG"
+
+      - name: The tag is on master
+        run: |
+          git fetch --quiet origin master
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/master
