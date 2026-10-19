@@ -52,15 +52,17 @@ The formulas are in *Methods* and the checks in *Your data*.
 
 - **Stratified** is a checkbox; the strata column appears next to the other columns when it is checked.
 - The example data keeps three columns, `strata`, `psu_id` and `population`, already chosen when "Use test data" is selected.
-- The **buffer** is a share of the target between 0 and 2 (200%): a larger value is reported before the draw.
 - The label **Error margin** is written the same way in the form, the Guide and the results.
 
 ## Checks
 
-- Missing or negative populations, the same column used twice, a file that is not a CSV, is empty or too large, a wrong seed or wrong parameters are reported before the draw.
+Every check is listed in *Your data*, under *What the tool checks*, in the order they run: the file, then the columns, then the parameters. The first problem is reported with what to do, and when it concerns the data, a list of the rows to fix can be downloaded.
+
+New checks: the population column (it has to be numeric, without missing or negative values), duplicate column names in the file, a strata column that is not in the file, protected `PST_` column names, a buffer above 200%, the cluster-size checks (see *Cluster sampling* above) and a sample too large for an Excel sheet.
 
 ## Parameters
 
 - The **proportion** is fixed at 0.5: the field is shown but not editable.
 - A **seed** makes the draw reproducible: the same seed and settings give the same sample.
 - With "Enter sample size", the number applies to each stratum, and no buffer is added. For the cluster type the summary still shows the ICC, the design effect and the effective sample size.
+- The **buffer** is a share of the target between 0 and 2 (200%): a larger value is reported before the draw.
