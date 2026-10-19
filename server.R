@@ -122,7 +122,6 @@ function(input, output, session) {
 
   # create the sampling frame
   sampling_frame <- eventReactive(input$apply_button, {
-    require_valid(validate_strata_selection(params()))
     require_valid(file_error())
     sframe <- frame_data()
     validate(need(!is.null(sframe), check_message("no_file")))

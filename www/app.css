@@ -60,6 +60,14 @@ table.dataTable td.dt-right {
 	font-size: 0.8rem;
 }
 
+/* With scrollX, DataTables copies the header, column filters included, into the
+   body's zero-height header. The copy is inert but its numeric filter popups are
+   positioned absolutely, so a copy becomes a second slider below the visible
+   one as soon as the filter opens. Hide the copied filter cells. */
+.dataTables_scrollBody thead tr:last-child td {
+	display: none;
+}
+
 /* Guide: readable width, text blocks and steps */
 .guide {
 	max-width: 62rem;
