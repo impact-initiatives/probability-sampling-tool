@@ -71,3 +71,25 @@ jobs:
           name: test-output
           path: test-output.log
           retention-days: 7
+
+  # A release tag is the version of the app, and is on master
+  tag:
+    if: github.ref_type == 'tag'
+    needs: [format, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: The tag is the version of the app
+        env:
+          TAG: ${{ github.ref_name }}
+        run: .github/scripts/check-tag.sh "$TAG"
+
+      - name: The tag is on master
+        run: |
+          git fetch --quiet origin master
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/master
