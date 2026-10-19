@@ -19,9 +19,9 @@ sampling_input <- function(sampling_mode, sampling_type, stratified) {
     buffer = 0.05,
     sampling_type = sampling_type,
     stratified = stratified,
-    strata_column = "Region",
-    psu_column = "VDC_code",
-    population_column = "HH_total",
+    strata_column = "strata",
+    psu_column = "psu_id",
+    population_column = "population",
     cluster_size = 5,
     icc = 0.06,
     seed = 7

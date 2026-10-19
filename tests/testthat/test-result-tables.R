@@ -30,7 +30,7 @@ test_that("the result tables have filters and aligned short numbers", {
     stratified = "Not stratified"
   )
   app$wait_for_idle()
-  app$set_inputs(population_column = "HH_total")
+  app$set_inputs(population_column = "population")
   app$wait_for_idle()
   app$click("apply_button")
   app$wait_for_idle()
