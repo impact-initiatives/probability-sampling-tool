@@ -4,7 +4,7 @@
 skip_if_not_installed("chromote")
 skip_if(is.null(chromote::find_chrome()), "Chrome is not available")
 
-test_that("a new Apply empties the Sampling tab until Sample is clicked again", {
+test_that("a change of the setup or a new Apply empties the Sampling tab until Sample is clicked again", {
   app <- AppDriver$new(
     app_dir = normalizePath(testthat::test_path("..", "..")),
     name = "sample-lifecycle",
@@ -58,6 +58,19 @@ test_that("a new Apply empties the Sampling tab until Sample is clicked again", 
   expect_true(has_rows("summary_table"))
   expect_true(has_link("download_sample"))
   expect_true(has_link("download_summary"))
+
+  # a change of the setup hides the sample and the downloads, and says why
+  go_tab("Sampling frame")
+  app$set_inputs(buffer = 0.1)
+  app$wait_for_idle()
+  go_tab("Sampling")
+  expect_false(has_rows("sample_table"))
+  expect_false(has_link("download_sample"))
+  expect_false(sample_enabled())
+  expect_match(
+    app$get_js("document.getElementById('sample_status').innerText"),
+    "setup changed"
+  )
 
   go_tab("Sampling frame")
   app$click("apply_button")

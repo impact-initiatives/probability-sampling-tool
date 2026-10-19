@@ -146,16 +146,19 @@ function(input, output, session) {
   # draw fails; an impossible seed blocks it too.
   applied <- reactiveVal(FALSE)
   draw_failed <- reactiveVal(FALSE)
+  # the setup changed since the last Apply, said in the Sampling tab
+  setup_changed <- reactiveVal(FALSE)
 
-  # The sample on screen is the one drawn after the last Apply: a new Apply
-  # hides it and its downloads until Sample is clicked again. Changing a
-  # parameter without Apply leaves it, like the frame and target tables.
+  # The sample on screen is the one drawn after the last Apply: a new Apply, or a
+  # change of the setup, hides it and its downloads until Sample is clicked
+  # again. The frame and target tables stay until the next Apply.
   sample_current <- reactiveVal(FALSE)
   observeEvent(input$apply_button, sample_current(FALSE), priority = 10)
 
   observeEvent(input$apply_button, {
     applied(FALSE)
     draw_failed(FALSE)
+    setup_changed(FALSE)
     # the errors are shown by the outputs; here they must not end the session
     if (!succeeds(sampling_frame()) || !succeeds(targets())) {
       return()
@@ -189,7 +192,11 @@ function(input, output, session) {
       input$cluster_size,
       input$icc
     ),
-    applied(FALSE),
+    {
+      applied(FALSE)
+      setup_changed(TRUE)
+      sample_current(FALSE)
+    },
     ignoreInit = TRUE
   )
 
@@ -311,16 +318,31 @@ function(input, output, session) {
     result_table(summary, small_table_height(summary))
   })
 
+  # why "Sample" can or cannot be used, and why there is nothing to show
+  status <- reactive(sampling_status(
+    apply_clicked = isTRUE(input$apply_button > 0),
+    setup_changed = setup_changed(),
+    applied = applied(),
+    seed_message = validate_seed(input$seed),
+    draw_failed = draw_failed(),
+    sample_current = sample_current()
+  ))
+  output$sample_status <- renderUI(status_note(status()))
+  output$summary_empty <- renderUI(empty_table_note(status(), sample_current()))
+  output$sample_empty <- renderUI(empty_table_note(status(), sample_current()))
+
   output$export_buttons <- renderUI({
     ready <- sample_current()
+    why_not <- if (!ready) status()$text
     tagList(
       export_button(
         "download_summary",
         "Sample summary",
         "width: 100%; margin-bottom: 10px;",
-        ready
+        ready,
+        why_not
       ),
-      export_button("download_sample", "Sample", "width: 100%;", ready)
+      export_button("download_sample", "Sample", "width: 100%;", ready, why_not)
     )
   })
 

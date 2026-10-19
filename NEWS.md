@@ -27,7 +27,7 @@ The `Sampling type` column of the summary shows the new names.
 
 - **Columns added by the tool** start with `PST_` and come first: `PST_id_sample`, `PST_survey`, `PST_stratum_id`, `PST_psu_id`, `PST_pop_size`, `PST_pop_size_stratum`, `PST_prob`. A frame with a column named like one of them was silently altered or made the draw fail: it is now blocked, with a message.
 - **Target columns** are labelled *Requested Target*: the draw is capped to the population in the random types, and a warning is shown after Apply and after Sample.
-- A new Apply **hides the previous sample** and its downloads until Sample is clicked again.
+- Changing a parameter, like a new Apply, **hides the previous sample** and its downloads until Apply and then Sample are clicked again. The Sampling tab says why Sample, the tables and the downloads are not available.
 
 ## Checks
 

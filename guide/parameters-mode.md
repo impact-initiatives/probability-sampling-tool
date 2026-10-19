@@ -5,4 +5,4 @@
 
 With **{{STRATIFIED}}**, every stratum gets its own target. In the mode "{{SAMPLING_MODE_FROM_POPULATION}}" it depends on the population of the stratum; in "{{SAMPLING_MODE_ENTER_SIZE}}" it is the same number for every stratum.
 
-Changing a parameter does not erase the tables, but **Sample** is disabled until the next Apply, and a new Apply hides the previous sample.
+Changing a parameter disables **Sample** and hides the sample on screen and its downloads until the next Apply; the Sampling tab says so. The target and frame tables of the Sampling frame tab keep showing what was last applied.

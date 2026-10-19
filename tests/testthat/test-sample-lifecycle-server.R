@@ -1,7 +1,8 @@
-# The sample on screen is the one drawn after the last Apply (issue #33).
+# The sample on screen is the one drawn after the last Apply (issue #33): a new
+# Apply or a change of the setup hides it.
 # Logic only, no browser: see test-sample-lifecycle-app.R for the real page.
 
-test_that("a new Apply hides the previous sample and its downloads", {
+test_that("a new Apply or a change of the setup hides the previous sample and its downloads", {
   withr::local_dir(app_root)
   server <- source("server.R")$value
 
@@ -38,10 +39,12 @@ test_that("a new Apply hides the previous sample and its downloads", {
     expect_no_error(output$download_sample)
     expect_no_error(output$download_summary)
 
-    # changing a parameter without Apply keeps the last validated sample
+    # changing a parameter without Apply hides it too, with its downloads
     session$setInputs(buffer = 0.10)
     expect_false(applied())
-    expect_true(sample_current())
+    expect_false(sample_current())
+    hidden(output$sample_table)
+    hidden(output$download_sample)
 
     session$setInputs(apply_button = 2)
     expect_false(sample_current())

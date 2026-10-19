@@ -27,7 +27,8 @@ sampling_tab <- function() {
               class = "btn-primary",
               width = "100%"
             )
-          )
+          ),
+          uiOutput("sample_status")
         ),
         sidebar_header("Export"),
         div(class = "p-3", uiOutput("export_buttons"))
@@ -39,9 +40,14 @@ sampling_tab <- function() {
         table_card(
           "Sample summary",
           uiOutput("sample_error"),
+          uiOutput("summary_empty"),
           DT::dataTableOutput("summary_table")
         ),
-        table_card("Sample", DT::dataTableOutput("sample_table"))
+        table_card(
+          "Sample",
+          uiOutput("sample_empty"),
+          DT::dataTableOutput("sample_table")
+        )
       )
     )
   )

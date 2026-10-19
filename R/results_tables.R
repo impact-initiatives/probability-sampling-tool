@@ -152,15 +152,18 @@ issues_download_link <- function(id) {
 #'
 #' Real download buttons only exist once a sample has been drawn; before that, or
 #' after a failed draw, inert placeholders are shown. `shinyjs::enable()` would
-#' leave `aria-disabled` and `tabindex=-1` on the links.
+#' leave `aria-disabled` and `tabindex=-1` on the links. A disabled button shows
+#' no tooltip, so the placeholder sits in a focusable wrapper that carries the
+#' tooltip saying why it is inert.
 #'
 #' @param id The id of the download output.
 #' @param label The text of the button.
 #' @param style The inline CSS of the button.
 #' @param ready `TRUE` once a sample has been drawn.
+#' @param why_not The tooltip of the inert button, `NULL` for none.
 #' @returns A download button, or a disabled button.
 #' @noRd
-export_button <- function(id, label, style, ready) {
+export_button <- function(id, label, style, ready, why_not = NULL) {
   if (ready) {
     downloadButton(
       id,
@@ -169,13 +172,23 @@ export_button <- function(id, label, style, ready) {
       style = style
     )
   } else {
-    tags$button(
-      type = "button",
-      class = "btn btn-outline-primary text-nowrap",
+    inert <- tags$span(
+      class = "d-block",
       style = style,
-      disabled = NA,
-      icon("download"),
-      label
+      tabindex = "0",
+      tags$button(
+        type = "button",
+        class = "btn btn-outline-primary text-nowrap",
+        style = "width: 100%; pointer-events: none;",
+        disabled = NA,
+        icon("download"),
+        label
+      )
     )
+    if (is.null(why_not)) {
+      inert
+    } else {
+      tooltip(inert, why_not, placement = "bottom")
+    }
   }
 }
