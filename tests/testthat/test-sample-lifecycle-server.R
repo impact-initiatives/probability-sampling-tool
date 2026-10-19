@@ -12,7 +12,7 @@ test_that("a new Apply hides the previous sample and its downloads", {
       data_source = "test",
       sampling_mode = "Sample size based on population",
       sampling_type = "Simple random sampling",
-      stratified = "Not stratified",
+      stratified = FALSE,
       psu_column = "None",
       strata_column = "None",
       population_column = "None",
@@ -55,7 +55,7 @@ test_that("a new Apply hides the previous sample and its downloads", {
     expect_no_error(output$sample_table)
 
     # an Apply that fails validation hides it too
-    session$setInputs(stratified = "Stratified", apply_button = 3)
+    session$setInputs(stratified = TRUE, apply_button = 3)
     expect_false(applied())
     expect_false(sample_current())
     hidden(output$download_sample)

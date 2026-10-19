@@ -27,7 +27,7 @@ test_that("the result tables have filters and aligned short numbers", {
   app$set_inputs(
     data_source = "test",
     sampling_type = "PPS sampling with replacement",
-    stratified = "Not stratified"
+    stratified = FALSE
   )
   app$wait_for_idle()
   app$set_inputs(population_column = "population")

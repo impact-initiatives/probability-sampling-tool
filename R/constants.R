@@ -11,9 +11,8 @@ SAMPLING_TYPE_CLUSTER <- "Two-stage PPS cluster sampling with replacement"
 SAMPLING_MODE_ENTER_SIZE <- "Enter sample size"
 SAMPLING_MODE_FROM_POPULATION <- "Sample size based on population"
 
-# stratified or not
+# the label of the checkbox that makes the sample stratified
 STRATIFIED <- "Stratified"
-NOT_STRATIFIED <- "Not stratified"
 
 # where the sampling frame comes from
 DATA_SOURCE_UPLOAD <- "upload"

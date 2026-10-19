@@ -63,8 +63,8 @@ checks:
     fix: "rename or remove the `{{RESERVED_PREFIX}}` columns"
   strata_missing:
     group: columns
-    message: "Please select a stratification variable, or set 'Stratified ?' to 'Not stratified'."
-    fix: "pick the column, or \"Not stratified\""
+    message: "Please select a stratification variable, or uncheck 'Stratified'."
+    fix: "pick the column, or uncheck \"Stratified\""
   strata_not_found:
     group: columns
     applies_to: "stratified"

@@ -67,7 +67,7 @@ test_that("a frame column named like an old internal column is kept as it is", {
     frame <- frame_24()
     frame[[name]] <- paste0("USER_", name, "_", seq_len(nrow(frame)))
     for (sampling_type in sampling_types) {
-      for (stratified in c("Not stratified", "Stratified")) {
+      for (stratified in c(FALSE, TRUE)) {
         label <- paste(name, sampling_type, stratified, sep = " / ")
         out <- tryCatch(
           draw(frame, sampling_type, stratified),
@@ -140,7 +140,7 @@ test_that("the frame attached to issue #32 can be sampled", {
     "Two-stage PPS cluster sampling with replacement",
     "PPS sampling with replacement"
   )) {
-    input <- sampling_input(sampling_type, "Stratified")
+    input <- sampling_input(sampling_type, TRUE)
     input$target_size <- 30
     input$cluster_size <- 2
     expect_no_error(run_with_seed(1, make_sample(frame, input)))
@@ -151,7 +151,7 @@ test_that("the sample carries the columns the tool adds, all with the PST_ prefi
   out <- draw(
     frame_24(),
     "Two-stage PPS cluster sampling with replacement",
-    "Stratified"
+    TRUE
   )
   added <- setdiff(names(out$sample), names(frame_24()))
   expect_setequal(added, tool_columns)
@@ -186,7 +186,7 @@ test_that("a reloaded sample is blocked at Apply with the reserved columns liste
   previous <- draw(
     frame_24(),
     "Simple random sampling",
-    "Not stratified"
+    FALSE
   )$sample
   path <- withr::local_tempfile(fileext = ".csv")
   write.csv(previous, path, row.names = FALSE)
@@ -197,7 +197,7 @@ test_that("a reloaded sample is blocked at Apply with the reserved columns liste
       frame_file = list(name = "previous_sample.csv", datapath = path),
       sampling_mode = "Enter sample size",
       sampling_type = "Simple random sampling",
-      stratified = "Not stratified",
+      stratified = FALSE,
       psu_column = "None",
       strata_column = "None",
       population_column = "None",
@@ -226,7 +226,7 @@ test_that("the downloads have no unnamed row-number column", {
       data_source = "test",
       sampling_mode = "Sample size based on population",
       sampling_type = "Simple random sampling",
-      stratified = "Not stratified",
+      stratified = FALSE,
       psu_column = "None",
       strata_column = "None",
       population_column = "None",

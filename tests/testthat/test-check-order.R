@@ -49,7 +49,7 @@ settings_for <- function(
   list(
     sampling_mode = mode,
     sampling_type = type,
-    stratified = if (stratified) STRATIFIED else NOT_STRATIFIED,
+    stratified = stratified,
     strata_column = strata,
     psu_column = psu,
     population_column = population,

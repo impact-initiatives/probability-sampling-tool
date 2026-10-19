@@ -38,14 +38,15 @@ read_params <- function(input) {
 
 #' Give the settings their final shape
 #'
-#' `stratified` becomes `TRUE` or `FALSE`, and a column field becomes `NULL` when
-#' no column is chosen, the name of the column otherwise.
+#' `stratified` becomes `TRUE` or `FALSE` (anything but `TRUE` is `FALSE`), and a
+#' column field becomes `NULL` when no column is chosen, the name of the column
+#' otherwise.
 #'
 #' @param params The settings as the interface sends them, or as a test builds them.
 #' @returns The same list, with `stratified` and the column fields normalised.
 #' @noRd
 normalize_params <- function(params) {
-  params$stratified <- identical(params$stratified, STRATIFIED)
+  params$stratified <- isTRUE(params$stratified)
   for (field in COLUMN_FIELDS) {
     params[field] <- list(column_choice(params[[field]]))
   }

@@ -49,7 +49,7 @@ test_that("the tables and the CSV files have the same column order in every conf
 
     for (sampling_mode in modes) {
       for (sampling_type in types) {
-        for (stratified in c("Not stratified", "Stratified")) {
+        for (stratified in c(FALSE, TRUE)) {
           label <- paste(
             frame_class,
             sampling_mode,

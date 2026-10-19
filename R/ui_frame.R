@@ -98,10 +98,11 @@ setup_sampling_choice <- function() {
     fluidRow(
       column(
         4,
-        select_input_overlay(
-          "stratified",
-          "Stratified ?",
-          c(NOT_STRATIFIED, STRATIFIED)
+        # the label above the box, like the other fields
+        div(
+          class = "stratified-check",
+          tags$label(class = "control-label", `for` = "stratified", STRATIFIED),
+          checkboxInput("stratified", NULL, value = FALSE)
         )
       ),
       conditionalPanel(
@@ -303,7 +304,7 @@ setup_column_mapping <- function() {
     condition = paste(
       js_differs("sampling_type", SAMPLING_TYPE_SIMPLE),
       "||",
-      js_equals("stratified", STRATIFIED)
+      "input.stratified"
     ),
     div(class = "param-subhead", "Column mapping"),
     fluidRow(
@@ -336,14 +337,14 @@ setup_column_mapping <- function() {
       # last, so that the two other fields keep their place
       # whether the sample is stratified or not
       conditionalPanel(
-        condition = js_equals("stratified", STRATIFIED),
+        condition = "input.stratified",
         column(
           4,
           select_input_overlay(
             'strata_column',
             'Input strata',
             choices = NULL,
-            multiple = F
+            multiple = FALSE
           )
         )
       )
