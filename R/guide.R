@@ -448,6 +448,11 @@ guide_ui <- function(id) {
     withMathJax(
       div(
         class = "guide",
+        # the links of the texts, `#guide:...`, are handled by guide_server()
+        tags$script(HTML(sprintf(
+          "$(document).on('click', 'a[href^=\"#guide:\"]', function(e) { e.preventDefault(); Shiny.setInputValue('%s', this.getAttribute('href').slice(7), {priority: 'event'}); });",
+          ns("goto")
+        ))),
         navset_pill(
           id = ns("nav"),
           nav_panel("Start", value = "start", guide_start(ns)),
@@ -615,6 +620,15 @@ guide_server <- function(id, parent) {
         bslib::nav_select("nav", "types")
         bslib::accordion_panel_set("types_accordion", type_links[[link]])
       })
+    })
+    # a link of a text, `[text](#guide:tab)` or `[text](#guide:tab/panel)`: go to the
+    # tab and open the panel of its accordion, if one is named
+    observeEvent(input$goto, {
+      target <- strsplit(input$goto, "/", fixed = TRUE)[[1]]
+      bslib::nav_select("nav", target[1])
+      if (length(target) > 1) {
+        bslib::accordion_panel_open(paste0(target[1], "_accordion"), target[2])
+      }
     })
     observeEvent(
       input$to_app,
