@@ -15,8 +15,9 @@ csv_format_error <- function(name) {
 
 #' Read an uploaded file as a CSV table
 #'
-#' The file is refused if it is not a .csv, if it cannot be read as a table or if
-#' reading it gave a warning, which means rows were dropped.
+#' The file is refused if it is not a .csv, if it cannot be read as a table, if
+#' reading it gave a warning (which means rows were dropped) or if two of its
+#' columns have the same name.
 #'
 #' @param name The name of the uploaded file.
 #' @param path The path of the uploaded file on the server.
@@ -45,6 +46,16 @@ read_uploaded_csv <- function(name, path) {
   )
   if (parse_warned || is.null(data) || nrow(data) == 0 || ncol(data) == 0) {
     return(fail(check_message("csv_unreadable", name = name)))
+  }
+
+  # two columns with the same name make the later steps fail with a technical
+  # message, so the file is refused here, with the names
+  repeated <- unique(names(data)[duplicated(names(data))])
+  if (length(repeated) > 0) {
+    return(fail(check_message(
+      "duplicate_columns",
+      columns = paste(repeated, collapse = ", ")
+    )))
   }
   list(data = data, error = NULL)
 }

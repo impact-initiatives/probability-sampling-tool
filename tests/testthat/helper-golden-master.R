@@ -198,6 +198,13 @@ golden_scenarios <- function() {
     "file|header-only",
     file = list(name = "frame.csv", content = "a,b\n")
   ))
+  add(scenario(
+    "file|duplicate-columns",
+    file = list(name = "frame.csv", content = "a,b,a,b,c\n1,2,3,4,5\n")
+  ))
+  add(scenario("file|duplicate-column-example", frame = function(d) {
+    cbind(d, d[, "Female_total"])
+  }))
   add(scenario("file|upload-ok", frame = function(d) d[1:200]))
 
   # 4. the columns
