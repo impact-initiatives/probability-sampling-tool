@@ -15,6 +15,18 @@ column_label <- function(key) {
   label
 }
 
+#' Get the name of a sheet of the Excel file
+#'
+#' @param key The name the code gives the sheet, a name of `OUTPUT_SHEETS`.
+#' @returns The name of the sheet, as a string. An unknown sheet is an error.
+#' @noRd
+sheet_name <- function(key) {
+  if (!key %in% names(OUTPUT_SHEETS)) {
+    stop("No sheet named: ", key, call. = FALSE)
+  }
+  unname(OUTPUT_SHEETS[[key]])
+}
+
 #' Get the label of a field of the form
 #'
 #' @param field The name of the field in the settings, see `FIELD_LABELS`.
@@ -31,7 +43,8 @@ field_label <- function(field) {
 #'
 #' A placeholder is the value of a constant (`{{MAX_UPLOAD_MB}}`), the label of a
 #' column (`{{label:clusters_drawn}}`), the label of a field of the form
-#' (`{{field:buffer}}`) or the title of a check
+#' (`{{field:buffer}}`), the name of a sheet of the Excel file (`{{sheet:inputs}}`)
+#' or the title of a check
 #' (`{{check_title:exceeds_population}}`).
 #'
 #' @param name What is between the braces.
@@ -40,6 +53,9 @@ field_label <- function(field) {
 guide_value <- function(name) {
   if (startsWith(name, "label:")) {
     return(column_label(sub("^label:", "", name)))
+  }
+  if (startsWith(name, "sheet:")) {
+    return(sheet_name(sub("^sheet:", "", name)))
   }
   if (startsWith(name, "field:")) {
     return(field_label(sub("^field:", "", name)))
@@ -343,7 +359,7 @@ guide_start <- function(ns) {
       guide_step(
         4,
         "Sample and export",
-        "Draws the sample in the Sampling tab, then download the Sample and its summary.",
+        "Draws the sample in the Sampling tab, then download one Excel file with the inputs, the summary and the sample.",
         actionLink(ns("to_results"), "Reading the results")
       )
     ),
@@ -432,6 +448,7 @@ guide_ui <- function(id) {
             "Results",
             value = "results",
             guide_card("The tables", "guide/results-tables.md"),
+            guide_card("The Excel file", "guide/results-file.md"),
             guide_card(
               "Columns added by the tool",
               "guide/results-columns.md"

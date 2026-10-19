@@ -318,3 +318,20 @@ test_that("every type of sampling gives a workbook that opens", {
     }
   }
 })
+
+test_that("the Guide names the sheets of the file like the code does", {
+  expect_identical(
+    fill_guide_placeholders("{{sheet:summary}}"),
+    "sample_summary"
+  )
+  expect_error(fill_guide_placeholders("{{sheet:no_such}}"), "No sheet")
+  text <- fill_guide_placeholders(paste(
+    readLines(file.path(app_root, "guide", "results-file.md"), warn = FALSE),
+    collapse = "\n"
+  ))
+  for (sheet in OUTPUT_SHEETS) {
+    expect_match(text, sheet, fixed = TRUE)
+  }
+  expect_match(text, "1048576 rows", fixed = TRUE)
+  expect_no_match(text, "{{", fixed = TRUE)
+})
