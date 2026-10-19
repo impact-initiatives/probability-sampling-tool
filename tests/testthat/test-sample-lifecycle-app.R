@@ -46,6 +46,9 @@ test_that("a change of the setup or a new Apply empties the Sampling tab until S
   }
 
   app$set_inputs(data_source = "test")
+  # the columns of the example data are chosen by the server just after: an Apply
+  # before they arrive would be followed by a change of the setup
+  app$wait_for_idle()
   app$click("apply_button")
   app$wait_for_idle()
   go_tab("Sampling")
