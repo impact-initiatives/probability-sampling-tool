@@ -56,7 +56,7 @@ test_that("with Enter sample size the cluster summary still shows the design eff
       proportion = 0.5,
       buffer = 0.05,
       sampling_type = type,
-      stratified = "Not stratified",
+      stratified = FALSE,
       strata_column = "None",
       psu_column = "psu_name",
       population_column = "population",

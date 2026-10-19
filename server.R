@@ -37,7 +37,7 @@ function(input, output, session) {
   # get the data
   frame_data <- reactive({
     if (input$data_source == DATA_SOURCE_TEST) {
-      data.table::fread("data/data_example.csv")
+      data.table::fread(EXAMPLE_DATA_PATH)
     } else {
       uploaded_file()$data
     }
@@ -49,15 +49,20 @@ function(input, output, session) {
     }
   })
 
+  # the name of the file of the frame
+  frame_name <- reactive(
+    if (input$data_source == DATA_SOURCE_TEST) {
+      basename(EXAMPLE_DATA_PATH)
+    } else {
+      input$frame_file$name
+    }
+  )
+
   # one-line feedback under the data source selector
   output$data_status <- renderUI({
     d <- frame_data()
     req(d)
-    src <- if (input$data_source == DATA_SOURCE_TEST) {
-      "data_example.csv"
-    } else {
-      input$frame_file$name
-    }
+    src <- frame_name()
     div(
       class = "data-status",
       paste0(
@@ -73,8 +78,8 @@ function(input, output, session) {
   })
 
   output$download_example <- downloadHandler(
-    filename = "data_example.csv",
-    content = function(file) file.copy("data/data_example.csv", file)
+    filename = basename(EXAMPLE_DATA_PATH),
+    content = function(file) file.copy(EXAMPLE_DATA_PATH, file)
   )
 
   # offer the columns of the data in the column selects; the example data comes
@@ -295,6 +300,9 @@ function(input, output, session) {
     issues <- psu_overflow_issues(sample_out$sample, params())
     draw_issues(issues)
     require_valid(psu_overflow_message(issues))
+    require_valid(excel_size_message(sample_out$sample))
+    # the settings of this draw, for the output file
+    sample_out$record <- draw_record(params(), frame_name(), frame_data())
     sample_out
   })
 

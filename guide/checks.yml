@@ -178,6 +178,11 @@ checks:
     message: "Draw blocked: {n} PSU(s) were selected several times and would need more surveys than their population - {examples}.\nReduce the cluster size or the target sample size, or merge PSUs."
     guide_message: "Draw blocked: … PSU(s) were selected several times and would need more surveys than their population"
     fix: "lower the cluster size or the target, or merge PSUs; another seed may also avoid it"
+  excel_limits:
+    group: draw
+    message: "The sample has {rows} rows and {columns} columns: an Excel sheet holds at most {max_rows} rows and {max_columns} columns, so the output file cannot be made.\nReduce the target sample size, or the number of columns of the file."
+    guide_message: "The sample has … rows and … columns: an Excel sheet holds at most … rows and … columns"
+    fix: "lower the target sample size, or remove columns from the file"
   exceeds_population:
     group: draw
     kind: warning

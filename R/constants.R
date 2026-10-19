@@ -28,6 +28,13 @@ EXAMPLE_COLUMNS <- c(
   population_column = "population"
 )
 
+# the example data, bundled with the app
+EXAMPLE_DATA_PATH <- "data/data_example.csv"
+
+# the output file: what a sheet of Excel holds at most
+EXCEL_MAX_ROWS <- 1048576
+EXCEL_MAX_COLUMNS <- 16384
+
 # the choice of a column select that stands for "no column"
 NO_COLUMN <- "None"
 
