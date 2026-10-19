@@ -42,6 +42,11 @@ checks:
     message: "'{name}' could not be read as a CSV table (empty or damaged file)."
     guide_message: "'…' could not be read as a CSV table (empty or damaged file)"
     fix: "check the file, export it again"
+  duplicate_columns:
+    group: file
+    message: "The file has duplicate column names: {columns}. Rename or remove them in the CSV."
+    guide_message: "The file has duplicate column names"
+    fix: "give each column its own name, or remove the copy"
   file_too_large:
     group: file
     message: "'{name}' is larger than the {limit} MB limit."
