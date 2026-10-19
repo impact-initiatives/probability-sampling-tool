@@ -1,0 +1,21 @@
+# What is NOT sent to shinyapps.io. The app reads R/, guide/, data/, www/, NEWS.md,
+# global.R, ui.R and server.R, and the packages are restored from renv.lock (and
+# BUILD_INFO, when the deployment writes it). Everything else stays out.
+
+# renv: the packages come from renv.lock, and .Rprofile would source renv/activate.R,
+# which is not sent
+.Rprofile
+
+# development: the CI, the editor, the tests and the documentation for contributors
+.github
+.vscode
+.gitattributes
+tests
+README.md
+CONTRIBUTING.md
+
+# local files that can hold something private (R saves the session, .Renviron holds
+# secrets); rsconnect already leaves out .Rhistory
+.RData
+.Renviron
+.Rhistory

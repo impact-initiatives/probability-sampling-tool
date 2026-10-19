@@ -1,0 +1,207 @@
+# Checks of the cluster design: at Apply, and on the drawn sample.
+
+#' Find the problems of cluster size, before any draw
+#'
+#' Depends on the data and the settings only, never on the seed. It looks for
+#' - PSUs smaller than the cluster size, which cannot host a cluster;
+#' - strata that cannot host the clusters their target requires: they need
+#'   `ceiling(target / cls)` clusters but their PSUs have room for
+#'   `sum(floor(population / cls))`.
+#'
+#' @param sampl_f The sampling frame, as returned by `format_sampling_frame()`.
+#' @param target The targets, as returned by `create_targets()`.
+#' @param params The settings of the sampling, see `read_params()`.
+#' @returns A data frame with one row per problem (a PSU row has a `psu`, a stratum row
+#'   has none), `NULL` when there is none.
+#' @noRd
+cluster_size_issues <- function(sampl_f, target, params) {
+  if (params$sampling_type != SAMPLING_TYPE_CLUSTER) {
+    return(NULL)
+  }
+  cls <- params$cluster_size
+  strata <- as.character(sampl_f$PST_stratum_id)
+  pop <- sampl_f$PST_pop_size
+  psu_rows <- NULL
+  stratum_rows <- NULL
+
+  too_small <- !is.na(pop) & pop < cls
+  if (any(too_small)) {
+    psu_rows <- data.frame(
+      issue = "PSU too small for the cluster size",
+      stratum = strata[too_small],
+      psu = as.character(sampl_f$PST_psu_id[too_small]),
+      n_psus = NA_integer_,
+      population = pop[too_small],
+      cluster_size = cls,
+      target_with_buffer = NA_real_,
+      max_surveys = NA_real_,
+      shortfall = NA_real_
+    )
+  }
+
+  capacity <- tapply(floor(pop / cls), strata, sum, na.rm = TRUE)
+  target_by_stratum <- setNames(
+    target$target_with_buffer,
+    as.character(target$PST_stratum_id)
+  )
+  needed <- ceiling(target_by_stratum[names(capacity)] / cls)
+  short <- names(capacity)[capacity < needed]
+  if (length(short) > 0) {
+    stratum_rows <- data.frame(
+      issue = "Stratum cannot reach its target with this cluster size",
+      stratum = short,
+      psu = NA_character_,
+      n_psus = as.integer(table(strata)[short]),
+      population = setNames(
+        target$population,
+        as.character(target$PST_stratum_id)
+      )[
+        short
+      ],
+      cluster_size = cls,
+      target_with_buffer = target_by_stratum[short],
+      max_surveys = capacity[short] * cls,
+      shortfall = target_by_stratum[short] - capacity[short] * cls
+    )
+    stratum_rows <- stratum_rows[order(-stratum_rows$shortfall), ]
+  }
+  out <- rbind(psu_rows, stratum_rows)
+  if (!is.null(out)) {
+    rownames(out) <- NULL
+  }
+  out
+}
+
+
+#' Build the error message for the problems of cluster size
+#'
+#' Each kind of problem has its own paragraph and only a few examples: the full
+#' list can be downloaded.
+#'
+#' @param issues The output of `cluster_size_issues()`.
+#' @param cls The cluster size.
+#' @returns An error message, `NULL` when `issues` is `NULL`.
+#' @noRd
+cluster_size_message <- function(issues, cls) {
+  if (is.null(issues)) {
+    return(NULL)
+  }
+  fmt <- function(x) format(x, big.mark = ",", scientific = FALSE, trim = TRUE)
+  blocks <- character()
+
+  psus <- issues[!is.na(issues$psu), ]
+  if (nrow(psus) > 0) {
+    blocks <- c(
+      blocks,
+      check_message(
+        "cluster_psu_too_small",
+        cluster_size = cls,
+        n = nrow(psus),
+        examples = preview_ids(
+          paste0(
+            psus$psu,
+            " in '",
+            psus$stratum,
+            "' (population ",
+            fmt(psus$population),
+            ")"
+          ),
+          n = 3
+        )
+      )
+    )
+  }
+
+  strata <- issues[is.na(issues$psu), ]
+  if (nrow(strata) > 0) {
+    blocks <- c(
+      blocks,
+      check_message(
+        "cluster_stratum_capacity",
+        n = nrow(strata),
+        cluster_size = cls,
+        examples = preview_ids(
+          paste0(
+            "'",
+            strata$stratum,
+            "' (target ",
+            fmt(strata$target_with_buffer),
+            ", maximum ",
+            fmt(strata$max_surveys),
+            ")"
+          ),
+          n = 3
+        )
+      )
+    )
+  }
+  paste(blocks, collapse = "\n\n")
+}
+
+#' Find the PSUs drawn more often than their population allows
+#'
+#' Cluster sampling draws PSUs with replacement: a PSU drawn several times is
+#' assigned cluster size x draws surveys, which can exceed its population. Unlike
+#' the check at Apply this depends on the seed, so it is made on the drawn
+#' sample.
+#'
+#' @param sample The drawn sample, the `sample` of `make_sample()`.
+#' @param params The settings of the sampling, see `read_params()`.
+#' @returns A data frame with one row per PSU concerned, `NULL` when there is none.
+#' @noRd
+psu_overflow_issues <- function(sample, params) {
+  if (params$sampling_type != SAMPLING_TYPE_CLUSTER) {
+    return(NULL)
+  }
+  over <- which(sample$PST_survey > sample$PST_pop_size)
+  if (length(over) == 0) {
+    return(NULL)
+  }
+  s <- sample[over, ]
+  out <- data.frame(
+    issue = "PSU drawn more often than its population allows",
+    stratum = as.character(s$PST_stratum_id),
+    psu = as.character(s$PST_psu_id),
+    times_drawn = s$PST_survey / params$cluster_size,
+    cluster_size = params$cluster_size,
+    surveys_assigned = s$PST_survey,
+    population = s$PST_pop_size,
+    excess = s$PST_survey - s$PST_pop_size
+  )
+  out[order(-out$excess), ]
+}
+
+
+#' Build the error message for the PSUs drawn too often
+#'
+#' Lists a few of the PSUs, then what to do.
+#'
+#' @param issues The output of `psu_overflow_issues()`.
+#' @returns An error message, `NULL` when `issues` is `NULL`.
+#' @noRd
+psu_overflow_message <- function(issues) {
+  if (is.null(issues)) {
+    return(NULL)
+  }
+  fmt <- function(x) format(x, big.mark = ",", scientific = FALSE, trim = TRUE)
+  check_message(
+    "draw_overflow",
+    n = nrow(issues),
+    examples = preview_ids(
+      paste0(
+        "'",
+        issues$psu,
+        "' in '",
+        issues$stratum,
+        "' (drawn ",
+        issues$times_drawn,
+        " times, ",
+        fmt(issues$surveys_assigned),
+        " surveys for a population of ",
+        fmt(issues$population),
+        ")"
+      ),
+      n = 3
+    )
+  )
+}

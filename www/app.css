@@ -1,0 +1,196 @@
+/* App-specific styles layered on top of the bslib theme (see ui.R). */
+
+/* A conditionalPanel() wrapping columns inside a row: Bootstrap 5 rows are
+   flex containers, so the panel must not become the flex item itself. */
+.row > .shiny-panel-conditional.shiny-conditional--shown {
+	display: contents;
+}
+
+/* ...so the gutter that Bootstrap 5 gives to the row's direct children goes to the columns */
+.row > .shiny-panel-conditional > [class*="col-"] {
+	padding-right: calc(var(--bs-gutter-x) * 0.5);
+	padding-left: calc(var(--bs-gutter-x) * 0.5);
+}
+
+/* Shiny still emits Bootstrap 3 markup for inline radios: give them a gap */
+.shiny-options-group .radio-inline {
+	margin-right: 1.5rem;
+}
+
+/* bslib does not pick up the card-cap-bg theme variable */
+.card-header {
+	background-color: #eef3fa;
+}
+
+/* Sub-heading between groups of fields inside a form (e.g. "Cluster
+   design", "Data source", "Column mapping") - lighter than a card header
+   so it doesn't add much height. */
+.param-subhead {
+	font-size: 15px;
+	font-weight: 700;
+	color: #333333;
+	margin: 6px 0 2px;
+}
+
+/* Loaded-data summary, shown to the right of the file box */
+.data-status {
+	font-size: 12px;
+	line-height: 1.35;
+	color: #707070;
+	padding-top: 4px;
+}
+
+/* Link to the bundled example CSV, shown where the file box would be */
+.example-link {
+	font-size: 13px;
+	padding-top: 6px;
+}
+
+/* The Stratified checkbox: its label is above it, like the other fields, and the
+   box is on the line of the boxes of the fields next to it */
+.stratified-check .shiny-input-container {
+	display: flex;
+	align-items: center;
+	width: auto;
+	min-height: 38px;
+	margin-bottom: 0;
+}
+.stratified-check .checkbox {
+	margin: 0;
+}
+
+/* Result tables: the header keeps room for the sort icon on its right, so the
+   numbers get the same room and end under the text of their header */
+table.dataTable td.dt-right {
+	padding-right: 20px;
+}
+
+/* Column filters: compact boxes, the full height of the default ones is not needed */
+.dataTables_scrollHead thead td input,
+.dataTables_scrollHead thead td select {
+	padding-top: 0.1rem;
+	padding-bottom: 0.1rem;
+	font-size: 0.8rem;
+}
+
+/* With scrollX, DataTables copies the header, column filters included, into the
+   body's zero-height header. The copy is inert but its numeric filter popups are
+   positioned absolutely, so a copy becomes a second slider below the visible
+   one as soon as the filter opens. Hide the copied filter cells. */
+.dataTables_scrollBody thead tr:last-child td {
+	display: none;
+}
+
+/* Guide: readable width, text blocks and steps */
+.guide {
+	max-width: 62rem;
+	margin: 0 auto;
+	padding: 0.25rem 0;
+}
+
+.guide .nav-pills {
+	margin-bottom: 0.5rem;
+}
+
+.guide-hero h1 {
+	font-size: 1.35rem;
+	margin-bottom: 0.25rem;
+}
+
+.guide-hero .lead {
+	font-size: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+.guide-step-number {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	width: 1.6rem;
+	height: 1.6rem;
+	border-radius: 50%;
+	background: var(--bs-primary);
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.85rem;
+}
+
+.guide-text {
+	max-width: 56rem;
+}
+
+.guide-text table {
+	width: 100%;
+	margin: 0.5rem 0 1rem;
+	border-collapse: collapse;
+}
+
+.guide-text th,
+.guide-text td {
+	padding: 0.4rem 0.6rem;
+	border-bottom: 1px solid var(--bs-border-color);
+	vertical-align: top;
+}
+
+.guide-text th {
+	background-color: var(--bs-light);
+	text-align: left;
+}
+
+.guide-text h2 {
+	font-size: 1.2rem;
+	margin-top: 1.5rem;
+}
+
+/* Sampling types: the title of each type is the first thing to read */
+.guide .accordion-button {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--bs-body-color);
+}
+
+.guide .accordion-button .badge {
+	font-size: 0.75rem;
+	font-weight: 400;
+}
+
+/* Help icon next to a field label, opening a tooltip (see info_tip() in ui.R) */
+.info-tip {
+	margin-left: 0.25rem;
+	font-size: 0.85em;
+	color: var(--bs-secondary);
+	cursor: help;
+}
+
+.info-tip:hover,
+.info-tip:focus-visible {
+	color: var(--bs-primary);
+}
+
+.tooltip-inner {
+	max-width: 18rem;
+	text-align: left;
+}
+
+.info-tip-source {
+	margin-top: 0.35rem;
+	font-size: 0.85em;
+	opacity: 0.8;
+}
+
+/* Centre the sidebar collapse arrow on the 40px section header */
+.bslib-sidebar-layout > .collapse-toggle {
+	margin-top: -4px;
+}
+
+/* Leave room for the collapse arrow once the sidebar is closed */
+.bslib-sidebar-layout.sidebar-collapsed > .main {
+	padding-left: 3rem !important;
+}
+
+/* Keep the text of a select clear of its arrow: a long option wraps instead of
+   running under it */
+.selectize-control.single .selectize-input {
+	padding-right: 2rem;
+}

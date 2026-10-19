@@ -1,58 +1,31 @@
 # Probability Sampling Tool
 
-A Shiny application for calculating probability-based sampling designs and producing sample selection outputs for survey work.
+[![CI](https://github.com/impact-initiatives/probability-sampling-tool/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/impact-initiatives/probability-sampling-tool/actions/workflows/ci.yml)
 
-## Project status
+A Shiny application that draws a probability sample from a sampling frame for survey work, and tells the field teams how many surveys to run where. It is maintained by IMPACT Initiatives.
 
-This repository is the IMPACT-maintained version of the existing sampling tool. The project history was preserved during migration into the IMPACT Initiatives GitHub organization and serves as the reference baseline for future maintenance and review.
+**Use it at https://impact-initiatives.shinyapps.io/probability-sampling-tool/**
 
-The current production application is available here:
+## What it does
 
-https://impact-initiatives.shinyapps.io/probability-sampling-tool/
+You load your sampling frame (one CSV file), choose a sampling type (simple random sampling, PPS sampling with replacement, or two-stage PPS cluster sampling with replacement) and its parameters, and apply: the tool checks the file and the settings and says what to fix. It then draws the sample and gives you **one Excel file** with the sample, its summary and the inputs of the draw (version of the app, file, settings and seed), so that the draw can be reproduced and checked.
 
-## Purpose
+The **Guide** tab of the application explains the sampling types, what the file must contain, the parameters, the checks, the results and the formulas. What changed in each version is in the Guide under *What's new*, and in [NEWS.md](NEWS.md).
 
-The tool supports common sampling approaches used in field data collection, including:
+## Your data
 
-- simple random sampling,
-- cluster sampling,
-- stratified sampling.
+The file you load is read during your session to draw the sample. The tool does not save it, and does not send it anywhere else: it is processed by the application, which runs on shinyapps.io (Posit). Follow the data protection rules of your organisation, and do not load personal data: a sampling frame lists areas, camps or population groups, not individuals.
 
-## Local development
+The file must be a CSV of at most 100 MB, with one row per unit of the frame (see the Guide, *Your sampling frame*). An example is in [data/data_example.csv](data/data_example.csv) and in the application (*Use test data*).
 
-This project uses `renv` to manage the R package environment and keep local setup reproducible.
+## Help and feedback
 
-1. Open the project in RStudio or your preferred R environment.
-2. Restore the project dependencies:
+To report a problem, suggest a change or ask a question, [open an issue](https://github.com/impact-initiatives/probability-sampling-tool/issues/new/choose): there is a form for each case.
 
-```r
-renv::restore()
-```
+## Maintaining the tool
 
-3. Launch the Shiny app locally:
-
-```r
-shiny::runApp()
-```
-
-The project is configured to use the project-local library when opened in the project directory.
-
-## Contribution workflow
-
-Contributions follow a simple issue-driven workflow:
-
-1. Create an issue describing the request, bug, or task.
-2. Create a dedicated branch linked to that issue.
-3. Implement the change on the branch.
-4. Open a pull request for review.
-5. Merge only after review and approval.
-
-This process is intended to keep changes traceable, reviewable, and aligned with project priorities.
+To draw a sample, use the production application above, not a copy on a computer: it runs a released version, on the packages that were tested. How to work on the code, the workflow of the contributions, the continuous integration and the releases are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Maintenance note
-
-This README reflects the project as it exists at the start of official maintenance. More detailed project documentation, standards, and technical guidance will be added as the codebase is reviewed and updated.
