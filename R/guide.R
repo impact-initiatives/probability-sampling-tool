@@ -119,40 +119,33 @@ guide_text <- function(file) {
   guide_markdown(paste(readLines(file, warn = FALSE), collapse = "\n"))
 }
 
-#' Show a Markdown file as one card per section
+#' Show a Markdown file as one accordion panel per section
 #'
-#' One card per second level heading, in a grid. What comes before the first
-#' heading is shown above the cards.
+#' One panel per second level heading; the first starts open. What comes before the
+#' first heading is shown above the panels.
 #'
 #' @param file The path of the file.
-#' @param width The minimum width of a card, a CSS length.
-#' @returns The introduction and the grid of cards.
+#' @param id The id of the accordion.
+#' @returns The introduction and the accordion.
 #' @noRd
-guide_sections <- function(file, width = "30rem") {
+guide_sections <- function(file, id) {
   lines <- readLines(file, warn = FALSE)
   starts <- grep("^## ", lines)
   intro <- if (starts[1] > 1) lines[seq_len(starts[1] - 1)] else character()
   ends <- c(starts[-1] - 1, length(lines))
-  cards <- lapply(seq_along(starts), function(i) {
+  panels <- lapply(seq_along(starts), function(i) {
     body <- lines[(starts[i] + 1):ends[i]]
-    card(
-      class = "guide-card h-100",
-      fill = FALSE,
-      card_header(h3(
-        sub("^## ", "", lines[starts[i]]),
-        class = "h6 fw-semibold mb-0"
-      )),
-      card_body(fillable = FALSE, guide_markdown(paste(body, collapse = "\n")))
+    guide_panel_text(
+      sub("^## ", "", lines[starts[i]]),
+      paste0("section", i),
+      paste(body, collapse = "\n")
     )
   })
   tagList(
     if (length(intro) > 0 && any(nzchar(intro))) {
       guide_markdown(paste(intro, collapse = "\n"))
     },
-    do.call(
-      layout_column_wrap,
-      c(list(width = width, fill = FALSE, heights_equal = "row"), cards)
-    )
+    do.call(guide_accordion, c(list(id), panels, list(open = "section1")))
   )
 }
 
@@ -401,6 +394,42 @@ guide_start <- function(ns) {
   )
 }
 
+#' Build a panel of a guide accordion from a file
+#'
+#' @param title The title of the panel.
+#' @param value The identifier of the panel, to say which panels start open.
+#' @param file The Markdown file of its text.
+#' @returns An accordion panel.
+#' @noRd
+guide_panel <- function(title, value, file) {
+  accordion_panel(title, value = value, guide_text(file))
+}
+
+#' Build a panel of a guide accordion from a text
+#'
+#' @param title The title of the panel.
+#' @param value The identifier of the panel, to say which panels start open.
+#' @param text The Markdown text of the panel.
+#' @returns An accordion panel.
+#' @noRd
+guide_panel_text <- function(title, value, text) {
+  accordion_panel(title, value = value, guide_markdown(text))
+}
+
+#' Build an accordion of the guide
+#'
+#' Several panels can be open at once. The detail that is looked up, not read, starts
+#' closed.
+#'
+#' @param id The id of the accordion.
+#' @param open The identifiers of the panels that start open.
+#' @param ... The panels, see `guide_panel()`.
+#' @returns An accordion.
+#' @noRd
+guide_accordion <- function(id, ..., open) {
+  accordion(id = id, open = open, multiple = TRUE, ...)
+}
+
 #' Build the Guide tab, the UI of the guide module
 #'
 #' One pill per section. Its links, to its own sections and to the app, are
@@ -437,33 +466,51 @@ guide_ui <- function(id) {
           nav_panel(
             "Parameters",
             value = "parameters",
-            guide_card("Mode of sampling", "guide/parameters-mode.md"),
-            guide_card("Parameters", "guide/parameters-list.md"),
-            guide_card(
-              "Which parameters apply",
-              "guide/parameters-applies.md"
+            guide_accordion(
+              ns("parameters_accordion"),
+              open = "mode",
+              guide_panel(
+                "Mode of sampling",
+                "mode",
+                "guide/parameters-mode.md"
+              ),
+              guide_panel("Parameters", "list", "guide/parameters-list.md"),
+              guide_panel(
+                "Which parameters apply",
+                "applies",
+                "guide/parameters-applies.md"
+              )
             )
           ),
           nav_panel(
             "Results",
             value = "results",
-            guide_card("The tables", "guide/results-tables.md"),
-            guide_card("The Excel file", "guide/results-file.md"),
-            guide_card(
-              "Columns added by the tool",
-              "guide/results-columns.md"
-            ),
-            guide_card("Sample summary", "guide/results-summary.md")
+            guide_accordion(
+              ns("results_accordion"),
+              open = "tables",
+              guide_panel("The tables", "tables", "guide/results-tables.md"),
+              guide_panel("The Excel file", "file", "guide/results-file.md"),
+              guide_panel(
+                "Columns added by the tool",
+                "columns",
+                "guide/results-columns.md"
+              ),
+              guide_panel(
+                "Sample summary",
+                "summary",
+                "guide/results-summary.md"
+              )
+            )
           ),
           nav_panel(
             "What's new",
             value = "news",
-            guide_sections("NEWS.md", "27rem")
+            guide_sections("NEWS.md", ns("news_accordion"))
           ),
           nav_panel(
             "Methods",
             value = "methods",
-            guide_sections("guide/methods.md", "30rem")
+            guide_sections("guide/methods.md", ns("methods_accordion"))
           )
         )
       )
