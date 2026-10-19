@@ -77,26 +77,21 @@ function(input, output, session) {
     content = function(file) file.copy("data/data_example.csv", file)
   )
 
-  # update the check ox based on the data headings
+  # offer the columns of the data in the column selects; the example data comes
+  # with its columns already chosen
   observe({
-    updateSelectInput(
-      session,
-      "psu_column",
-      choices = c(NO_COLUMN, colnames(frame_data())),
-      selected = NO_COLUMN
-    )
-    updateSelectInput(
-      session,
-      "strata_column",
-      choices = c(NO_COLUMN, colnames(frame_data())),
-      selected = NO_COLUMN
-    )
-    updateSelectInput(
-      session,
-      "population_column",
-      choices = c(NO_COLUMN, colnames(frame_data())),
-      selected = NO_COLUMN
-    )
+    for (field in COLUMN_FIELDS) {
+      updateSelectInput(
+        session,
+        field,
+        choices = c(NO_COLUMN, colnames(frame_data())),
+        selected = if (input$data_source == DATA_SOURCE_TEST) {
+          EXAMPLE_COLUMNS[[field]]
+        } else {
+          NO_COLUMN
+        }
+      )
+    }
   })
 
   # a new upload hides the frame and target tables until the next Apply

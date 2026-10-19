@@ -19,6 +19,14 @@ NOT_STRATIFIED <- "Not stratified"
 DATA_SOURCE_UPLOAD <- "upload"
 DATA_SOURCE_TEST <- "test"
 
+# the columns of the example data that each column field selects when the
+# example data is used, named by the field they fill
+EXAMPLE_COLUMNS <- c(
+  strata_column = "strata",
+  psu_column = "psu_id",
+  population_column = "population"
+)
+
 # the choice of a column select that stands for "no column"
 NO_COLUMN <- "None"
 
