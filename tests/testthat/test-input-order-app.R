@@ -12,7 +12,9 @@ test_that("the population field keeps its place whether the sample is stratified
   )
   withr::defer(app$stop())
 
-  app$run_js("Array.from(document.querySelectorAll('.navbar .nav-link')).find(function(a) { return a.textContent.trim() === 'Sampling frame'; }).click();")
+  app$run_js(
+    "Array.from(document.querySelectorAll('.navbar .nav-link')).find(function(a) { return a.textContent.trim() === 'Sampling frame'; }).click();"
+  )
   Sys.sleep(1.5)
   app$wait_for_idle()
 
@@ -22,15 +24,17 @@ test_that("the population field keeps its place whether the sample is stratified
       id
     ))
   }
-  app$set_inputs(samp_type = "Two-stage PPS cluster sampling with replacement")
+  app$set_inputs(
+    sampling_type = "Two-stage PPS cluster sampling with replacement"
+  )
   app$set_inputs(stratified = "Not stratified")
   app$wait_for_idle()
   Sys.sleep(0.5)
-  population_alone <- left("colpop")
+  population_alone <- left("population_column")
 
   app$set_inputs(stratified = "Stratified")
   app$wait_for_idle()
   Sys.sleep(0.5)
-  expect_equal(left("colpop"), population_alone)
-  expect_gt(left("strata"), left("colpop"))
+  expect_equal(left("population_column"), population_alone)
+  expect_gt(left("strata_column"), left("population_column"))
 })

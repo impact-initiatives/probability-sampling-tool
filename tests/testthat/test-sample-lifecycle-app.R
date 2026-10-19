@@ -36,40 +36,40 @@ test_that("a new Apply empties the Sampling tab until Sample is clicked again", 
   }
   sample_enabled <- function() {
     app$get_js(
-      "var b = document.getElementById('desButton'); !b.disabled && !b.classList.contains('disabled')"
+      "var b = document.getElementById('draw_button'); !b.disabled && !b.classList.contains('disabled')"
     )
   }
   draw <- function() {
-    app$click("desButton")
+    app$click("draw_button")
     app$wait_for_idle()
     Sys.sleep(1)
   }
 
   app$set_inputs(data_source = "test")
-  app$click("f_apply")
+  app$click("apply_button")
   app$wait_for_idle()
   go_tab("Sampling")
   expect_true(sample_enabled())
-  expect_false(has_rows("sampling_output"))
-  expect_false(has_link("downloadBtn"))
+  expect_false(has_rows("sample_table"))
+  expect_false(has_link("download_sample"))
 
   draw()
-  expect_true(has_rows("sampling_output"))
-  expect_true(has_rows("test_1"))
-  expect_true(has_link("downloadBtn"))
-  expect_true(has_link("downloadBtn2"))
+  expect_true(has_rows("sample_table"))
+  expect_true(has_rows("summary_table"))
+  expect_true(has_link("download_sample"))
+  expect_true(has_link("download_summary"))
 
   go_tab("Sampling frame")
-  app$click("f_apply")
+  app$click("apply_button")
   app$wait_for_idle()
   go_tab("Sampling")
-  expect_false(has_rows("sampling_output"))
-  expect_false(has_rows("test_1"))
-  expect_false(has_link("downloadBtn"))
-  expect_false(has_link("downloadBtn2"))
+  expect_false(has_rows("sample_table"))
+  expect_false(has_rows("summary_table"))
+  expect_false(has_link("download_sample"))
+  expect_false(has_link("download_summary"))
   expect_true(sample_enabled())
 
   draw()
-  expect_true(has_rows("sampling_output"))
-  expect_true(has_link("downloadBtn"))
+  expect_true(has_rows("sample_table"))
+  expect_true(has_link("download_sample"))
 })

@@ -26,17 +26,17 @@ test_that("the result tables have filters and aligned short numbers", {
 
   app$set_inputs(
     data_source = "test",
-    samp_type = "PPS sampling with replacement",
+    sampling_type = "PPS sampling with replacement",
     stratified = "Not stratified"
   )
   app$wait_for_idle()
-  app$set_inputs(colpop = "HH_total")
+  app$set_inputs(population_column = "HH_total")
   app$wait_for_idle()
-  app$click("f_apply")
+  app$click("apply_button")
   app$wait_for_idle()
   Sys.sleep(1)
   go_tab("Sampling")
-  app$click("desButton")
+  app$click("draw_button")
   app$wait_for_idle()
   Sys.sleep(2)
 
@@ -52,7 +52,7 @@ test_that("the result tables have filters and aligned short numbers", {
       id
     ))
   }
-  for (id in c("test_1", "sampling_output")) {
+  for (id in c("summary_table", "sample_table")) {
     info <- table_info(id)
     expect_equal(info$filters, info$columns, label = paste(id, "filters"))
   }
@@ -67,16 +67,20 @@ test_that("the result tables have filters and aligned short numbers", {
       selector
     ))
   }
-  head_right <- edge("#sampling_output .dataTables_scrollHead thead tr:first-child th:nth-child(2)")
-  value_right <- edge("#sampling_output .dataTables_scrollBody tbody tr:first-child td:nth-child(2)")
+  head_right <- edge(
+    "#sample_table .dataTables_scrollHead thead tr:first-child th:nth-child(2)"
+  )
+  value_right <- edge(
+    "#sample_table .dataTables_scrollBody tbody tr:first-child td:nth-child(2)"
+  )
   expect_lte(abs(head_right - value_right), 2)
 
   # PST_prob is shown with 4 significant digits at most
   prob <- app$get_js(
     "(function() {
-      var heads = Array.from(document.querySelectorAll('#sampling_output .dataTables_scrollHead thead tr:first-child th'));
+      var heads = Array.from(document.querySelectorAll('#sample_table .dataTables_scrollHead thead tr:first-child th'));
       var i = heads.findIndex(function(h) { return h.innerText.trim() === 'PST_prob'; });
-      return document.querySelectorAll('#sampling_output .dataTables_scrollBody tbody tr:first-child td')[i].innerText.trim();
+      return document.querySelectorAll('#sample_table .dataTables_scrollBody tbody tr:first-child td')[i].innerText.trim();
     })()"
   )
   expect_lte(nchar(gsub("^0\\.0*|\\.", "", prob)), 4)

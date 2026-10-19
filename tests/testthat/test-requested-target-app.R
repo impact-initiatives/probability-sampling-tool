@@ -26,7 +26,9 @@ test_that("the capped sample warning is shown after Apply and after Sample", {
     )
   }
   close_modal <- function() {
-    app$run_js("var b = document.querySelector('.modal.show .modal-footer button'); if (b) b.click();")
+    app$run_js(
+      "var b = document.querySelector('.modal.show .modal-footer button'); if (b) b.click();"
+    )
     Sys.sleep(1)
   }
   headers <- function(id) {
@@ -38,37 +40,41 @@ test_that("the capped sample warning is shown after Apply and after Sample", {
 
   app$set_inputs(
     data_source = "test",
-    topup = "Enter sample size",
-    samp_type = "Simple random sampling",
+    sampling_mode = "Enter sample size",
+    sampling_type = "Simple random sampling",
     stratified = "Not stratified"
   )
-  app$set_inputs(target = 1000)
+  app$set_inputs(target_size = 1000)
   go_tab("Sampling frame")
-  app$click("f_apply")
+  app$click("apply_button")
   app$wait_for_idle()
   Sys.sleep(1)
   expect_match(modal_text(), "will be capped")
   close_modal()
-  expect_true("Requested Target" %in% unlist(headers("target_frame")))
-  expect_true("Requested Target (with buffer)" %in% unlist(headers("target_frame")))
+  expect_true("Requested Target" %in% unlist(headers("target_table")))
+  expect_true(
+    "Requested Target (with buffer)" %in% unlist(headers("target_table"))
+  )
 
   go_tab("Sampling")
-  app$click("desButton")
+  app$click("draw_button")
   app$wait_for_idle()
   Sys.sleep(1)
   expect_match(modal_text(), "was capped")
   close_modal()
-  expect_true("Requested Target (with buffer)" %in% unlist(headers("test_1")))
+  expect_true(
+    "Requested Target (with buffer)" %in% unlist(headers("summary_table"))
+  )
 
   # a target within the population shows no warning, neither at Apply nor Sample
   go_tab("Sampling frame")
-  app$set_inputs(target = 100)
-  app$click("f_apply")
+  app$set_inputs(target_size = 100)
+  app$click("apply_button")
   app$wait_for_idle()
   Sys.sleep(1)
   expect_identical(modal_text(), "")
   go_tab("Sampling")
-  app$click("desButton")
+  app$click("draw_button")
   app$wait_for_idle()
   Sys.sleep(1)
   expect_identical(modal_text(), "")

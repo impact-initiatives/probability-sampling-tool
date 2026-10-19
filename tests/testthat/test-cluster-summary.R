@@ -1,31 +1,28 @@
 # The cluster size and the design effect of the summary are set by the design:
 # a PSU drawn several times is several independent clusters (issue #21).
 
-app_root <- normalizePath(testthat::test_path("..", ".."))
-source(file.path(app_root, "global.R"), chdir = TRUE)
-
 test_that("the cluster summary has one cluster size, one DEFF and one effective sample size", {
   frame <- data.frame(
     region = rep(c("N", "S"), each = 30),
     psu_name = sprintf("P%02d", 1:60),
     population = rep(c(40, 60, 80, 120, 200, 400), 10)
   )
-  input <- list(
-    topup = "Sample size based on population",
-    target = NA,
-    conf_level = 0.95,
-    e_marg = 0.05,
-    pror = 0.5,
-    buf = 0.05,
-    samp_type = "Two-stage PPS cluster sampling with replacement",
+  input <- normalize_params(list(
+    sampling_mode = "Sample size based on population",
+    target_size = NA,
+    confidence_level = 0.95,
+    error_margin = 0.05,
+    proportion = 0.5,
+    buffer = 0.05,
+    sampling_type = "Two-stage PPS cluster sampling with replacement",
     stratified = "Stratified",
-    strata = "region",
-    col_psu = "psu_name",
-    colpop = "population",
-    cls = 5,
-    ICC = 0.1,
-    seed_value = 1
-  )
+    strata_column = "region",
+    psu_column = "psu_name",
+    population_column = "population",
+    cluster_size = 5,
+    icc = 0.1,
+    seed = 1
+  ))
   summary <- run_with_seed(1, make_sample(frame, input))$summary_sample
 
   expect_true(all(
