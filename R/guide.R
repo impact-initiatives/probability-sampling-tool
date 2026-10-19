@@ -142,7 +142,7 @@ guide_text <- function(file) {
 #' Show a Markdown file as one accordion panel per section
 #'
 #' One panel per second level heading; the first starts open. What comes before the
-#' first heading is shown above the panels.
+#' first heading is shown above the panels, as a discreet note.
 #'
 #' @param file The path of the file.
 #' @param id The id of the accordion.
@@ -163,7 +163,11 @@ guide_sections <- function(file, id) {
   })
   tagList(
     if (length(intro) > 0 && any(nzchar(intro))) {
-      guide_markdown(paste(intro, collapse = "\n"))
+      # a discreet note above the panels
+      div(
+        class = "text-muted fst-italic small mb-2",
+        guide_markdown(paste(intro, collapse = "\n"))
+      )
     },
     do.call(guide_accordion, c(list(id), panels, list(open = "section1")))
   )
