@@ -14,12 +14,11 @@ The two-stage PPS cluster sampling is the only type whose method changed. Simple
 
 | Topic | Before | Now |
 |---|---|---|
-| **Number of draws** | PSUs were added one by one until a target, recomputed at each draw from the draws already made, was reached. The number of draws was random: the same inputs could give different totals. | Fixed before the draw: $m = \lceil \text{requested target} / b \rceil$, with $b$ the cluster size. The same file, settings and seed give the same sample. |
+| **Number of draws** | The number of clusters was not decided before the draw. The tool kept adding PSUs until the number of surveys reached a target that was recomputed after each draw, from the PSUs already drawn. The total therefore changed from one run to the next, even with the same inputs. | The number of clusters is decided before the draw: the requested target divided by the cluster size $b$, rounded up. The total is the same at each run, and the same file, settings and seed give the same sample. |
 | **Design effect** | $\mathrm{DEFF} = 1 + (\bar{k} \cdot b - 1)\,\mathrm{ICC}$, with $\bar{k}$ the mean number of times a PSU was drawn: a PSU drawn $k$ times counted as one cluster of $k \cdot b$. | $\mathrm{DEFF} = 1 + (b - 1)\,\mathrm{ICC}$ with the planned $b$: a PSU drawn $k$ times is $k$ independent clusters of $b$ surveys. With "Sample size based on population" it multiplies the computed size, $\lceil n \times \mathrm{DEFF} \rceil$, then the buffer is added. |
-| **Cluster size and DEFF in the summary** | A "planned" and a "realized" value, equal except after a fallback to simple random sampling. | One value of each, and the effective sample size $= \text{Surveys} / \mathrm{DEFF}$. |
-| **Fallback to simple random sampling** | When every PSU had been used, the stratum silently switched to simple random sampling, with 10% more buffer. | Removed: the problem is reported before the draw, as below. |
+| **Fallback to simple random sampling** | When every PSU of a stratum had been drawn at least once and the target was still not reached, the tool switched the stratum to simple random sampling, with 10% more buffer. Only the `Sampling type` column of the summary said so. | Removed: the type of sampling never changes. |
 | **PSUs smaller than the cluster size** | Left out of the draw without a message. | Blocked at Apply, with the list of the PSUs: lower the cluster size or remove them from the frame. |
-| **Stratum that cannot reach its target** | Fallback to simple random sampling. | Blocked at Apply, with the list: a stratum can host $\sum_i \lfloor N_i / b \rfloor$ clusters. |
+| **Stratum that cannot reach its target** | Not checked. | Blocked at Apply, with the list: a stratum can host $\sum_i \lfloor N_i / b \rfloor$ clusters. |
 | **PSU drawn too many times** | Not checked: the surveys of a PSU ($k \times b$) could exceed its population. | Blocked at Sample, with the list: a PSU can be drawn at most $\lfloor N_i / b \rfloor$ times. |
 | **Number of surveys** | – | $m \times b$: it can be a little above the requested target, because clusters are whole. |
 | **"Enter sample size"** | The number entered was not inflated (no buffer, no ICC); the ICC, the design effect and the effective sample size were blank. | The same number is drawn, per stratum; the design effect and the effective sample size are shown, as information. |
@@ -43,7 +42,7 @@ The formulas are in [Methods](#guide:methods) and the checks in [What the tool c
 
   Three columns are new: **Distinct PSUs**, **Requested Target (with buffer)** and **Seed**.
 
-- **Columns of the Sample**: the columns added by the tool start with `PST_` and come first, and the unnamed column of row numbers of the CSV file is gone.
+- **Columns of the Sample**: the columns added by the tool start with `PST_` and come first.
 
   | Before | Now |
   |---|---|
@@ -67,6 +66,12 @@ The tool now checks the sampling frame and the settings before the draw. Every c
 ## Parameters
 
 - The **proportion** is fixed at 0.5: the field is shown but not editable.
-- A **seed** makes the draw reproducible: the same seed and settings give the same sample.
-- With "Enter sample size", the number applies to each stratum, and no buffer is added. For the cluster type the summary still shows the ICC, the design effect and the effective sample size.
+- **New: a seed field.** The same file, settings and seed give the same sample, so a draw can be reproduced and checked. The seed is in the Sample summary and in the Excel file.
+- With "Enter sample size" and the cluster type, the summary now shows the ICC, the design effect and the effective sample size, as information: the number of surveys is the one you entered.
 - The **buffer** is a share of the target between 0 and 2 (200%): a larger value is reported before the draw.
+
+## Interface
+
+- The Sampling frame and Sampling tabs are redesigned: the setup is in a side panel that can be folded to give the tables the whole width.
+- The Introduction page is replaced by this Guide.
+- The four tables have a filter on each column and shorter numbers (display only: the Excel file keeps every digit).
