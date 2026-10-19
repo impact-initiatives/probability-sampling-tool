@@ -2,7 +2,7 @@ Draws **PSUs** one survey at a time, **with probability proportional to their po
 
 | | |
 |---|---|
-| **One row of your CSV is** | a **PSU**: an area (region, camp, settlement) or any population group (host, IDP, returnee), with its population |
+| **One row of your CSV is** | {{one_row_detail:pps}} |
 | **Required columns** | a **population** column (numeric, no missing or negative value) |
 | **Draw** | probability proportional to the population, with replacement |
 | **Surveys per draw** | 1; the surveys of a PSU are the number of times it is drawn |

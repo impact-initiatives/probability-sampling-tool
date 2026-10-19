@@ -19,7 +19,7 @@ The tool draws a probability sample from your sampling frame: it returns the uni
 
 | | Simple random sampling | PPS sampling with replacement | Two-stage PPS cluster sampling with replacement |
 |---|---|---|---|
-| **One row is** | a unit to survey (household, person) | a PSU (an area) with its population | a PSU with its population |
+| **One row is** | a unit to survey (household, person) | a PSU (an area or a population group) with its population | a PSU (hexagon, village, camp...) with its population |
 | **Needs** | no population column | a population column | a cluster column and a population column |
 
 A strata column is optional in the three types. *Guide: Sampling types.*

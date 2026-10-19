@@ -6,6 +6,21 @@
 # milestone. A release tag vX.Y.Z must be equal to it (checked by the CI, see #56).
 APP_VERSION <- "2026.1.0"
 
+# What one row of the sampling frame is, for each type (simple, pps and cluster):
+# the short form for the tables that compare the types, the longer
+# one for the page of the type. The Guide reads them ({{one_row:pps}},
+# {{one_row_detail:pps}}); the README repeats the short ones, a test checks them.
+ONE_ROW <- c(
+  simple = "a unit to survey (household, person)",
+  pps = "a PSU (an area or a population group) with its population",
+  cluster = "a PSU (hexagon, village, camp...) with its population"
+)
+ONE_ROW_DETAIL <- c(
+  simple = "a unit to survey: a household, a person, a beneficiary",
+  pps = "a PSU: an area (region, camp, settlement) or any population group (host, IDP, returnee), with its population",
+  cluster = "a PSU (hexagon GRID_ID, village, camp...) with its population"
+)
+
 # the three sampling types
 SAMPLING_TYPE_SIMPLE <- "Simple random sampling"
 SAMPLING_TYPE_PPS <- "PPS sampling with replacement"

@@ -15,6 +15,20 @@ column_label <- function(key) {
   label
 }
 
+#' Get what one row of the frame is, for a type of sampling
+#'
+#' @param type The key of the type: `"simple"`, `"pps"` or `"cluster"`.
+#' @param detail Whether to give the longer form, for the page of the type.
+#' @returns The text, as a string. An unknown type is an error.
+#' @noRd
+one_row <- function(type, detail = FALSE) {
+  texts <- if (detail) ONE_ROW_DETAIL else ONE_ROW
+  if (!type %in% names(texts)) {
+    stop("No type of sampling named: ", type, call. = FALSE)
+  }
+  unname(texts[[type]])
+}
+
 #' Get the name of a sheet of the Excel file
 #'
 #' @param key The name the code gives the sheet, a name of `OUTPUT_SHEETS`.
@@ -53,6 +67,12 @@ field_label <- function(field) {
 guide_value <- function(name) {
   if (startsWith(name, "label:")) {
     return(column_label(sub("^label:", "", name)))
+  }
+  if (startsWith(name, "one_row:")) {
+    return(one_row(sub("^one_row:", "", name), detail = FALSE))
+  }
+  if (startsWith(name, "one_row_detail:")) {
+    return(one_row(sub("^one_row_detail:", "", name), detail = TRUE))
   }
   if (startsWith(name, "sheet:")) {
     return(sheet_name(sub("^sheet:", "", name)))
@@ -149,29 +169,13 @@ guide_sections <- function(file, id) {
   )
 }
 
-#' Show a Markdown file in a titled card
-#'
-#'
-#'
-#' @param title The title of the card.
-#' @param file The path of the file.
-#' @returns A card.
-#' @noRd
-guide_card <- function(title, file) {
-  card(
-    class = "guide-card h-100",
-    fill = FALSE,
-    card_header(h3(title, class = "h6 fw-semibold mb-0")),
-    card_body(fillable = FALSE, guide_text(file))
-  )
-}
-
 #' Show the checks of the app
 #'
-#' One closed panel per group of checks of `guide/checks.yml`.
+#' One closed panel per group of checks of `guide/checks.yml`, in an accordion that
+#' goes inside a panel of the accordion of the page.
 #'
 #' @param ns The namespace function of the guide module.
-#' @returns A card.
+#' @returns An accordion.
 #' @noRd
 guide_checks <- function(ns) {
   panels <- lapply(names(CHECKS$groups), function(id) {
@@ -181,20 +185,9 @@ guide_checks <- function(ns) {
       guide_markdown(guide_checks_markdown(id))
     )
   })
-  card(
-    class = "guide-card",
-    fill = FALSE,
-    card_header(h3("What the tool checks", class = "h6 fw-semibold mb-0")),
-    card_body(
-      fillable = FALSE,
-      do.call(
-        accordion,
-        c(
-          list(id = ns("checks_accordion"), open = FALSE, multiple = TRUE),
-          panels
-        )
-      )
-    )
+  do.call(
+    accordion,
+    c(list(id = ns("checks_accordion"), open = FALSE, multiple = TRUE), panels)
   )
 }
 
@@ -363,21 +356,21 @@ guide_start <- function(ns) {
       guide_type_card(
         SAMPLING_TYPE_SIMPLE,
         "Simple random",
-        "a unit to survey (household, person).",
+        paste0(ONE_ROW[["simple"]], "."),
         "no population column.",
         ns("open_simple_random")
       ),
       guide_type_card(
         SAMPLING_TYPE_PPS,
         "Simple random - allocation",
-        "a PSU (an area) with its population.",
+        paste0(ONE_ROW[["pps"]], "."),
         "a population column.",
         ns("open_pps")
       ),
       guide_type_card(
         SAMPLING_TYPE_CLUSTER,
         "Cluster sampling",
-        "a PSU with its population.",
+        paste0(ONE_ROW[["cluster"]], "."),
         "a cluster column and a population column.",
         ns("open_cluster")
       )
@@ -452,16 +445,22 @@ guide_ui <- function(id) {
           nav_panel(
             "Your data",
             value = "data",
-            layout_columns(
-              col_widths = c(5, 7),
-              fill = FALSE,
-              guide_card("The file", "guide/data-file.md"),
-              guide_card(
+            guide_accordion(
+              ns("data_accordion"),
+              open = "file",
+              guide_panel("The file", "file", "guide/data-file.md"),
+              guide_panel(
                 "What each type expects",
+                "types",
                 "guide/data-types.md"
+              ),
+              # an accordion of its own, one panel per group of checks
+              accordion_panel(
+                "What the tool checks",
+                value = "checks",
+                guide_checks(ns)
               )
-            ),
-            guide_checks(ns)
+            )
           ),
           nav_panel(
             "Parameters",
