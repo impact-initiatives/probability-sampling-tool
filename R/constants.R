@@ -38,7 +38,7 @@ DATA_SOURCE_TEST <- "test"
 # the columns of the example data that each column field selects when the
 # example data is used, named by the field they fill
 EXAMPLE_COLUMNS <- c(
-  strata_column = "strata",
+  strata_column = "stratum",
   psu_column = "psu_id",
   population_column = "population"
 )
@@ -68,7 +68,7 @@ FIELD_LABELS <- c(
   sampling_mode = "Mode of sampling",
   sampling_type = "Type of sampling",
   stratified = "Stratified",
-  strata_column = "Input strata",
+  strata_column = "Input stratum",
   psu_column = "Input cluster",
   population_column = "Input population",
   confidence_level = "Confidence level",

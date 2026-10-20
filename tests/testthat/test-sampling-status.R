@@ -131,7 +131,7 @@ test_that("the tables say why they are empty, and the downloads why they are ine
     session$setInputs(stratified = TRUE, apply_button = 3)
     expect_identical(status()$id, "apply_failed")
     # and a change after it: apply again
-    session$setInputs(strata_column = "strata")
+    session$setInputs(strata_column = "stratum")
     expect_identical(status()$id, "setup_changed")
 
     # an invalid seed

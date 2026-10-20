@@ -1,4 +1,4 @@
-This part is for readers who want the statistical detail.
+This part is for users interested in some statistical details behind the sampling types implemented.
 
 ## Sample size (mode "based on population")
 
