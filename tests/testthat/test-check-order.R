@@ -153,15 +153,15 @@ test_that("with a valid file, the columns are reported in the order of the form,
       "strata_not_found"
     ),
     list(
-      settings_for(cluster, by_mode, TRUE, "strata", "None", "None", TRUE),
+      settings_for(cluster, by_mode, TRUE, "stratum", "None", "None", TRUE),
       "psu_missing"
     ),
     list(
-      settings_for(cluster, by_mode, TRUE, "strata", "nope", "None", TRUE),
+      settings_for(cluster, by_mode, TRUE, "stratum", "nope", "None", TRUE),
       "psu_not_found"
     ),
     list(
-      settings_for(cluster, by_mode, TRUE, "strata", "psu_id", "None", TRUE),
+      settings_for(cluster, by_mode, TRUE, "stratum", "psu_id", "None", TRUE),
       "population_missing"
     ),
     list(
@@ -169,9 +169,9 @@ test_that("with a valid file, the columns are reported in the order of the form,
         cluster,
         by_mode,
         TRUE,
-        "strata",
+        "stratum",
         "psu_id",
-        "strata",
+        "stratum",
         TRUE
       ),
       "population_not_numeric"
@@ -190,7 +190,7 @@ test_that("with a valid file, the columns are reported in the order of the form,
         cluster,
         by_mode,
         TRUE,
-        "strata",
+        "stratum",
         "psu_id",
         "population",
         TRUE
@@ -202,7 +202,7 @@ test_that("with a valid file, the columns are reported in the order of the form,
         cluster,
         SAMPLING_MODE_ENTER_SIZE,
         TRUE,
-        "strata",
+        "stratum",
         "psu_id",
         "population",
         TRUE
@@ -215,7 +215,7 @@ test_that("with a valid file, the columns are reported in the order of the form,
         cluster,
         by_mode,
         TRUE,
-        "strata",
+        "stratum",
         "psu_id",
         "population",
         FALSE

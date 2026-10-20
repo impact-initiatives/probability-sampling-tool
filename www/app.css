@@ -92,14 +92,20 @@ table.dataTable td.dt-right {
 	margin-bottom: 0.5rem;
 }
 
+.guide-hero {
+	padding-top: 0.75rem;
+}
+
 .guide-hero h1 {
-	font-size: 1.35rem;
-	margin-bottom: 0.25rem;
+	font-size: 1.5rem;
+	font-weight: 600;
+	margin-bottom: 0.5rem;
 }
 
 .guide-hero .lead {
-	font-size: 1rem;
-	margin-bottom: 0.5rem;
+	font-size: 1.05rem;
+	color: var(--bs-secondary-color);
+	margin-bottom: 1.25rem;
 }
 
 .guide-step-number {

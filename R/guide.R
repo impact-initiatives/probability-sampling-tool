@@ -258,13 +258,13 @@ guide_step <- function(number, title, text, link = NULL) {
   card(
     class = "guide-step",
     card_body(
-      class = "d-flex flex-column",
+      class = "d-flex flex-column gap-2 py-2",
       div(
-        class = "d-flex align-items-center gap-2 mb-1",
+        class = "d-flex align-items-center gap-2",
         span(class = "guide-step-number", number),
         h3(title, class = "h6 fw-semibold mb-0")
       ),
-      p(text, class = "small mb-2"),
+      p(text, class = "small mb-1"),
       if (!is.null(link)) div(class = "mt-auto small", link)
     )
   )
@@ -275,28 +275,26 @@ guide_step <- function(number, title, text, link = NULL) {
 #' The link sits at the bottom of the card.
 #'
 #' @param name The name of the type.
-#' @param before The name it had before this version.
 #' @param one_row What one row of the frame is.
 #' @param needs What the type needs in the frame.
 #' @param button_id The id of the link to the details.
 #' @returns A card.
 #' @noRd
-guide_type_card <- function(name, before, one_row, needs, button_id) {
+guide_type_card <- function(name, one_row, needs, button_id) {
   card(
     class = "guide-type",
-    card_header(
-      div(
-        h3(name, class = "h6 fw-semibold mb-1"),
-        span(class = "badge text-bg-light fw-normal", paste("before:", before))
-      )
-    ),
     card_body(
-      class = "d-flex flex-column",
-      p(strong("One row is "), one_row, class = "small mb-1"),
-      p(strong("Needs "), needs, class = "small mb-2"),
+      class = "d-flex flex-column gap-2 py-2",
+      h3(name, class = "h6 fw-semibold mb-0"),
+      p(strong("One row is "), one_row, class = "small mb-0"),
       div(
-        class = "mt-auto small",
-        actionLink(button_id, tagList("Details ", icon("arrow-right")))
+        class = "d-flex justify-content-between align-items-end gap-2 small",
+        span(strong("Needs "), needs),
+        actionLink(
+          button_id,
+          tagList("Details ", icon("arrow-right")),
+          class = "text-nowrap"
+        )
       )
     )
   )
@@ -317,7 +315,7 @@ guide_start <- function(ns) {
       h1("Draw a probability sample from your sampling frame"),
       p(
         class = "lead",
-        "Load your CSV, choose a sampling type and set the parameters. The tool returns the units to survey and the number of surveys to run in each."
+        "Load your CSV, choose a sampling type and set the parameters: the tool returns the units to survey."
       ),
       actionButton(
         ns("to_app"),
@@ -325,22 +323,7 @@ guide_start <- function(ns) {
         class = "btn-primary"
       )
     ),
-    div(
-      class = "alert alert-info mt-2 mb-0 py-2 d-flex justify-content-between align-items-center",
-      span(
-        icon("circle-info"),
-        strong(" Coming from the previous version? "),
-        HTML(
-          "The output, the names of the sampling types and of the columns, and the <strong>cluster sampling method</strong> have changed."
-        )
-      ),
-      actionLink(
-        ns("to_news"),
-        tagList("What's new ", icon("arrow-right")),
-        class = "ms-3 text-nowrap"
-      )
-    ),
-    h2("How it works", class = "h6 fw-semibold mt-3"),
+    h2("How it works", class = "h5 fw-semibold mt-4 mb-2"),
     layout_column_wrap(
       width = "14rem",
       fill = FALSE,
@@ -364,34 +347,46 @@ guide_start <- function(ns) {
       guide_step(
         4,
         "Sample and export",
-        "Draws the sample in the Sampling tab, then download one Excel file with the inputs, the summary and the sample.",
+        "Draws the sample in the Sampling tab, then download it as one Excel file.",
         actionLink(ns("to_results"), "Reading the results")
       )
     ),
-    h2("Three sampling types", class = "h6 fw-semibold mt-3"),
+    h2("Three sampling types", class = "h5 fw-semibold mt-4 mb-2"),
     layout_column_wrap(
       width = "17rem",
       fill = FALSE,
       guide_type_card(
         SAMPLING_TYPE_SIMPLE,
-        "Simple random",
         paste0(ONE_ROW[["simple"]], "."),
         "no population column.",
         ns("open_simple_random")
       ),
       guide_type_card(
         SAMPLING_TYPE_PPS,
-        "Simple random - allocation",
         paste0(ONE_ROW[["pps"]], "."),
         "a population column.",
         ns("open_pps")
       ),
       guide_type_card(
         SAMPLING_TYPE_CLUSTER,
-        "Cluster sampling",
         paste0(ONE_ROW[["cluster"]], "."),
         "a cluster column and a population column.",
         ns("open_cluster")
+      )
+    ),
+    div(
+      class = "alert alert-info mt-3 mb-0 py-2 d-flex justify-content-between align-items-center",
+      span(
+        icon("circle-info"),
+        strong(" Coming from the previous version? "),
+        HTML(
+          "The output, the names of the sampling types and of the columns, and the <strong>cluster sampling method</strong> have changed."
+        )
+      ),
+      actionLink(
+        ns("to_news"),
+        tagList("What's new ", icon("arrow-right")),
+        class = "ms-3 text-nowrap"
       )
     )
   )
@@ -448,9 +443,10 @@ guide_ui <- function(id) {
     withMathJax(
       div(
         class = "guide",
-        # the links of the texts, `#guide:...`, are handled by guide_server()
+        # the links of the texts, `#guide:...`, are handled by guide_server(); the
+        # deployed page rewrites the href into a full URL, so match inside it
         tags$script(HTML(sprintf(
-          "$(document).on('click', 'a[href^=\"#guide:\"]', function(e) { e.preventDefault(); Shiny.setInputValue('%s', this.getAttribute('href').slice(7), {priority: 'event'}); });",
+          "$(document).on('click', 'a[href*=\"#guide:\"]', function(e) { e.preventDefault(); Shiny.setInputValue('%s', this.getAttribute('href').split('#guide:')[1], {priority: 'event'}); });",
           ns("goto")
         ))),
         navset_pill(

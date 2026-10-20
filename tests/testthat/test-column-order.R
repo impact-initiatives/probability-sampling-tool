@@ -19,7 +19,7 @@ sampling_input <- function(sampling_mode, sampling_type, stratified) {
     buffer = 0.05,
     sampling_type = sampling_type,
     stratified = stratified,
-    strata_column = "strata",
+    strata_column = "stratum",
     psu_column = "psu_id",
     population_column = "population",
     cluster_size = 5,

@@ -1,4 +1,4 @@
-# "Input strata" comes last in the column mapping, so that "Input population"
+# "Input stratum" comes last in the column mapping, so that "Input population"
 # does not move when the sample is stratified or not (issue #43).
 
 skip_if_not_installed("chromote")
