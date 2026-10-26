@@ -2,7 +2,7 @@
 
 ## Results
 
-- **The Excel file has a fourth sheet, `sampling_frame`**: the sampling frame as the tool read it (the file that was sampled, without the columns the tool adds). With the `inputs` sheet it is enough to draw the same sample again: save the sheet as a CSV file, load it in the tool and use the same settings, seed and version of the app. The file now contains the whole sampling frame: share it with the care you give to the frame itself.
+- **The Excel file has a fourth sheet, `sampling_frame`**, with the sampling frame used for the draw, for better reproducibility.
 
 # 2026.1.0
 
