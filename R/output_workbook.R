@@ -1,11 +1,12 @@
 # The output file: an Excel workbook with the inputs of the draw, the summary of the
-# sample and the sample.
+# sample, the sample and the sampling frame it was drawn from.
 
 # the sheets of the workbook, in this order; snake_case, no space and no digit
 OUTPUT_SHEETS <- c(
   inputs = "inputs",
   summary = "sample_summary",
-  sample = "sample"
+  sample = "sample",
+  frame = "sampling_frame"
 )
 
 # the primary colour of the theme, for the headers of the inputs sheet
@@ -88,13 +89,15 @@ input_rows <- function(record) {
 
 #' Build the output workbook of a draw
 #'
-#' Three sheets, see `OUTPUT_SHEETS`: the inputs of the draw, the summary of the
-#' sample and the sample, the last two with the content of the tables of the app.
+#' Four sheets, see `OUTPUT_SHEETS`: the inputs of the draw, the summary of the
+#' sample, the sample and the sampling frame. The summary and the sample have the
+#' content of the tables of the app; the frame is the one the tool read, which the
+#' record keeps, so that the draw can be reproduced from the file.
 #'
 #' @param sample The drawn sample, the `sample` of `make_sample()`.
 #' @param summary The summary of the sample, the `summary_sample` of
 #'   `make_sample()`.
-#' @param record The record of the draw, see `draw_record()`.
+#' @param record The record of the draw, see `draw_record()`, with its `frame`.
 #' @returns A workbook, to save with its `save()` method.
 #' @noRd
 build_output_workbook <- function(sample, summary, record) {
@@ -105,6 +108,7 @@ build_output_workbook <- function(sample, summary, record) {
   add_inputs_sheet(wb, record)
   add_table_sheet(wb, OUTPUT_SHEETS[["summary"]], summary)
   add_table_sheet(wb, OUTPUT_SHEETS[["sample"]], sample)
+  add_table_sheet(wb, OUTPUT_SHEETS[["frame"]], record$frame)
   wb
 }
 

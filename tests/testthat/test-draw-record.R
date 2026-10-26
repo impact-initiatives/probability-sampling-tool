@@ -1,6 +1,6 @@
 # The settings of a draw are kept with its sample, for the output file (issue #60).
 
-test_that("the record keeps the settings, the file, the time and the versions", {
+test_that("the record keeps the settings, the file, the frame, the time and the versions", {
   frame <- data.frame(a = 1:3, b = 4:6)
   at <- as.POSIXct("2026-10-19 13:05:31", tz = "UTC")
   record <- draw_record(
@@ -12,6 +12,8 @@ test_that("the record keeps the settings, the file, the time and the versions", 
   )
   expect_identical(record$params, list(seed = 7))
   expect_identical(record$file_name, "frame.csv")
+  # the frame of the draw is kept, for the sheet of the output file
+  expect_identical(record$frame, frame)
   expect_identical(record$n_rows, 3L)
   expect_identical(record$n_columns, 2L)
   expect_identical(record$drawn_at, at)

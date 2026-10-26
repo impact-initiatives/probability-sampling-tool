@@ -70,7 +70,7 @@ test_that("a change of the setup or a new Apply empties the Sampling tab until S
   )
   expect_identical(
     unname(openxlsx2::wb_get_sheet_names(openxlsx2::wb_load(file))),
-    c("inputs", "sample_summary", "sample")
+    c("inputs", "sample_summary", "sample", "sampling_frame")
   )
 
   # a change of the setup hides the sample and the downloads, and says why

@@ -1,5 +1,5 @@
-# The output file: three sheets, the inputs of the draw, the summary and the sample
-# (issue #60). The workbook is saved and read back, as a user opens it.
+# The output file: four sheets, the inputs of the draw, the summary, the sample and
+# the sampling frame (issues #60 and #73). The workbook is saved and read back, as a user opens it.
 
 frame <- data.table::fread(file.path(app_root, EXAMPLE_DATA_PATH))
 
@@ -68,11 +68,11 @@ settings_of <- function(record) {
   vapply(input_rows(record), function(line) line$setting, character(1))
 }
 
-test_that("the workbook has the three sheets, in order, named in snake_case", {
+test_that("the workbook has the four sheets, in order, named in snake_case", {
   file <- saved(draw(settings()))
   expect_identical(
     unname(openxlsx2::wb_get_sheet_names(file$wb)),
-    c("inputs", "sample_summary", "sample")
+    c("inputs", "sample_summary", "sample", "sampling_frame")
   )
   # no space, no digit
   expect_match(unname(OUTPUT_SHEETS), "^[a-z_]+$")
@@ -100,6 +100,20 @@ test_that("the summary and the sample sheets hold the tables of the app", {
   )
 })
 
+test_that("the sampling frame sheet is the frame as the tool read it", {
+  d <- draw(settings())
+  file <- saved(d)
+  read <- openxlsx2::wb_to_df(file$path, sheet = "sampling_frame")
+  # the columns of the file, none of those the tool adds
+  expect_identical(names(read), names(frame))
+  expect_false(any(startsWith(names(read), RESERVED_PREFIX)))
+  expect_equal(nrow(read), nrow(frame))
+  expect_identical(as.character(read$stratum), as.character(frame$stratum))
+  expect_equal(read$population, frame$population)
+  # the whole frame, not only the PSUs drawn
+  expect_gt(nrow(read), nrow(d$out$sample))
+})
+
 test_that("an empty value is an empty cell, and a text that looks like a formula stays text", {
   wb <- openxlsx2::wb_workbook()
   add_table_sheet(
@@ -119,7 +133,7 @@ test_that("an empty value is an empty cell, and a text that looks like a formula
 
 test_that("the table sheets have a frozen header, a filter and readable column widths", {
   file <- saved(draw(settings()))
-  for (i in 2:3) {
+  for (i in 2:4) {
     xml <- sheet_xml(file$path, i)
     expect_match(xml, 'state="frozen"', fixed = TRUE)
     expect_match(xml, "<autoFilter ref=\"A1:", fixed = TRUE)
