@@ -4,7 +4,7 @@
 
 # The version of the app, in calendar versioning like the branches and the
 # milestone. A release tag vX.Y.Z must be equal to it (checked by the CI, see #56).
-APP_VERSION <- "2026.1.0"
+APP_VERSION <- "2026.2.0"
 
 # What one row of the sampling frame is, for each type (simple, pps and cluster):
 # the short form for the tables that compare the types, the longer
