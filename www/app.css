@@ -108,6 +108,14 @@ table.dataTable td.dt-right {
 	margin-bottom: 1.25rem;
 }
 
+.guide-step {
+	min-height: 9.5rem;
+}
+
+.guide-type {
+	min-height: 11rem;
+}
+
 .guide-step-number {
 	display: inline-flex;
 	align-items: center;

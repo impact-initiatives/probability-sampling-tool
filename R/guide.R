@@ -258,7 +258,7 @@ guide_step <- function(number, title, text, link = NULL) {
   card(
     class = "guide-step",
     card_body(
-      class = "d-flex flex-column gap-2 py-2",
+      class = "d-flex flex-column gap-2 py-3",
       div(
         class = "d-flex align-items-center gap-2",
         span(class = "guide-step-number", number),
@@ -272,7 +272,7 @@ guide_step <- function(number, title, text, link = NULL) {
 
 #' Show a sampling type of the Three sampling types row
 #'
-#' The link sits at the bottom of the card.
+#' The link sits at the bottom right of the card.
 #'
 #' @param name The name of the type.
 #' @param one_row What one row of the frame is.
@@ -284,17 +284,14 @@ guide_type_card <- function(name, one_row, needs, button_id) {
   card(
     class = "guide-type",
     card_body(
-      class = "d-flex flex-column gap-2 py-2",
+      class = "d-flex flex-column gap-2 py-3",
       h3(name, class = "h6 fw-semibold mb-0"),
       p(strong("One row is "), one_row, class = "small mb-0"),
+      p(strong("Needs "), needs, class = "small mb-0"),
+      # always at the bottom right of the card, whatever the length of the text
       div(
-        class = "d-flex justify-content-between align-items-end gap-2 small",
-        span(strong("Needs "), needs),
-        actionLink(
-          button_id,
-          tagList("Details ", icon("arrow-right")),
-          class = "text-nowrap"
-        )
+        class = "mt-auto text-end small",
+        actionLink(button_id, tagList("Details ", icon("arrow-right")))
       )
     )
   )
