@@ -65,6 +65,59 @@ test_that("the tables of the checks list every check that blocks", {
   )
 })
 
+test_that("a file with versions and topics makes a panel per version with a panel per topic", {
+  file <- withr::local_tempfile(fileext = ".md")
+  writeLines(
+    c(
+      "# 2.0",
+      "",
+      "## New",
+      "",
+      "- a new thing",
+      "",
+      "# 1.0",
+      "",
+      "## First",
+      "",
+      "First text.",
+      "",
+      "## Second",
+      "",
+      "Second text."
+    ),
+    file
+  )
+  html <- as.character(guide_sections(file, "news", level = 1))
+  # one accordion for the versions, one inside each version
+  expect_match(html, 'id="news"', fixed = TRUE)
+  expect_match(html, 'id="news_1"', fixed = TRUE)
+  expect_match(html, 'id="news_2"', fixed = TRUE)
+  titles <- regmatches(
+    html,
+    gregexpr('(?<=accordion-title">)[^<]+', html, perl = TRUE)
+  )[[1]]
+  expect_identical(titles, c("2.0", "New", "1.0", "First", "Second"))
+  # a file without versions keeps one level of panels
+  flat <- as.character(guide_sections(file, "flat", level = 2))
+  expect_no_match(flat, 'id="flat_', fixed = TRUE)
+})
+
+test_that("What's new has a panel per version, the latest first, with its topics", {
+  html <- as.character(guide_sections(
+    file.path(app_root, "NEWS.md"),
+    "news",
+    level = 1
+  ))
+  titles <- regmatches(
+    html,
+    gregexpr('(?<=accordion-title">)[^<]+', html, perl = TRUE)
+  )[[1]]
+  versions <- grep("^[0-9]{4}\\.[0-9]+\\.[0-9]+$", titles, value = TRUE)
+  expect_identical(versions[1], APP_VERSION)
+  expect_true("2026.1.0" %in% versions)
+  expect_true("Cluster sampling: what changed in the method" %in% titles)
+})
+
 skip_if_not_installed("chromote")
 skip_if(is.null(chromote::find_chrome()), "Chrome is not available")
 
