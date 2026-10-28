@@ -141,25 +141,50 @@ guide_text <- function(file) {
 
 #' Show a Markdown file as one accordion panel per section
 #'
-#' One panel per second level heading; the first starts open. What comes before the
-#' first heading is shown above the panels, as a discreet note.
+#' One panel per heading of the given level; the first starts open. What comes before
+#' the first heading is shown above the panels, as a discreet note. A panel whose
+#' text has headings of the next level holds an accordion of its own, one panel per
+#' heading: `NEWS.md` has a panel per version (`# 2026.2.0`) with a panel per topic
+#' (`## Results`).
 #'
 #' @param file The path of the file.
 #' @param id The id of the accordion.
+#' @param level The level of the headings that make the panels (2 is `##`).
 #' @returns The introduction and the accordion.
 #' @noRd
-guide_sections <- function(file, id) {
-  lines <- readLines(file, warn = FALSE)
-  starts <- grep("^## ", lines)
+guide_sections <- function(file, id, level = 2) {
+  guide_sections_lines(readLines(file, warn = FALSE), id, level)
+}
+
+#' Show lines of Markdown as one accordion panel per section
+#'
+#' What `guide_sections()` does, on the lines of a text, so that a panel can hold
+#' the accordion of its own sections.
+#'
+#' @param lines The lines of the text.
+#' @param id The id of the accordion; the accordion of a panel adds its number.
+#' @param level The level of the headings that make the panels.
+#' @returns The introduction and the accordion.
+#' @noRd
+guide_sections_lines <- function(lines, id, level) {
+  heading <- paste0("^", strrep("#", level), " ")
+  next_heading <- paste0("^", strrep("#", level + 1), " ")
+  starts <- grep(heading, lines)
   intro <- if (starts[1] > 1) lines[seq_len(starts[1] - 1)] else character()
   ends <- c(starts[-1] - 1, length(lines))
   panels <- lapply(seq_along(starts), function(i) {
     body <- lines[(starts[i] + 1):ends[i]]
-    guide_panel_text(
-      sub("^## ", "", lines[starts[i]]),
-      paste0("section", i),
-      paste(body, collapse = "\n")
-    )
+    title <- sub(heading, "", lines[starts[i]])
+    value <- paste0("section", i)
+    if (any(grepl(next_heading, body))) {
+      accordion_panel(
+        title,
+        value = value,
+        guide_sections_lines(body, paste0(id, "_", i), level + 1)
+      )
+    } else {
+      guide_panel_text(title, value, paste(body, collapse = "\n"))
+    }
   })
   tagList(
     if (length(intro) > 0 && any(nzchar(intro))) {
@@ -258,7 +283,7 @@ guide_step <- function(number, title, text, link = NULL) {
   card(
     class = "guide-step",
     card_body(
-      class = "d-flex flex-column gap-2 py-2",
+      class = "d-flex flex-column gap-2 py-3",
       div(
         class = "d-flex align-items-center gap-2",
         span(class = "guide-step-number", number),
@@ -272,7 +297,7 @@ guide_step <- function(number, title, text, link = NULL) {
 
 #' Show a sampling type of the Three sampling types row
 #'
-#' The link sits at the bottom of the card.
+#' The link sits at the bottom right of the card.
 #'
 #' @param name The name of the type.
 #' @param one_row What one row of the frame is.
@@ -284,17 +309,14 @@ guide_type_card <- function(name, one_row, needs, button_id) {
   card(
     class = "guide-type",
     card_body(
-      class = "d-flex flex-column gap-2 py-2",
+      class = "d-flex flex-column gap-2 py-3",
       h3(name, class = "h6 fw-semibold mb-0"),
       p(strong("One row is "), one_row, class = "small mb-0"),
+      p(strong("Needs "), needs, class = "small mb-0"),
+      # always at the bottom right of the card, whatever the length of the text
       div(
-        class = "d-flex justify-content-between align-items-end gap-2 small",
-        span(strong("Needs "), needs),
-        actionLink(
-          button_id,
-          tagList("Details ", icon("arrow-right")),
-          class = "text-nowrap"
-        )
+        class = "mt-auto text-end small",
+        actionLink(button_id, tagList("Details ", icon("arrow-right")))
       )
     )
   )
@@ -514,7 +536,7 @@ guide_ui <- function(id) {
           nav_panel(
             "What's new",
             value = "news",
-            guide_sections("NEWS.md", ns("news_accordion"))
+            guide_sections("NEWS.md", ns("news_accordion"), level = 1)
           ),
           nav_panel(
             "Methods",

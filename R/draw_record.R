@@ -8,12 +8,13 @@
 #'
 #' @param params The settings of the draw, see `read_params()`.
 #' @param file_name The name of the file of the sampling frame.
-#' @param frame The sampling frame, as read from the file.
+#' @param frame The sampling frame, as read from the file. It is kept in the record,
+#'   for the sheet of the output file that gives the frame of the draw.
 #' @param drawn_at The time of the draw.
 #' @param info The version of the app, see `app_info()`.
-#' @returns A list: the `params`, the `file_name`, the number of rows and of columns
-#'   of the file (`n_rows`, `n_columns`), the time (`drawn_at`), and the version of
-#'   the app (`app_version`) and of R (`r_version`).
+#' @returns A list: the `params`, the `file_name`, the `frame`, its number of rows
+#'   and of columns (`n_rows`, `n_columns`), the time (`drawn_at`), and the version
+#'   of the app (`app_version`) and of R (`r_version`).
 #' @noRd
 draw_record <- function(
   params,
@@ -25,6 +26,7 @@ draw_record <- function(
   list(
     params = params,
     file_name = file_name,
+    frame = frame,
     n_rows = nrow(frame),
     n_columns = ncol(frame),
     drawn_at = drawn_at,

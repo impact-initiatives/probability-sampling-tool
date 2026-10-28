@@ -1,3 +1,11 @@
+# 2026.2.0
+
+## Results
+
+- **The Excel file has a fourth sheet, `sampling_frame`**, with the sampling frame used for the draw, for better reproducibility.
+
+# 2026.1.0
+
 ## Names of the sampling types
 
 | Before | Now |

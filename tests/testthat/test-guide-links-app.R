@@ -34,7 +34,8 @@ test_that("a link in What's new goes to What the tool checks and opens it", {
 
   click_text("a.nav-link", "What")
   expect_identical(active_tab(), "What's new")
-  # the Checks section is folded: open it to reach its link
+  # the Checks section is in the version 2026.1.0, folded: open both to reach its link
+  click_text(".accordion-button", "2026.1.0")
   click_text(".accordion-button", "Checks")
   app$run_js(
     "document.querySelector('a[href=\"#guide:data/checks\"]').click();"
