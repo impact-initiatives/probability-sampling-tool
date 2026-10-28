@@ -8,13 +8,13 @@ A Shiny application that draws a probability sample from a sampling frame for su
 
 ## What it does
 
-You load your sampling frame (one CSV file), choose a sampling type (simple random sampling, PPS sampling with replacement, or two-stage PPS cluster sampling with replacement) and its parameters, and apply: the tool checks the file and the settings and says what to fix. It then draws the sample and gives you **one Excel file** with the sample, its summary and the inputs of the draw (version of the app, file, settings and seed), so that the draw can be reproduced and checked.
+You load your sampling frame (one CSV file), choose a sampling type (simple random sampling, PPS sampling with replacement, or two-stage PPS cluster sampling with replacement) and its parameters, and apply: the tool checks the file and the settings and says what to fix. It then draws the sample and gives you **one Excel file** with the sample, its summary, the inputs of the draw (version of the app, file, settings and seed) and the sampling frame it was drawn from, so that the draw can be reproduced and checked.
 
 The **Guide** tab of the application explains the sampling types, what the file must contain, the parameters, the checks, the results and the formulas. What changed in each version is in the Guide under *What's new*, and in [NEWS.md](NEWS.md).
 
 ## Your data
 
-The file you load is read during your session to draw the sample. The tool does not save it, and does not send it anywhere else: it is processed by the application, which runs on shinyapps.io (Posit). Follow the data protection rules of your organisation, and do not load personal data: a sampling frame lists areas, camps or population groups, not individuals.
+The file you load is read during your session to draw the sample. The tool does not save it, and does not send it anywhere else: it is processed by the application, which runs on shinyapps.io (Posit). The Excel file you download contains the whole sampling frame (its last sheet): share it with the care you give to the frame itself. Follow the data protection rules of your organisation, and do not load personal data: a sampling frame lists areas, camps or population groups, not individuals.
 
 The file must be a CSV of at most 100 MB, with one row per unit of the frame (see the Guide, *Your sampling frame*). An example is in [data/data_example.csv](data/data_example.csv) and in the application (*Use test data*).
 
