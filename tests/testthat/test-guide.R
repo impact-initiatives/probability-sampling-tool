@@ -151,3 +151,26 @@ test_that("the links of the guide open its sections and the app", {
   Sys.sleep(1)
   expect_identical(app$get_value(input = "main_nav"), "Sampling frame")
 })
+
+# The link Details of the three sampling types is at the bottom right of its card,
+# whatever the length of the text of the card (issue #75).
+test_that("the Details link of the sampling types is at the same place in each card", {
+  app <- AppDriver$new(
+    app_dir = app_root,
+    name = "guide-type-cards",
+    load_timeout = 90000
+  )
+  withr::defer(app$stop())
+  Sys.sleep(1.5)
+  app$wait_for_idle()
+
+  # the distance from the bottom and from the right of each card to its link
+  gaps <- app$get_js(
+    "Array.from(document.querySelectorAll('.guide-type')).map(function(card) { var link = card.querySelector('a.action-button').getBoundingClientRect(); var box = card.getBoundingClientRect(); return [Math.round(box.bottom - link.bottom), Math.round(box.right - link.right)]; })"
+  )
+  expect_length(gaps, 3)
+  bottoms <- vapply(gaps, function(gap) gap[[1]], numeric(1))
+  rights <- vapply(gaps, function(gap) gap[[2]], numeric(1))
+  expect_lte(max(bottoms) - min(bottoms), 1)
+  expect_lte(max(rights) - min(rights), 1)
+})
